@@ -1,6 +1,11 @@
 ```{r}
 library(dplyr)
 library(ggplot2)
+library(tidyr)
+library(lubridate)
+library(cluster)
+library(factoextra)
+library(fmsb)
 ```
 
 ```{r}
@@ -91,5 +96,186 @@ data <- data %>% mutate(across(everything(), ~ ifelse(is.na(.), mean(., na.rm = 
 ```
 
 ```{r}
+# 读取数据
+data <- read.csv("data/merged_data.csv")
 
+# 查看数据结构
+str(data)
+
+# 清除 timeconsume 列内容为 '-' 和 '--' 的行
+data <- data %>%
+  filter(!(timeconsume %in% c('-', '--')))
+
+# 定义要保留的 state 值
+valid_states <- c("Absolutely_Correct", "Absolutely_Error", "Error1", "Error2", "Error3", "Error4", "Error6", "Error7", "Error8", "Error9", "Partially_Correct")
+
+# 过滤数据，只保留 state 列中包含指定值的行
+data <- data %>%
+  filter(state %in% valid_states)
+
+# 查看处理后的数据结构
+str(data)
+
+# 保存清洗后的数据
+write.csv(data, "data/cleaned_data.csv", row.names = FALSE)
+```
+
+```{r}
+# 读取数据
+cleaned_data <- read.csv("data/cleaned_data.csv")
+title_info <- read.csv("data/Data_TitleInfo.csv")
+
+
+# 检查两个数据集中 title_ID 的分布情况
+summary(cleaned_data$title_ID)
+summary(title_info$title_ID)
+
+# 合并数据集，将 title_info 中的 score, knowledge 和 sub_knowledge 填充到 cleaned_data 中
+merged_data <- cleaned_data %>%
+  left_join(title_info %>% select(title_ID, score, knowledge, sub_knowledge), by = "title_ID")
+
+# 查看合并后的数据结构
+str(merged_data)
+
+# 保存合并后的数据
+write.csv(merged_data, "data/final_data.csv", row.names = FALSE)
+```
+
+```{r}
+final_data <- read.csv("data/final_data.csv")
+
+# 计算得分率，并创建新列 'rate'
+final_data <- final_data %>%
+  mutate(rate = score.x / score.y)
+
+# 查看数据结构，以验证新列 'rate'
+str(final_data)
+
+# 保存计算后的数据
+write.csv(final_data, "data/final_data.csv", row.names = FALSE)
+```
+
+```{r}
+# 读取数据
+final_data <- read.csv("data/final_data.csv")
+# 转换 timeconsume 列为数值格式
+final_data$timeconsume <- as.numeric(final_data$timeconsume)
+
+# 计算每个学生的平均得分率
+avg_rate <- final_data %>%
+  group_by(student_ID) %>%
+  summarise(avg_rate = mean(rate, na.rm = TRUE))
+
+# 计算每个学生在每种 knowledge 下的回答次数
+knowledge_counts <- final_data %>%
+  group_by(student_ID, knowledge) %>%
+  summarise(knowledge_count = n(), .groups = 'drop')
+
+# 计算每个学生的总回答次数
+total_counts <- final_data %>%
+  group_by(student_ID) %>%
+  summarise(total_count = n(), .groups = 'drop')
+
+# 计算每个学生每种 knowledge 的百分比
+knowledge_percentage <- knowledge_counts %>%
+  left_join(total_counts, by = "student_ID") %>%
+  mutate(knowledge_percentage = knowledge_count / total_count * 100) %>%
+  select(student_ID, knowledge, knowledge_percentage) %>%
+  pivot_wider(names_from = knowledge, values_from = knowledge_percentage, values_fill = list(knowledge_percentage = 0))
+
+# 计算每个学生的平均 time consume
+avg_time_consume <- final_data %>%
+  group_by(student_ID) %>%
+  summarise(avg_time_consume = mean(timeconsume, na.rm = TRUE), .groups = 'drop')
+
+# 合并所有特征
+learning_behavior <- avg_rate %>%
+  left_join(knowledge_percentage, by = "student_ID") %>%
+  left_join(avg_time_consume, by = "student_ID")
+
+# 查看数据结构
+str(learning_behavior)
+
+# 保存生成的新数据集
+write.csv(learning_behavior, "data/learning_behavior.csv", row.names = FALSE)
+```
+
+```{markdown}
+# 计算每个学生的学习频率（每天）
+daily_frequency <- final_data %>%
+  group_by(student_id, date) %>%
+  summarise(daily_study_count = n()) %>%
+  group_by(student_id) %>%
+  summarise(daily_frequency = mean(daily_study_count, na.rm = TRUE))
+
+# 计算每个学生的学习频率（每周）
+final_data <- final_data %>%
+  mutate(week = floor_date(date, "week"))
+
+weekly_frequency <- final_data %>%
+  group_by(student_id, week) %>%
+  summarise(weekly_study_count = n()) %>%
+  group_by(student_id) %>%
+  summarise(weekly_frequency = mean(weekly_study_count, na.rm = TRUE))
+```
+
+```{r}
+# 平均得分率分布
+ggplot(learning_behavior, aes(x = avg_rate)) +
+  geom_histogram(binwidth = 0.05, fill = "blue", color = "black") +
+  labs(title = "Distribution of Average Rate", x = "Average Rate", y = "Frequency")
+
+# 平均time consume分布
+ggplot(learning_behavior, aes(x = avg_time_consume)) +
+  geom_histogram(binwidth = 1, fill = "green", color = "black") +
+  labs(title = "Distribution of Average Time Consume", x = "Average Time Consume", y = "Frequency")
+
+```
+
+```{r}
+# 读取数据
+learning_behavior <- read.csv("data/learning_behavior.csv")
+
+# 选择用于聚类分析的列
+clustering_data <- learning_behavior %>%
+  select(avg_rate, avg_time_consume, b3C9s, g7R2j, k4W1c, m3D1v, r8S3g, s8Y2f, t5V9e, y9W5d)
+
+# 标准化数据
+clustering_data_scaled <- scale(clustering_data)
+
+# 使用 Elbow 方法选择聚类数
+fviz_nbclust(clustering_data_scaled, kmeans, method = "wss") +
+  labs(title = "Elbow Plot for K-means Clustering", x = "Number of Clusters (k)", y = "Total Within-Cluster Sum of Square (WSS)")
+
+# 使用 K-means 聚类分析，设置聚类数为 5
+set.seed(123) # 确保结果可重复
+kmeans_result <- kmeans(clustering_data_scaled, centers = 5, nstart = 25)
+
+# 将聚类结果添加回数据框
+learning_behavior <- learning_behavior %>%
+  mutate(cluster = kmeans_result$cluster)
+
+# 计算每个聚类组的平均值
+cluster_means <- learning_behavior %>%
+  group_by(cluster) %>%
+  summarise(across(c(avg_rate, avg_time_consume, b3C9s, g7R2j, k4W1c, m3D1v, r8S3g, s8Y2f, t5V9e, y9W5d), mean, na.rm = TRUE))
+
+print(cluster_means)
+
+
+```
+
+```{r}
+# 准备数据用于可视化
+cluster_means_long <- cluster_means %>%
+  pivot_longer(cols = -cluster, names_to = "feature", values_to = "value")
+
+# 绘制每个聚类在各个特征上的差异
+ggplot(cluster_means_long, aes(x = feature, y = value, fill = factor(cluster))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Feature Differences Across Clusters",
+       x = "Feature",
+       y = "Mean Value",
+       fill = "Cluster") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```

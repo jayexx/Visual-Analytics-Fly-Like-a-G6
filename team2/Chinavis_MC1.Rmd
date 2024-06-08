@@ -13,10 +13,9 @@ knitr::opts_chunk$set(echo = TRUE,
 
 ```
 
-
 ## Introduction
 
-NorthClass is a well-known higher education training institution that offers over 100 courses covering various academic disciplines such as literature, science, engineering, medicine, economics, and management, attracting approximately 300,000 registered learners. The institution establishes a flexible and convenient learning environment by providing excellent instructional services. In order to adapt to the development trend of the digital age and enhance its market competitiveness in the field of technology, the institution has planned and launched a programming course. Learners are required to complete specified programming tasks during the learning period, with multiple attempts and submissions allowed to ensure full mastery and application of the knowledge learned. After the completion of the course, the organization gathers learners' temporal learning data to assess whether the quality of instruction meets the predetermined standards and requirements. To optimize teaching resources and improve teaching quality, the institution aims to establish a dedicated Smart Education Development and Innovation Group that will explore how to empower education with next-generation artificial intelligence technology, in order to better cultivate innovative talents who are suited to the development needs of the new era. Visualization and Visual Analytics harness the power of high-bandwidth visual perception channels to transform complex temporal learning behavior data into comprehensible graphical representations. These techniques not only diagnose and analyze learners' knowledge mastery levels but also dynamically monitor the evolving trends in their learning behaviors. Additionally, they effectively identify and dissect potential factors that contribute to learning difficulties. If you were a member of the Smart Education Development and Innovation Group, please design and implement a Visual Analytics solution to help the institution intuitively perceive the learning status of learners and provide feasible suggestions for adjusting teaching strategies and course designs. 
+NorthClass is a well-known higher education training institution that offers over 100 courses covering various academic disciplines such as literature, science, engineering, medicine, economics, and management, attracting approximately 300,000 registered learners. The institution establishes a flexible and convenient learning environment by providing excellent instructional services. In order to adapt to the development trend of the digital age and enhance its market competitiveness in the field of technology, the institution has planned and launched a programming course. Learners are required to complete specified programming tasks during the learning period, with multiple attempts and submissions allowed to ensure full mastery and application of the knowledge learned. After the completion of the course, the organization gathers learners' temporal learning data to assess whether the quality of instruction meets the predetermined standards and requirements. To optimize teaching resources and improve teaching quality, the institution aims to establish a dedicated Smart Education Development and Innovation Group that will explore how to empower education with next-generation artificial intelligence technology, in order to better cultivate innovative talents who are suited to the development needs of the new era. Visualization and Visual Analytics harness the power of high-bandwidth visual perception channels to transform complex temporal learning behavior data into comprehensible graphical representations. These techniques not only diagnose and analyze learners' knowledge mastery levels but also dynamically monitor the evolving trends in their learning behaviors. Additionally, they effectively identify and dissect potential factors that contribute to learning difficulties. If you were a member of the Smart Education Development and Innovation Group, please design and implement a Visual Analytics solution to help the institution intuitively perceive the learning status of learners and provide feasible suggestions for adjusting teaching strategies and course designs.
 
 ## Tasks and Questions:
 
@@ -34,13 +33,11 @@ FishEye analysts need your help to perform geographic and temporal analysis of t
 
 ## Libraries
 
-For this analysis, we will use the following packages from CRAN. 
+For this analysis, we will use the following packages from CRAN.
 
-[`rjson`](https://cran.r-project.org/web/packages/cluster/index.html) - Methods for Cluster analysis. Much extended the original from Peter Rousseeuw, Anja Struyf and Mia Hubert, based on Kaufman and Rousseeuw (1990) "Finding Groups in Data".  
-[`tidyverse`](https://www.tidyverse.org/packages/) - Loading the core tidyverse packages which will be used for data wrangling and visualisation.  
-[`visNetwork`](https://cran.r-project.org/web/packages/factoextra/readme/README.html#:~:text=The%20R%20package%20factoextra%20has,data%20visualization%20with%20less%20typing.) - Extract and Visualize the Results of Multivariate Data Analyses.
-[`ggasym`](https://ggobi.github.io/ggally/) Extension of `ggplot2` by adding several functions to reduce the complexity of combining geometric objects with transformed data.
-[`igraph`](https://ggobi.github.io/ggally/) Extension of `ggplot2` by adding several functions to reduce the complexity of combining geometric objects with transformed data.
+[`rjson`](https://cran.r-project.org/web/packages/cluster/index.html) - Methods for Cluster analysis. Much extended the original from Peter Rousseeuw, Anja Struyf and Mia Hubert, based on Kaufman and Rousseeuw (1990) "Finding Groups in Data".\
+[`tidyverse`](https://www.tidyverse.org/packages/) - Loading the core tidyverse packages which will be used for data wrangling and visualisation.\
+[`visNetwork`](https://cran.r-project.org/web/packages/factoextra/readme/README.html#:~:text=The%20R%20package%20factoextra%20has,data%20visualization%20with%20less%20typing.) - Extract and Visualize the Results of Multivariate Data Analyses. [`ggasym`](https://ggobi.github.io/ggally/) Extension of `ggplot2` by adding several functions to reduce the complexity of combining geometric objects with transformed data. [`igraph`](https://ggobi.github.io/ggally/) Extension of `ggplot2` by adding several functions to reduce the complexity of combining geometric objects with transformed data.
 
 ```{r}
 pacman::p_load(geojsonR,rjson,sf, dplyr,tidyr,stringr,readr,fs,purrr,ggplot2, plotly, ggstatsplot,igraph,lubridate,hms, vcd, ggalluvial, ggforce)
@@ -51,7 +48,6 @@ df_StudentInfo <- read_csv("data/Data_StudentInfo.csv")
 df_TitleInfo <- read_csv("data/Data_TitleInfo.csv")
 
 ```
-
 
 ```{r}
 csv_file_list <- dir('data/Data_SubmitRecord')
@@ -93,7 +89,6 @@ print(df_StudentRecord)
 
 ```
 
-
 ```{r}
 
 # Identify students with multiple classes
@@ -105,7 +100,6 @@ students_multiple_classes <- df_StudentRecord %>%
 # Display the results
 print(students_multiple_classes)
 ```
-
 
 ```{r}
 #remove index column
@@ -140,7 +134,6 @@ df_TitleInfo <- df_TitleInfo %>%
   )
 ```
 
-
 ```{r}
 missing_students <- anti_join(df_StudentRecord, df_StudentInfo, by = "student_ID")
 
@@ -155,7 +148,6 @@ df_StudentRecord <- df_StudentRecord %>%
   filter (state != '�������')%>%
   filter (class != "class")
 ```
-
 
 ```{r}
 # Self join on knowledge to find pairs of title_IDs that share knowledge
@@ -193,7 +185,6 @@ title_info_aggregated <- title_info_aggregated %>%
   mutate(knowledge_count = sapply(knowledge_list, length),
          sub_knowledge_count = sapply(sub_knowledge_list, length))
 ```
-
 
 ```{r}
 # Merge StudentInfo with SubmitRecord based on student_ID
@@ -263,8 +254,6 @@ for (plot_name in names(summary_plots)) {
 
 ```
 
-
-
 ```{r}
 check_state5 <- merged_data %>%
   filter(state == "Error5")
@@ -278,14 +267,12 @@ unique(check_na$state)
 
 All Error 5 has no timeconsume, this could suggest Student skip the question.
 
-
 ```{r}
 set.seed(123)  # For reproducibility
 sample_df <- merged_data %>%
   sample_frac(0.10)
 
 ```
-
 
 ```{r}
 
@@ -304,7 +291,6 @@ library(FSA)
 dunn_test <- dunnTest(timeconsume ~ domain, data = sample_df, method = "bonferroni")
 print(dunn_test)
 ```
-
 
 ```{r}
 # Pairwise comparisons using ggbetweenstats
@@ -325,7 +311,6 @@ ggbetweenstats(
 
 
 ```
-
 
 Are there association with the state of answer and domain?
 
@@ -360,9 +345,6 @@ ggplot(as.data.frame(table(sample_df_error$domain, sample_df_error$state)),
 
 ```
 
-
-
-
 ```{r}
 ggstatsplot::ggbarstats(
   data = sample_df,
@@ -375,8 +357,6 @@ ggstatsplot::ggbarstats(
 )
 
 ```
-
-
 
 ```{r}
 
@@ -405,8 +385,6 @@ ggbetweenstats(
 
 ```
 
-
-
 ```{r, fig.height=25}
 ggplot(heatmap_data, aes(x = major, y = hour, fill = attempt_count)) +
   geom_tile() +
@@ -421,7 +399,6 @@ ggplot(heatmap_data, aes(x = major, y = hour, fill = attempt_count)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
-
 
 ```{r}
 # Step 1: Group by domain and state, and calculate the count of each state within each domain
@@ -469,9 +446,7 @@ ggstatsplot::ggbarstats(
 
 ```
 
-
 ## Are there any Association between Domain and Errors?
-
 
 ```{r}
 # Step 1: Create a contingency table
