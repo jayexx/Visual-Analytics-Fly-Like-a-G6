@@ -20,10 +20,10 @@ To address the above, the key objective of this exercise is:
 
 -   To analyse and provide a visual representation of the relationship between learning modes and knowledge acquisition (learners' ability to absorb, integrate, and apply knowledge)
 
-This would entail the following sub-task requirements: 
+This would entail the following sub-task requirements:
 
--   To visualise and uncover the various learning modes, and 
--   To visualise and uncover the patterns in distribution in learner's performance in each various learning modes, and 
+-   To visualise and uncover the various learning modes, and
+-   To visualise and uncover the patterns in distribution in learner's performance in each various learning modes, and
 -   To visualise and determine the statistical differences and correlations that learning mode may have with learners' performance
 
 ## Getting Started
@@ -53,8 +53,16 @@ The code chunk below loads the following libraries:
 -   stats
 -   hms
 -   caret
+-   ggfortify
+-   gridExtra
+-   GGally
+-   parallelPlot
+-   seriation
+-   dendextend
+-   heatmaply,
+
 ```{r}
-pacman::p_load(tidyverse, knitr, ggridges, ggdist, colorspace, ggrepel, ggthemes, hrbrthemes, patchwork, lubridate, ggstatsplot, plotly, rjson, visNetwork, BiocManager, igraph, cluster, factoextra, stats, hms, caret) 
+pacman::p_load(tidyverse, knitr, ggridges, ggdist, colorspace, ggrepel, ggthemes, hrbrthemes, patchwork, lubridate, ggstatsplot, plotly, rjson, visNetwork, BiocManager, igraph, cluster, factoextra, stats, hms, caret, ggfortify, gridExtra, GGally, parallelPlot, seriation, dendextend, heatmaply) 
 ```
 
 ### Importing the Data
@@ -166,6 +174,7 @@ duplicates <- df_StudentInfo[duplicated(df_StudentInfo$student_ID) | duplicated(
 # Display the rows with duplicate student_IDs
 duplicates
 ```
+
 From the output above, no duplicates found.
 
 2.  Duplicate title_ID (aka questions) in TitleInfo
@@ -177,10 +186,12 @@ duplicates <- df_TitleInfo[duplicated(df_TitleInfo$title_ID) | duplicated(df_Tit
 # Display the rows with duplicate title_IDs
 duplicates
 ```
+
 ```{r}
 unique(duplicates$knowledge)
 unique(duplicates$sub_knowledge)
 ```
+
 From the outputs above, some questions (title_ID) belong to up to 2 knowledge areas or 2 sub-knowledge areas, where the scores for the former are consistently 3, and for the latter, 1. This overlap in title_ID affects 6 title_IDs, spreads across 6 knowledge areas and 7 sub-knowledge areas.
 
 The unique values for knowledge and sub-knowledge areas are obtained in the following code chunk to better understand the complexity of these 2 variables.
@@ -189,6 +200,7 @@ The unique values for knowledge and sub-knowledge areas are obtained in the foll
 unique(df_TitleInfo$knowledge)
 unique(df_TitleInfo$sub_knowledge)
 ```
+
 Based on the output above, there is a total of 8 knowledge areas and 15 sub-knowledge areas. This suggests that majority of the knowledge areas and approximately half of sub-knowledge areas have overlapping title_ID. From the nomenclature, each sub-knowledge area is tagged to only 1 knowledge area.
 
 To meaningfully analyse the relationship between knowledge areas & sub knowledge areas and other variables, additional columns are introduced where the values in these 2 columnns are transposed as column labels with binary values to indicate the tagging of each question to that value. This is done in the following code chunk.
@@ -259,7 +271,8 @@ students_multiple_classes_entries <- df_StudentRecord %>%
 # Display the results
 print(students_multiple_classes_entries)
 ```
-Based on the output above, it is apparent that the 2nd class for each of the student above is an erroneous value. Hence this inconsistency will be cleaned in the following code chunk 
+
+Based on the output above, it is apparent that the 2nd class for each of the student above is an erroneous value. Hence this inconsistency will be cleaned in the following code chunk
 
 ```{r}
 # Step 1: Identify the correct class for each student (the class with the highest frequency)
@@ -277,6 +290,7 @@ df_StudentRecord <- df_StudentRecord %>%
   mutate(class = ifelse(!is.na(correct_class), correct_class, class)) %>%
   select(-correct_class)
 ```
+
 For completeness, a check is done for existence of other students with class that has no class number in the following code chunk.
 
 ```{R}
@@ -284,6 +298,7 @@ MissingClassNo <- df_StudentRecord %>%
   filter(class == "class")
 MissingClassNo
 ```
+
 Based on the output above, there are no further students with class without number.
 
 #### Identifying Other Unexpected and/or Missing Values
@@ -297,6 +312,7 @@ missing_students <- anti_join(df_StudentRecord, df_StudentInfo, by = "student_ID
 missing_student_ids <- missing_students %>% select(student_ID) %>% distinct()
 print(missing_student_ids)
 ```
+
 ```{r}
 missing_questions <- anti_join(df_StudentRecord, df_TitleInfo, by = "title_ID")
 
@@ -304,6 +320,7 @@ missing_questions <- anti_join(df_StudentRecord, df_TitleInfo, by = "title_ID")
 missing_questions <- missing_questions %>% select(title_ID) %>% distinct()
 print(missing_questions)
 ```
+
 There is 1 missing student between either StudentRecord or StudentInfo, but no missing questions. Since there is partial missing info on this student, it isn't meaningful to include in this analysis, hence the student_ID will be excluded in the following code chunk.
 
 ```{R}
@@ -336,15 +353,17 @@ unique(df_TitleInfo$score)
 unique(df_TitleInfo$knowledge)
 unique(df_TitleInfo$sub_knowledge)
 ```
+
 From the outputs above, there is an unexpected value for state and timeconsume in StudentRecord.
 
-Starting with  state, the rows with unexpected value(s) are queried in the following code chunk to better understand the number of affected rows.
+Starting with state, the rows with unexpected value(s) are queried in the following code chunk to better understand the number of affected rows.
 
 ```{R}
 Outlier_state <- df_StudentRecord %>%
   filter (state == '�������')
 Outlier_state
 ```
+
 From the output above, there are only 6 rows that are affected. Further cross-validation with the data description document found that there should only be 12 unique values for this variable, and including this outlier state value will give 13. Hence this is likely a wrong entry, and so it will be excluded from the analysis in the following code chunk.
 
 ```{R}
@@ -359,6 +378,7 @@ Outlier_timeconsume <- df_StudentRecord %>%
   filter (timeconsume %in% c('-', '--'))
 Outlier_timeconsume
 ```
+
 Based on the output, there is a significant number of 2,612 rows with the unexpected value. Hence these rows will be kept in the analysis and replaced with 0 (since there is no existing values of 0 too), however subsequent analysis in this exercise involving the timeconsume variable will treat these values as missing values. This is done in the following code chunk
 
 ```{r}
@@ -396,6 +416,7 @@ date_adjustment2 <- as.numeric(as.Date("2024-01-25")) - (max_time / 24 / 60 / 60
 date_adjustmentavg <- as.Date((date_adjustment1 + date_adjustment2)/2, origin = "1970-01-01")
 date_adjustmentavg
 ```
+
 Step 2: Apply date_adjustmentavg to the time variable to amend the data type to date time format in the folloiwing code chunk
 
 ```{r}
@@ -404,7 +425,8 @@ df_StudentRecord$time_change <- as.POSIXct(df_StudentRecord$time, origin=date_ad
 
 glimpse(df_StudentRecord)
 ```
-Further, additional timeconsume will be converted to numeric, wherein the '-' and '--' values found earlier had taken the value of 0 and will be treated as missing values in subsequent analysis.
+
+Further, the timeconsume variable will be converted to numeric, wherein since the '-' and '--' values found earlier had taken the value of 0 and there will not be an issue of NA values affecting subsequent analysis.
 
 ```{R}
 df_StudentRecord <- df_StudentRecord %>%
@@ -415,7 +437,7 @@ glimpse(df_StudentRecord)
 
 ### Create Merged Dataset
 
-To prepare for cross dataset analysis of variables, the 3 data sets are joined on title_id and student_id variables in the following code chunks.
+To prepare for cross dataset visualisation and analysis of variables, the 3 data sets are joined on title_id and student_id variables in the following code chunks.
 
 ```{r}
 # Merge StudentInfo with SubmitRecord based on student_ID
@@ -439,46 +461,113 @@ saveRDS(merged_data, "merged_data_df.rds")
 summary (merged_data)
 ```
 
-## Learner modes
+## Learning modes
+
+Based on the given data, the relevant features that best defines a learner's learning mode is assessed to be as follows:
+
+-   Peak answering hours determined by (a) day of the week and (b) time of the day
+-   Variety of question types attempted determined by (a) total number of different questions attempted, (b) total number of different knowledge and sub knowledge areas covered,
+-   Depth of question types and answers determined by (a) mean question scores, (b) mean memory size of file submissions
+-   Level of learning effort determined by (a) total number of answering attempts, (b) total number of different answering methods, (C) total memory size of file submission
 
 ### Feature engineering
 
-Splitting Date and time up from the earlier created time_change date-time variable with the following code chunk
+#### Peak answering hours Boolean Integer Variables
+
+Splitting Date and time up from the earlier created time_change date-time variable, and adding 2 derived variables for boolean integer values for weekday (Mon to Fri) and working hours (8am to 8pm) with the following code chunk.
 
 ```{R}
-merged_data <- merged_data %>%
+merged_data_lm <- merged_data %>%
   mutate(
     date = as.Date(time_change),
-    time = as_hms(format(time_change, "%H:%M:%S"))
-)
-glimpse(merged_data)
+    time = as_hms(format(time_change, "%H:%M:%S")),
+    is_weekday = as.numeric(wday(date) %in% 2:6),  # Monday to Friday 1, else 0
+    is_working_hours = as.numeric(hour(time) >= 8 & hour(time) < 20)  # 8am to 8pm 1, else 0
+  )
+
+glimpse(merged_data_lm)
 
 ```
 
+#### Group By Student ID
 
+The following variables will be obtained with the code chunk below in preparation for clustering analysis
 
-### Determine number of cluster for KMeans
+-   Peak answering hours
+
+(a) percentage of answers on weekdays,
+(b) percentage of answers during working hours
+
+-   Variety of question types attempted
+
+(a) total number of different questions attempted,
+(b) total number of different knowledge and sub knowledge areas covered,
+
+-   Depth of question types and answers
+
+(a) mean question scores,
+(b) mean memory size of file submissions
+
+-   Level of learning effort
+
+(a) total number of answering attempts,
+(b) total number of different answering methods,
+
+<!-- -->
+
+(C) total memory size of file submission
+
+```{r}
+StudentLM_data <- merged_data_lm %>%
+  group_by(student_ID) %>%
+  summarize(
+    pct_answers_weekdays = sum(is_weekday, na.rm = TRUE) / n() * 100,
+    pct_answers_working_hours = sum(is_working_hours, na.rm = TRUE) / n() * 100,
+    total_diff_questions_attempted = n_distinct(title_ID, na.rm = TRUE),
+    total_diff_knowledge_areas = sum(colSums(across(16:23, as.numeric)) > 0),
+    total_diff_sub_knowledge_areas = sum(colSums(across(25:39, as.numeric)) > 0),
+    mean_question_scores = mean(question_score, na.rm = TRUE),
+    mean_memory_size = mean(memory, na.rm = TRUE),
+    total_answering_attempts = n(),
+    total_diff_answering_methods = n_distinct(method, na.rm = TRUE),
+    total_memory_size = sum(memory, na.rm = TRUE)
+  )
+
+glimpse(StudentLM_data)
+```
+
+#### Removing highly skewed columns
+
+Inspecting the data frame, 3 variables were found to be highly skewed and concentrated within a small range of values, hence they are removed for more meaningful analysis, with the following code chunk.
+
+```{r}
+StudentLM_data <- StudentLM_data %>%
+  select(-total_diff_knowledge_areas, -total_diff_sub_knowledge_areas, -total_diff_answering_methods)
+
+glimpse(StudentLM_data)
+```
+
+### Determine number of K-Means clusters
+
+To determine the ideal number of clusters for K-means clustering on the recompiled learners' learning mode features, a silhouette analysis and SSE elbow method are performed in the following code chunks.
 
 #### Silhouette analysis
 
 ```{r}
-# Function to compute silhouette width for different numbers of clusters
-silhouette_analysis <- function(merged_data, max_clusters) {
-  # Convert character columns to factors
-  merged_data <- merged_data %>%
-    mutate_if(is.character, as.factor)
-  
-    # Compute Gower distance matrix
-  gower_dist <- daisy(merged_data, metric = "gower")
-  
+# Exclude non-numeric columns
+StudentLM_data_numeric <- StudentLM_data %>%
+  select(-student_ID)
+
+# Function to compute silhouette widths
+silhouette_analysis <- function(data, max_clusters) {
   avg_sil_widths <- numeric(max_clusters)
   
   for (k in 2:max_clusters) {
-    # Perform clustering using PAM
-    pam_result <- pam(gower_dist, diss = TRUE, k = k)
+    # Perform k-means clustering
+    kmeans_result <- kmeans(data, centers = k, nstart = 25)
     
     # Compute silhouette widths
-    sil <- silhouette(pam_result$clustering, gower_dist)
+    sil <- silhouette(kmeans_result$cluster, dist(data))
     
     # Calculate average silhouette width
     avg_sil_widths[k] <- mean(sil[, 3])
@@ -487,22 +576,14 @@ silhouette_analysis <- function(merged_data, max_clusters) {
   return(avg_sil_widths)
 }
 
-# Sample data (replace this with your actual data)
-set.seed(123)
-merged_data <- data.frame(
-  x = rnorm(100),
-  y = rnorm(100),
-  category = sample(LETTERS[1:3], 100, replace = TRUE) # Categorical column
-)
-
 # Determine the maximum number of clusters to test
 max_clusters <- 10
 
 # Perform silhouette analysis
-avg_sil_widths <- silhouette_analysis(merged_data, max_clusters)
+avg_sil_widths <- silhouette_analysis(StudentLM_data_numeric, max_clusters)
 
 # Plot the average silhouette widths
-plot(2:max_clusters, avg_sil_widths[2:max_clusters], type = "b", pch = 19, frame = FALSE,
+plot(1:max_clusters, avg_sil_widths, type = "b", pch = 19, frame = FALSE,
      xlab = "Number of clusters", ylab = "Average silhouette width",
      main = "Silhouette Analysis for Determining Optimal Number of Clusters")
 
@@ -514,19 +595,6 @@ points(optimal_clusters, avg_sil_widths[optimal_clusters], col = "red", pch = 19
 #### SSE-Elbow method
 
 ```{r}
-# Function to one-hot encode categorical variables
-one_hot_encode <- function(df) {
-  # Convert character columns to factors
-  df <- df %>%
-    mutate_if(is.character, as.factor)
-  
-  # Apply one-hot encoding
-  dummies <- dummyVars(~ ., data = df)
-  df_encoded <- data.frame(predict(dummies, newdata = df))
-  
-  return(df_encoded)
-}
-
 # Function to compute SSE for different numbers of clusters
 compute_sse <- function(data, max_clusters) {
   sse <- numeric(max_clusters)
@@ -542,14 +610,11 @@ compute_sse <- function(data, max_clusters) {
   return(sse)
 }
 
-# One-hot encode the merged_data
-merged_data_encoded <- one_hot_encode(merged_data)
-
 # Determine the maximum number of clusters to test
 max_clusters <- 10
 
 # Compute SSE for each number of clusters
-sse_values <- compute_sse(merged_data_encoded, max_clusters)
+sse_values <- compute_sse(StudentLM_data_numeric, max_clusters)
 
 # Plot SSE against number of clusters
 plot(1:max_clusters, sse_values, type = "b", pch = 19, frame = FALSE,
@@ -559,5 +624,373 @@ plot(1:max_clusters, sse_values, type = "b", pch = 19, frame = FALSE,
 # Add text for elbow point
 elbow_point <- which.min(diff(sse_values)) + 1
 text(elbow_point, sse_values[elbow_point], labels = paste("Elbow Point:", elbow_point), pos = 4, col = "red")
+
 ```
 
+### K Means clustering
+
+K Means clustering is then performed on the recompiled learners' learning mode features with the number of clusters set as 2 based on the above results, in the following code chunk
+
+```{r}
+# Drop the student_ID column
+clustering_data <- StudentLM_data %>%
+  select(-student_ID)
+
+# Standardize the data
+clustering_data_scaled <- scale(clustering_data)
+
+# Perform k-means clustering
+set.seed(123)  # For reproducibility
+kmeans_result <- kmeans(clustering_data_scaled, centers = 2, nstart = 25)
+
+# Add the cluster assignments to the original data
+StudentLM_data$cluster <- kmeans_result$cluster
+```
+
+### Visualisation of K Means clusters
+
+The first plot for visualisation of the K means cluster is the Principal Component Analysis (PCA) Plot, which gives an initial sensing of the separation of the clusters based on first 2 PCA components that rank the highest in distinctness amongst the features used. This is plotted with the following code chunk.
+
+```{r}
+# Perform PCA
+pca_result <- prcomp(StudentLM_data[-1], scale. = TRUE)
+
+# Get PCA scores
+pca_scores <- as.data.frame(predict(pca_result))
+
+# Add cluster information to PCA scores
+pca_scores$cluster <- factor(StudentLM_data$cluster)
+
+# Plot PCA results with cluster color coding
+pca_plot <- ggplot(pca_scores, aes(PC1, PC2, color = cluster)) +
+  geom_point(size = 3) +
+  scale_color_discrete(name = "Cluster") +
+  labs(x = "Principal Component 1", y = "Principal Component 2",
+       title = "PCA Plot of Clusters") +
+  theme_minimal()
+
+# Display the plot
+pca_plot
+```
+
+Based on the PCA plot, the clusters are visually clearly separated, suggesting that the clusters are distinct, especially in relation to the top 2 PCA components in the x and y-axis.
+
+Next to visualise the distribution of the 2 clusters across all the features used for the K Means clustering, a parallel coordinate plot is used, with the following code chunk.
+
+```{r}
+
+#| fig-width: 15
+#| fig-height: 12
+
+StudentLM_data_factor <- StudentLM_data
+StudentLM_data_factor$cluster <- as.character(StudentLM_data_factor$cluster)
+
+ggparcoord(data = StudentLM_data_factor, 
+           columns = c(2:8), 
+           groupColumn = 9,
+           scale = "uniminmax",
+           alphaLines = 0.2,
+           boxplot = TRUE, 
+           title = "Parallel Coordinates Plot of Students' learning modes")+
+   theme(axis.text.x = element_text(angle = 30))
+```
+
+Based on the plot, there is varying degree of separation and distinctness between the 2 clusters across different variables. The more distinct separation are in variables such as total-memory size of answers, total answering attempt and mean memory size, where cluster 2 tends to fare better in these metrics suggesting that perhaps cluster 2 is the more hardworking learning mode among the 2.
+
+### Hierarchical Clustering and Visualisation with heatmap
+
+As an alternative to K means, hierarchical clustering is also considered, and initiates with mapping the data frame into a data matrix, and thereby using the dend_expend function to determine the best clustering method.
+
+```{r}
+row.names(StudentLM_data) <- StudentLM_data$student_ID
+StudentLM_data1 <- select(StudentLM_data, c(1, 2:8))
+StudentLM_data_matrix <- data.matrix(StudentLM_data1)
+
+StudentLM_data_d <- dist(normalize(StudentLM_data_matrix[, -c(1)]), method = "euclidean")
+dend_expend(StudentLM_data_d)[[3]]
+```
+
+Based on the output above, the average method will be the most optimal.
+
+A silhoutte plot in the same approach as before is also done with the following code chunk to give an initial sensing of the number of clusters to achieve higher cluster separation and distinctness. This is done in the following code chunk.
+
+```{r}
+StudentLM_data_clust <- hclust(StudentLM_data_d, method = "average")
+num_k <- find_k(StudentLM_data_clust)
+plot(num_k)
+```
+
+Based on the output above, the same conclusion is arrived at, with 2 clusters being the idea number.
+
+Now using the 2 parameters, the hierarchical clustering using an interactive heatmap for visualisation is plot with the following code chunk.
+
+```{r}
+
+#| fig-width: 15
+#| fig-height: 12
+heatmaply(normalize(StudentLM_data_matrix[, -c(1)]),
+          dist_method = "euclidean",
+          hclust_method = "average",
+          k_row = 2,
+          margins = c(NA,200,60,NA),
+          fontsize_row = 4,
+          fontsize_col = 5,          
+          main="Students' Learning Mode Clustering \nDataTransformation using Normalise Method",
+          xlab = "Student_IDs",
+          ylab = "Learning Mode Features"
+)
+```
+
+## Knowledge Acquisition
+
+Based on the given data, the relevant features that best defines a learner's knowledge acquisition is assessed to be as follows:
+
+-   knowledge mastery determined by (a) overall sum of highest actual score for each question attempted and (b) sum of highest actual score of each question by knowledge area
+-   correct answering rate determined by (a) percentage of answers absolutely correct, (b) total number of questions with answers absolutely correct and partially correct
+
+### Feature engineering
+
+#### Group By Student ID
+
+The following variables will be obtained with the code chunk below in preparation for visualisation and analysis of Knowledge Acquisition with respect to the various learning modes.
+
+-   knowledge mastery
+
+(a) overall sum of highest actual score for each question attempted and
+(b) sum of highest actual score of each question by knowledge area
+
+-   correct answering rate
+
+(a) percentage of answers absolutely correct,
+(b) total number of questions with answers absolutely correct and partially correct
+
+```{r}
+StudentKA_data <- merged_data %>%
+  group_by(student_ID) %>%
+  summarize(
+    # Part (a): Sum of highest actual score for each question attempted
+    sum_highest_actual_score = sum(sapply(unique(title_ID), function(x) {
+      max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, "actual_score"])
+    })),
+    
+    # Part (b): Sum of highest actual score for each knowledge area
+    sum_highest_actual_score_b3C9s = sum(sapply(unique(title_ID), function(x) {
+      ifelse(any(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 16] == 1),
+             max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID & merged_data[, 16] == 1, "actual_score"]),
+             0)
+    })),
+    sum_highest_actual_score_g7R2j = sum(sapply(unique(title_ID), function(x) {
+      ifelse(any(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 17] == 1),
+             max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID & merged_data[, 17] == 1, "actual_score"]),
+             0)
+    })),
+    sum_highest_actual_score_k4W1c = sum(sapply(unique(title_ID), function(x) {
+      ifelse(any(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 18] == 1),
+             max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID & merged_data[, 18] == 1, "actual_score"]),
+             0)
+    })),
+    sum_highest_actual_score_m3D1v = sum(sapply(unique(title_ID), function(x) {
+      ifelse(any(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 19] == 1),
+             max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID & merged_data[, 19] == 1, "actual_score"]),
+             0)
+    })),
+    sum_highest_actual_score_r8S3g = sum(sapply(unique(title_ID), function(x) {
+      ifelse(any(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 20] == 1),
+             max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID & merged_data[, 20] == 1, "actual_score"]),
+             0)
+    })),
+    sum_highest_actual_score_s8Y2f = sum(sapply(unique(title_ID), function(x) {
+      ifelse(any(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 21] == 1),
+             max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID & merged_data[, 21] == 1, "actual_score"]),
+             0)
+    })),
+    sum_highest_actual_score_t5V9e = sum(sapply(unique(title_ID), function(x) {
+      ifelse(any(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 22] == 1),
+             max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID & merged_data[, 22] == 1, "actual_score"]),
+             0)
+    })),
+    sum_highest_actual_score_y9W5d = sum(sapply(unique(title_ID), function(x) {
+      ifelse(any(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 23] == 1),
+             max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID & merged_data[, 23] == 1, "actual_score"]),
+             0)
+    })),
+    
+    # Part (c): Percentage of answers absolutely correct
+    pct_answers_absolutely_correct = (sum(state == "Absolutely_Correct") / n()) * 100,
+    
+    # Part (d): Total number of questions with answers absolutely correct and partially correct
+    total_questions_correct_or_partial = length(unique(title_ID[state %in% c("Partially_Correct", "Absolutely_Correct")]))
+  )
+
+
+glimpse(StudentKA_data)
+```
+
+#### Removing highly skewed columns
+
+Inspecting the data frame, 2 variables were found to be highly skewed and concentrated within a small range of values, hence they are removed for more meaningful analysis, with the following code chunk.
+
+```{r}
+StudentKA_data <- StudentKA_data %>%
+  select(-sum_highest_actual_score_k4W1c, -sum_highest_actual_score_s8Y2f)
+
+glimpse(StudentKA_data)
+```
+
+### Merging Students' Learning Modes with Knowledge Acqusition features
+
+With the both data frames prepared, they will now be merged for next sub-task which involves comparison of learners' knowledge acqusition in respect to learning mode, and subsequently to identify patterns and relationship
+
+```{r}
+# Join the two dataframes on the column student_ID
+StudentLMKA_data <- left_join(StudentLM_data, StudentKA_data, by = "student_ID")
+
+glimpse(StudentLMKA_data)
+```
+
+### Visualisation of Knowledge Aquisition by learning mode clusters
+
+To visualise differences in the performance in total number of questions that had correct or partially correct answers, a ridgeline plot to compare the shape of distribution of students in both clusters in the same axis, using the following code chunk.
+
+```{r}
+StudentLMKA_data$cluster <- as.factor(StudentLMKA_data$cluster)
+
+# Plot
+ggplot(StudentLMKA_data, 
+       aes(x = total_questions_correct_or_partial, 
+           y = cluster,
+           fill = factor(stat(quantile))
+           )) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE, 
+    quantiles = 4,
+    quantile_lines = TRUE) +
+  scale_fill_viridis_d(name = "Quartiles") +
+  theme_ridges()
+```
+
+Cluster 2 has a sharper peak and more packed to the right which suggests that students in this cluster generally performed better, while for cluster 1 there is a 2nd smaller group of that performs even worse.
+
+A multi faceted plot to compare the distribution of answering performance in respect to the 2 clusters across 6 knowledge areas is plot with the following code chunk.
+
+```{r}
+
+#| fig-width: 16
+#| fig-height: 20
+
+a <- ggplot(StudentLMKA_data, 
+       aes(x = sum_highest_actual_score_b3C9s, 
+           y = cluster,
+           fill = factor(stat(quantile))
+           )) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE, 
+    quantiles = 4,
+    quantile_lines = TRUE) +
+  scale_fill_viridis_d(name = "Quartiles") +
+  theme_ridges()
+
+b <- ggplot(StudentLMKA_data, 
+       aes(x = sum_highest_actual_score_g7R2j,
+           y = cluster,
+           fill = factor(stat(quantile))
+           )) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE, 
+    quantiles = 4,
+    quantile_lines = TRUE) +
+  scale_fill_viridis_d(name = "Quartiles") +
+  theme_ridges()
+c <- ggplot(StudentLMKA_data, 
+       aes(x = sum_highest_actual_score_m3D1v, 
+           y = cluster,
+           fill = factor(stat(quantile))
+           )) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE, 
+    quantiles = 4,
+    quantile_lines = TRUE) +
+  scale_fill_viridis_d(name = "Quartiles") +
+  theme_ridges()
+d <- ggplot(StudentLMKA_data, 
+       aes(x = sum_highest_actual_score_r8S3g, 
+           y = cluster,
+           fill = factor(stat(quantile))
+           )) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE, 
+    quantiles = 4,
+    quantile_lines = TRUE) +
+  scale_fill_viridis_d(name = "Quartiles") +
+  theme_ridges()
+e <- ggplot(StudentLMKA_data, 
+       aes(x = sum_highest_actual_score_t5V9e, 
+           y = cluster,
+           fill = factor(stat(quantile))
+           )) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE, 
+    quantiles = 4,
+    quantile_lines = TRUE) +
+  scale_fill_viridis_d(name = "Quartiles") +
+  theme_ridges()
+f <- ggplot(StudentLMKA_data, 
+       aes(x = sum_highest_actual_score_y9W5d, 
+           y = cluster,
+           fill = factor(stat(quantile))
+           )) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE, 
+    quantiles = 4,
+    quantile_lines = TRUE) +
+  scale_fill_viridis_d(name = "Quartiles") +
+  theme_ridges()
+
+(a + b) / (c + d) / (e + f)
+
+```
+
+The findings are highly congruent with the earlier ridge plot, which found that cluster 2 had performed better with a sharper peak and more concentration of learners to the right, where as cluster 1 had small pockets of learners to the left instead.
+
+A statistical violin plot to perform both a mathematical 2 sample mean test in tandem with a visual analysis of the difference in the distribution of the students' total actual score in the answering records in respect of the 2 clusters is plot with the following code chunk.
+
+```{r}
+ggbetweenstats(
+  data = StudentLMKA_data,
+  x = cluster, 
+  y = sum_highest_actual_score,
+  type = "np",
+  messages = FALSE
+)
+```
+
+Based on the figures, the p-value is extremely small which suggest that there is strong statistical significance between the 2 clusters in the performance of total actual score of students in each cluster, wherein cluster 2 fared better than cluster 1, it also shows that cluster 2 is much smaller than cluster 1.
+
+Lastly a similar statistical violin plot to analyse the differences in percentage of answers that were absolutely correct in respect of the 2 clusters is plot in the following code chunk.
+
+```{r}
+ggbetweenstats(
+  data = StudentLMKA_data,
+  x = cluster, 
+  y = pct_answers_absolutely_correct,
+  type = "np",
+  messages = FALSE
+)
+```
+
+Based on the figures, the p-value is extremely small which suggest that there is strong statistical significance between the 2 clusters in the performance of total actual score of students in each cluster, wherein surprisingly, cluster 1 had fared better than cluster 2, cluster 2 had a smaller spread and more concentrated compared to cluster 1.
+
+## Conclusion
+
+In conclusion, the visual analysis of learning modes clustering found that 2 substantially distinct clusters can be formed using the selected students' learning mode features, whereby cluster 2 tends to be the more earnest learning mode cluster.
+
+Using these clusters to draw a relationship with indicators of students' knowledge acquistion found that cluster 2 also had a better knowledge acquisition although cluster 1 students seems to have submit lesser answers in general, hence having a higher percentage of correct answers.
+
+And therefore, the consensus in the analysis found that there is a statistically significant relationship between the selected indicators for more hardworking learning modes with better knowledge aquisition.
