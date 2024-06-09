@@ -19,8 +19,6 @@ NorthClass is a well-known higher education training institution that offers ove
 
 ## Tasks and Questions:
 
-FishEye analysts need your help to perform geographic and temporal analysis of the CatchNet data so they can prevent illegal fishing from happening again. Your task is to develop new visual analytics tools and workflows that can be used to discover and understand signatures of different types of behavior. Can you use your tool to visualize a signature of SouthSeafood Express Corp’s illegal behavior? FishEye needs your help to develop a workflow to find other instances of illegal behavior.
-
 -   Analyze the log records of learners' question-answering behaviors, quantitatively assess the degree of knowledge mastery based on multi-dimensional attributes such as answer scores and answer status, and identify weak links in their knowledge system. (It is recommended that participants answer this question with no more than 800 words and no more than 5 pictures)
 
 -   Mine personalized learning behavior patterns based on learners' characteristics, and design and present learners' profiles from various perspectives, including peak answering hours, preferred question types, correct answering rates, etc. (It is recommended that participants answer this question with no more than 800 words and 5 pictures)
@@ -40,7 +38,7 @@ For this analysis, we will use the following packages from CRAN.
 [`visNetwork`](https://cran.r-project.org/web/packages/factoextra/readme/README.html#:~:text=The%20R%20package%20factoextra%20has,data%20visualization%20with%20less%20typing.) - Extract and Visualize the Results of Multivariate Data Analyses. [`ggasym`](https://ggobi.github.io/ggally/) Extension of `ggplot2` by adding several functions to reduce the complexity of combining geometric objects with transformed data. [`igraph`](https://ggobi.github.io/ggally/) Extension of `ggplot2` by adding several functions to reduce the complexity of combining geometric objects with transformed data.
 
 ```{r}
-pacman::p_load(geojsonR,rjson,sf, dplyr,tidyr,stringr,readr,fs,purrr,ggplot2, plotly, ggstatsplot,igraph,lubridate,hms, vcd, ggalluvial, ggforce)
+pacman::p_load(dplyr,tidyr,stringr,readr,fs,purrr,ggplot2, plotly, ggstatsplot,igraph,lubridate,hms, vcd)
 ```
 
 ```{r}
@@ -107,12 +105,6 @@ df_StudentRecord <- df_StudentRecord %>% select(-1)
 df_TitleInfo <- df_TitleInfo %>% select(-1)
 df_StudentInfo <- df_StudentInfo %>% select(-1)
 
-```
-
-```{r}
-summary(df_StudentRecord)
-summary (df_TitleInfo)
-summary (df_StudentInfo)
 ```
 
 ```{r}
@@ -200,8 +192,33 @@ merged_data <- merged_data %>%
   )
 ```
 
+### Based on point system for mastery.
+
+If student get partially correct, award 1 point, if student get abosultely correct, award 2 points. When the student keep practicing the question, we assume he will be a master of the topic.
+
+```{r}
+merged_data <- merged_data %>%
+  mutate(points = case_when(
+    state == "Absolutely_Correct" ~ 2,
+    state == "Partially_Correct" ~ 1,
+    TRUE ~ -1
+  ))
+
+```
+
+```{r}
+merged_data <- merged_data %>%
+  mutate(true_points = case_when(
+    state == "Absolutely_Correct" ~ 2,
+    state == "Partially_Correct" ~ 1,
+    TRUE ~ -1
+  ))
+
+```
+
 ```{r}
 saveRDS(merged_data, "merged_data_df.rds")
+#merged_data <- readRDS("merged_data_df.rds")
 ```
 
 ```{r}
@@ -209,343 +226,305 @@ summary (merged_data)
 ```
 
 ```{r}
-create_summary_plots <- function(data) {
-  plots <- list()
-  
-  for (col in names(data)) {
-    if (is.numeric(data[[col]])) {
-      p <- ggplot(data, aes_string(x = col)) +
-        geom_histogram(binwidth = 1, fill = "blue", color = "black") +
-        ggtitle(paste("Histogram of", col)) +
-        theme_minimal()
-      plots[[col]] <- p
-    } else if (is.factor(data[[col]]) || is.character(data[[col]])) {
-      p <- ggplot(data, aes_string(x = col)) +
-        geom_bar(fill = "blue", color = "black") +
-        ggtitle(paste("Bar Plot of", col)) +
-        theme_minimal() +
-        theme(axis.text.x = element_text(angle = 45, hjust = 1))
-      plots[[col]] <- p
-    } else if (inherits(data[[col]], "Date")) {
-      p <- ggplot(data, aes_string(x = col)) +
-        geom_histogram(binwidth = 1, fill = "blue", color = "black") +
-        ggtitle(paste("Histogram of", col)) +
-        theme_minimal()
-      plots[[col]] <- p
-    } else if (inherits(data[[col]], "hms")) {
-      p <- ggplot(data, aes_string(x = col)) +
-        geom_histogram(binwidth = 60, fill = "blue", color = "black") +
-        ggtitle(paste("Histogram of", col)) +
-        theme_minimal()
-      plots[[col]] <- p
-    }
-  }
-  
-  return(plots)
-}
-
-# Create the summary plots
-summary_plots <- create_summary_plots(merged_data)
-
-# Print the plots
-for (plot_name in names(summary_plots)) {
-  print(summary_plots[[plot_name]])
-}
+df_StudentRecord_duplicate <- merged_data %>%
+  group_by(student_ID, title_ID) %>%
+  arrange(student_ID, title_ID, time) %>%
+  mutate(cumulative_correct = cumsum(state == "Absolutely_Correct")) %>%
+  filter(cumulative_correct <= 1) %>%
+  ungroup() %>%
+  select(-cumulative_correct)
 
 ```
 
-```{r}
-check_state5 <- merged_data %>%
-  filter(state == "Error5")
-```
+## Assign Points and Calculate Weighted Scores
 
-```{r}
-check_na <- merged_data %>% filter(if_any(everything(), is.na))
-
-unique(check_na$state)
-```
-
-All Error 5 has no timeconsume, this could suggest Student skip the question.
-
-```{r}
-set.seed(123)  # For reproducibility
-sample_df <- merged_data %>%
-  sample_frac(0.10)
-
-```
+Calculate the total points and weighted score for each student per title, and then compute the overall performance for each student.
 
 ```{r}
 
-#ks_test <- ks.test(sample_df$timeconsume, "pnorm", mean(sample_df$timeconsume, na.rm = TRUE), sd(sample_df$timeconsume, na.rm = TRUE))
-#print(ks_test)
+# Calculate total points and number of attempts for each student per title
+attempt_scores <- merged_data %>%
+  group_by(student_ID, title_ID) %>%
+  summarise(total_points = sum(points),
+            attempts = n(),
+            .groups = 'drop')
 
-kruskal_result <- kruskal.test(timeconsume ~ domain, data = sample_df)
-print(kruskal_result)
+# Calculate the weighted score by dividing total points by number of attempts
+attempt_scores <- attempt_scores %>%
+  mutate(weighted_score = total_points / attempts)
 
-```
+# Calculate the overall weighted score for each student
+overall_weighted_score <- attempt_scores %>%
+  group_by(student_ID) %>%
+  summarise(overall_weighted_score = mean(weighted_score, na.rm = TRUE), .groups = 'drop')
 
-```{r}
-# Pairwise Comparisons using Dunn's Test (post hoc test for Kruskal-Wallis)
-install.packages("FSA")
-library(FSA)
-dunn_test <- dunnTest(timeconsume ~ domain, data = sample_df, method = "bonferroni")
-print(dunn_test)
-```
+# Calculate the completion rate for each student (number of titles attempted)
+completion_rate <- merged_data %>%
+  group_by(student_ID) %>%
+  summarise(titles_attempted = n_distinct(title_ID), .groups = 'drop')
 
-```{r}
-# Pairwise comparisons using ggbetweenstats
-ggbetweenstats(
-  data = sample_df,
-  x = domain,
-  y = timeconsume,
-  pairwise.comparisons = TRUE,
-  pairwise.display = "significant",
-  p.adjust.method = "bonferroni",
-  title = "Time Consumed Across Various Domains with Pairwise Comparisons",
-  xlab = "Domain",
-  ylab = "Time Consumed (seconds)",
-  type = "nonparametric",  # Kruskal-Wallis is a nonparametric test
-  results.subtitle = TRUE,
-  messages = FALSE
-)
+# Merge all metrics
+student_performance <- overall_weighted_score %>%
+  left_join(completion_rate, by = "student_ID") %>%
+  left_join(df_StudentInfo %>% select(student_ID, major), by = "student_ID") %>%
+  left_join(merged_data %>% select(student_ID, class) %>% distinct(), by = "student_ID") %>%
+  filter (titles_attempted > 7) ## There are only 2 students who attempted 1 question, we will remove them from the analysis
 
 
 ```
 
-Are there association with the state of answer and domain?
-
-```{r}
-contingency_table <- table(merged_data$state, merged_data$domain)
-chi_squared_result <- chisq.test(contingency_table)
-print(chi_squared_result)
-if (chi_squared_result$p.value < 0.05) {
-  cat("There is a significant association between state and domain (p-value:", chi_squared_result$p.value, ")\n")
-} else {
-  cat("There is no significant association between state and domain (p-value:", chi_squared_result$p.value, ")\n")
-}
-```
-
-```{r, fig.height=15}
-
-sample_df_error <- sample_df %>%
-  filter (actual_score == "0")
-
-# Create an alluvial plot
-ggplot(as.data.frame(table(sample_df_error$domain, sample_df_error$state)),
-       aes(axis1 = Var1, axis2 = Var2, y = Freq)) +
-  geom_alluvium(aes(fill = Var2)) +
-  geom_stratum() +
-  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
-  labs(title = "Alluvial Plot of State by Domain",
-       x = "Category",
-       y = "Count",
-       fill = "State") +
-  theme_minimal()
-
-
-```
-
-```{r}
-ggstatsplot::ggbarstats(
-  data = sample_df,
-  x = state,
-  y = domain,
-  title = "Distribution of State across Domains",
-  xlab = "Domain",
-  ylab = "State",
-  messages = FALSE
-)
-
-```
+## Assign True Points and Calculate Weighted Scores
 
 ```{r}
 
-sample_df <- sample_df %>%
-  mutate (hour = hour(time) + minute(time)/60)
+# Calculate total points and number of attempts for each student per title
+attempt_scores_true <- merged_data %>%
+  group_by(student_ID, title_ID) %>%
+  summarise(total_points = sum(true_points),
+            attempts = n(),
+            .groups = 'drop')
+
+# Calculate the weighted score by dividing total points by number of attempts
+attempt_scores_true <- attempt_scores_true %>%
+  mutate(weighted_score = total_points / attempts)
+
+# Calculate the overall weighted score for each student
+overall_weighted_score_true <- attempt_scores_true %>%
+  group_by(student_ID) %>%
+  summarise(overall_weighted_score = mean(weighted_score, na.rm = TRUE), .groups = 'drop')
+
+# Calculate the completion rate for each student (number of titles attempted)
+completion_rate_true <- merged_data %>%
+  group_by(student_ID) %>%
+  summarise(titles_attempted = n_distinct(title_ID), .groups = 'drop')
+
+# Merge all metrics
+student_performance_true <- overall_weighted_score %>%
+  left_join(completion_rate_true, by = "student_ID") %>%
+  left_join(df_StudentInfo %>% select(student_ID, major), by = "student_ID") %>%
+  left_join(merged_data %>% select(student_ID, class) %>% distinct(), by = "student_ID") %>%
+  filter (titles_attempted > 7) ## There are only 2 students who attempted 1 question, we will remove them from the analysis
+
 
 ```
+
+## Calculate Performance Metrics
+
+Determine the performance metrics for each student within each domain.
 
 ```{r}
-# Pairwise comparisons using ggbetweenstats
-ggbetweenstats(
-  data = sample_df,
-  x = class,
-  y = hour,
-  pairwise.comparisons = TRUE,
-  pairwise.display = "significant",
-  p.adjust.method = "bonferroni",
-  title = "Time Consumed Across Various Majors with Pairwise Comparisons",
-  xlab = "Majors",
-  ylab = "Hour",
-  type = "nonparametric",  # Kruskal-Wallis is a nonparametric test
-  results.subtitle = TRUE,
-  messages = FALSE
-)
 
+# Calculate the total points and number of attempts for each student per title in each domain
+attempt_scores_domain <- merged_data %>%
+  group_by(domain, student_ID, title_ID) %>%
+  summarise(total_points = sum(points),
+            attempts = n(),
+            .groups = 'drop')
 
-```
+# Calculate the weighted score by dividing total points by number of attempts for each domain
+attempt_scores_domain <- attempt_scores_domain %>%
+  mutate(weighted_score = total_points / attempts)
 
-```{r, fig.height=25}
-ggplot(heatmap_data, aes(x = major, y = hour, fill = attempt_count)) +
-  geom_tile() +
-  scale_fill_gradient(low = "white", high = "blue") +
-  scale_y_continuous(breaks = seq(0, 24, by = 1), limits = c(0, 24)) +
-  facet_wrap(~ actual_score) +
-  labs(title = "Distribution of Question Attempt Times by Major and Actual Score",
-       x = "Major",
-       y = "Time of Day (hours)",
-       fill = "Attempt Count") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# Calculate the overall weighted score for each student within each domain
+overall_weighted_score_domain <- attempt_scores_domain %>%
+  group_by(domain, student_ID) %>%
+  summarise(overall_weighted_score = mean(weighted_score, na.rm = TRUE), .groups = 'drop')
+
+# Calculate the completion rate for each student within each domain (number of titles attempted)
+completion_rate_domain <- merged_data %>%
+  group_by(domain, student_ID) %>%
+  summarise(titles_attempted = n_distinct(title_ID), .groups = 'drop')
+
+# Merge all metrics for each domain
+student_performance_domain <- overall_weighted_score_domain %>%
+  left_join(completion_rate_domain, by = c("domain", "student_ID"))
 
 ```
+
+Determine the True_Score performance metrics for each student within each domain.
 
 ```{r}
-# Step 1: Group by domain and state, and calculate the count of each state within each domain
 
-state_counts <- sample_df %>%
-  group_by(domain, state) %>%
-  summarise(state_count = n()) %>%
-  ungroup()
+# Calculate the total points and number of attempts for each student per title in each domain
+attempt_scores_domain_true <- merged_data %>%
+  group_by(domain, student_ID, title_ID) %>%
+  summarise(total_points = sum(true_points),
+            attempts = n(),
+            .groups = 'drop')
 
-# Step 2: Calculate the total count of all states within each domain
-total_counts <- state_counts %>%
+# Calculate the weighted score by dividing total points by number of attempts for each domain
+attempt_scores_domain_true <- attempt_scores_domain_true %>%
+  mutate(weighted_score = total_points / attempts,
+         Never_correct = case_when(
+           total_points == -attempts ~ "yes",
+           TRUE ~ "no"
+         ))
+
+# Calculate the overall weighted score for each student within each domain
+overall_weighted_score_domain_true <- attempt_scores_domain_true %>%
+  group_by(domain, student_ID) %>%
+  summarise(overall_mean_score = mean(total_points, na.rm = TRUE), .groups = 'drop')
+
+# Calculate the completion rate for each student within each domain (number of titles attempted)
+completion_rate_domain <- merged_data %>%
+  group_by(domain, student_ID) %>%
+  summarise(titles_attempted = n_distinct(title_ID), .groups = 'drop')
+
+# Merge all metrics for each domain
+student_performance_domain <- overall_weighted_score_domain_true %>%
+  left_join(completion_rate_domain, by = c("domain", "student_ID"))
+
+```
+
+## Identify Students with Mastery in Each Domain
+
+Define mastery criteria and identify students who have attained mastery in each domain.
+
+```{r}
+
+# Determine high knowledge students within each domain based on the top 25% of the overall weighted score
+high_knowledge_threshold_domain <- student_performance_domain %>%
   group_by(domain) %>%
-  summarise(total_count = sum(state_count)) %>%
-  ungroup()
+  summarise(threshold = quantile(overall_mean_score, 0.75), .groups = 'drop')
 
-state_percentage <- state_counts %>%
-  left_join(total_counts, by = "domain") %>%
-  mutate(percentage = (state_count / total_count) * 100)
+# Merge the threshold back with the performance data
+student_performance_domain <- student_performance_domain %>%
+  left_join(high_knowledge_threshold_domain, by = "domain")
 
+# Identify high knowledge students within each domain
+high_knowledge_students_domain <- student_performance_domain %>%
+  filter(overall_mean_score >= threshold)
 
-ggplot(state_percentage, aes(x = domain, y = percentage, fill = state)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Percentage of Each State for Each Domain",
-       x = "Domain",
-       y = "Percentage",
-       fill = "State") +
-  theme_minimal()
+# Calculate the percentage of correct answers for each student within each domain
+correct_answers_domain <- merged_data %>%
+  filter(state == "Absolutely_Correct") %>%
+  group_by(domain, student_ID) %>%
+  summarise(correct_count = n(), .groups = 'drop')
+
+total_answers_domain <- merged_data %>%
+  group_by(domain, student_ID) %>%
+  summarise(total_count = n(), .groups = 'drop')
+
+correct_percentage_domain <- correct_answers_domain %>%
+  left_join(total_answers_domain, by = c("domain", "student_ID")) %>%
+  mutate(correct_percentage = correct_count / total_count)
+
+# Merge correct percentage with high knowledge students within each domain
+high_knowledge_students_domain <- high_knowledge_students_domain %>%
+  left_join(correct_percentage_domain, by = c("domain", "student_ID"))
+
+# Identify high knowledge students with low correct percentage (e.g., below 50%) within each domain
+low_correct_students_domain <- high_knowledge_students_domain %>%
+  filter(correct_percentage < 0.5)
 
 ```
 
 ```{r}
-sample_df_zero <- sample_df %>%
-  filter (actual_score == "0")
 
-ggstatsplot::ggbarstats(
-  data = sample_df_zero,
-  x = state,
-  y = domain,
-  title = "Distribution of State across Domains",
-  xlab = "Domain",
-  ylab = "State",
-  messages = FALSE
-)
+low_correct_students_domain_id <- low_correct_students_domain$student_ID
 
+tough_qns <- attempt_scores_domain_true %>%
+  filter (student_ID %in% low_correct_students_domain_id) %>%
+  filter (Never_correct == "yes")
 
-```
+tough_details <- df_TitleInfo %>%
+  filter (title_ID %in% tough_qns$title_ID)
 
-## Are there any Association between Domain and Errors?
-
-```{r}
-# Step 1: Create a contingency table
-contingency_table <- merged_data %>%
-  count(domain, state) %>%
-  spread(state, n, fill = 0)
-
-# Convert the contingency table to a matrix
-contingency_matrix <- as.matrix(contingency_table[,-1])
-
-# Step 2: Perform the chi-squared test
-chi_squared_test <- chisq.test(contingency_matrix)
-
-# Step 3: Print the results
-print(chi_squared_test)
-
-# Optional: Print expected values to see where the deviations are
-print(chi_squared_test$expected)
-
-
-```
-
-```{r, fig.height=25}
-sample_df_zero <- merged_data %>%
-  filter (actual_score == "0")
-
-# Step 1: Create a contingency table
-contingency_table_error <- sample_df_zero %>%
-  filter (state != "Error9") %>%
-  count(domain, state) %>%
-  spread(state, n, fill = 0)
-
-# Convert the contingency table to a matrix
-contingency_matrix <- as.matrix(contingency_table_error[,-1])
-
-# Step 2: Perform the chi-squared test
-chi_squared_test <- chisq.test(contingency_matrix)
-
-# Step 3: Print the results
-print(chi_squared_test)
-
-# Optional: Print expected values to see where the deviations are
-print(chi_squared_test$expected)
-
-
-
-
-mosaic_data <- table(sample_df_zero$domain, sample_df_zero$state)
-
-mosaicplot(mosaic_data, main = "Mosaic Plot of State by Domain", shade = TRUE, color = TRUE)
-
-
-#mosaic_data <- table(merged_data$domain, merged_data$state)
-
-#mosaicplot(mosaic_data, main = "Mosaic Plot of State by Domain", shade = TRUE, color = TRUE)
-
-```
-
-```{r, fig.height=20}
-# Create an alluvial plot
-ggplot(as.data.frame(table(merged_data$domain, merged_data$state)),
-       aes(axis1 = Var1, axis2 = Var2, y = Freq)) +
-  geom_alluvium(aes(fill = Var2)) +
-  geom_stratum() +
-  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
-  labs(title = "Alluvial Plot of State by Domain",
-       x = "Category",
-       y = "Count",
-       fill = "State") +
-  theme_minimal()
-
-
-```
-
-```{r, fig.height=20}
-
-# Prepare the data for the alluvial plot
-alluvial_data <- merged_data %>%
-  count(class, state, method, sex, domain, actual_score) %>%
-  rename(Freq = n)
-
-# Create the alluvial plot
-ggplot(alluvial_data,
-       aes(axis1 = class, axis2 = state, axis3 = method, axis4 = sex, axis5 = domain, axis6 = actual_score, y = Freq)) +
-  geom_alluvium(aes(fill = state), width = 1/12) +
-  geom_stratum(width = 1/12, fill = "white", color = "black") +
-  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
-  scale_x_discrete(limits = c("class", "state", "method", "sex", "domain", "actual_score"), expand = c(0.15, 0.05)) +
-  scale_fill_brewer(type = "qual", palette = "Set3") +
-  labs(title = "Alluvial Plot of Categorical Variables",
-       x = "Categories",
-       y = "Count",
-       fill = "State") +
-  theme_minimal() +
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 ```{r}
+
+# - high_knowledge_students_domain: high mastery students in each domain
+# - merged_data: merged data of student records and question info
+
+# Filter merged_data for high mastery students
+high_mastery_attempts <- merged_data %>%
+  inner_join(high_knowledge_students_domain %>% select(student_ID, domain), by = c("student_ID", "domain"))
+
+# Identify questions never answered correctly by high mastery students within each domain
+questions_never_correct <- high_mastery_attempts %>%
+  group_by(domain, title_ID) %>%
+  summarise(never_correct = all(state != "Absolutely_Correct"), .groups = 'drop') %>%
+  filter(never_correct)
+
+# Extract the title_IDs
+titles_never_correct <- questions_never_correct %>% select(domain, title_ID)
+
+# Display the title_IDs that were never answered correctly by high mastery students
+print(titles_never_correct)
+
+# Optional: Display additional details about these titles if needed
+detailed_questions_never_correct <- merged_data %>%
+  filter(title_ID %in% titles_never_correct$title_ID) %>%
+  group_by(domain, title_ID) %>%
+  summarise(incorrect_count = sum(state != "Absolutely_Correct"), .groups = 'drop') %>%
+  arrange(desc(incorrect_count))
+
+print(detailed_questions_never_correct)
+
+
+```
+
+```{r}
+# Calculate total points and number of attempts for each student per title
+attempt_scores <- merged_data %>%
+  group_by(student_ID, title_ID) %>%
+  summarise(total_points = sum(true_points),
+            attempts = n(),
+            .groups = 'drop')
+
+# Mutate the Never_correct column
+attempt_scores <- attempt_scores %>%
+  mutate(Never_correct = case_when(
+    total_points == -attempts ~ "yes",
+    TRUE ~ "no"
+  ))
+
+# Save the attempt_scores dataframe as an RDS file
+saveRDS(attempt_scores, file = "attempt_scores.RDS")
+
+domain_mastery <- merged_data %>%
+  group_by(student_ID, class, domain) %>%
+  summarise(average_score = mean(points), .groups = 'drop')
+
+# Save the domain mastery dataframe as an RDS file
+saveRDS(domain_mastery, file = "domain_mastery.RDS")
+
+saveRDS(df_TitleInfo, "title_info.RDS")
+
+```
+
+
+```{r}
+get_high_mastery_students <- function(domain_mastery, threshold) {
+  if (threshold == "> 0") {
+    high_mastery_students <- domain_mastery %>%
+      filter(average_score > 0)
+  } else {
+    percentile <- as.numeric(sub("%", "", threshold)) / 100
+    threshold_score <- quantile(domain_mastery$average_score, percentile)
+    high_mastery_students <- domain_mastery %>%
+      filter(average_score > threshold_score)
+  }
+  return(high_mastery_students)
+}
+
+
+high_mastery_students <- get_high_mastery_students(domain_mastery, "75%")
+
+    never_correct_questions <- merged_data %>%
+      inner_join(high_mastery_students, by = c("student_ID", "domain", "class"), relationship = "many-to-many") %>%
+      group_by(student_ID, title_ID, domain) %>%
+      summarise(total_points = sum(points), attempts = n(), .groups = 'drop') %>%
+      mutate(Never_correct = if_else(total_points == -attempts, "yes", "no")) %>%
+      filter(Never_correct == "yes") %>%
+      ungroup() %>%
+      group_by(title_ID) %>%
+      summarise (count = n())
+    
+    # Filter questions never correct by high mastery students within their mastered domains
+    filtered_questions <- never_correct_questions %>%
+      left_join(title_info, by = c("title_ID" = "title_ID"))
 
 
 ```
