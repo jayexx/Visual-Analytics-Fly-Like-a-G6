@@ -6,7 +6,10 @@ library(lubridate)
 library(cluster)
 library(factoextra)
 library(fmsb)
+library(reshape2)
 ```
+
+# 1. Data Preparation
 
 ```{r}
 # 设置文件路径
@@ -219,6 +222,8 @@ weekly_frequency <- final_data %>%
   summarise(weekly_frequency = mean(weekly_study_count, na.rm = TRUE))
 ```
 
+# 2. Visualization
+
 ```{r}
 # 平均得分率分布
 ggplot(learning_behavior, aes(x = avg_rate)) +
@@ -232,13 +237,15 @@ ggplot(learning_behavior, aes(x = avg_time_consume)) +
 
 ```
 
+# 3. Cluster by knowledge
+
 ```{r}
 # 读取数据
 learning_behavior <- read.csv("data/learning_behavior.csv")
 
 # 选择用于聚类分析的列
 clustering_data <- learning_behavior %>%
-  select(avg_rate, avg_time_consume, b3C9s, g7R2j, k4W1c, m3D1v, r8S3g, s8Y2f, t5V9e, y9W5d)
+  select(b3C9s, g7R2j, k4W1c, m3D1v, r8S3g, s8Y2f, t5V9e, y9W5d)
 
 # 标准化数据
 clustering_data_scaled <- scale(clustering_data)
@@ -255,27 +262,96 @@ kmeans_result <- kmeans(clustering_data_scaled, centers = 5, nstart = 25)
 learning_behavior <- learning_behavior %>%
   mutate(cluster = kmeans_result$cluster)
 
+# 打印带有聚类结果的数据框
+print(learning_behavior)
+
 # 计算每个聚类组的平均值
 cluster_means <- learning_behavior %>%
   group_by(cluster) %>%
-  summarise(across(c(avg_rate, avg_time_consume, b3C9s, g7R2j, k4W1c, m3D1v, r8S3g, s8Y2f, t5V9e, y9W5d), mean, na.rm = TRUE))
+  summarise(across(c(b3C9s, g7R2j, k4W1c, m3D1v, r8S3g, s8Y2f, t5V9e, y9W5d), mean, na.rm = TRUE))
 
+# 打印聚类组的平均值
 print(cluster_means)
-
-
 ```
 
 ```{r}
-# 准备数据用于可视化
-cluster_means_long <- cluster_means %>%
-  pivot_longer(cols = -cluster, names_to = "feature", values_to = "value")
+# 将数据从宽格式转换为长格式
+long_data <- melt(cluster_means, id.vars = "cluster")
 
-# 绘制每个聚类在各个特征上的差异
-ggplot(cluster_means_long, aes(x = feature, y = value, fill = factor(cluster))) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Feature Differences Across Clusters",
-       x = "Feature",
-       y = "Mean Value",
-       fill = "Cluster") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# 绘制箱线图
+ggplot(long_data, aes(x = factor(cluster), y = value)) +
+  geom_boxplot() +
+  facet_wrap(~ variable, scales = "free") +
+  labs(title = "Distribution of Features by Cluster", x = "Cluster", y = "Value")
+```
+
+```{r}
+# 排除第一列计算最大值和最小值
+max_values <- apply(cluster_means[, -1], 2, max)
+min_values <- apply(cluster_means[, -1], 2, min)
+
+# 将最大值行、最小值行和聚类均值数据结合起来
+radar_data <- rbind(max_values, min_values, cluster_means[, -1])
+
+# 查看准备好的数据
+print(radar_data)
+
+# 生成雷达图
+colors_border <- c("blue", "green", "red", "orange", "purple")
+
+# 生成雷达图
+radarchart(radar_data, axistype = 1,
+           pcol = colors_border, pfcol = colors_in, plwd = 2, plty = 1,
+           cglcol = "grey", cglty = 1, cglwd = 0.8,
+           vlcex = 0.8, title = "Cluster Comparison Radar Chart")
+
+# 添加图例
+legend(x = "topright", legend = rownames(cluster_means), bty = "n",
+       pch = 20, col = colors_border, text.col = "grey", cex = 1.2, pt.cex = 3)
+```
+
+# 4. Cluster by avg_time and avg_rate
+
+```{r}
+# 选择用于聚类分析的列 ,
+clustering_data <- learning_behavior %>%
+  select( avg_rate, avg_time_consume )
+
+# 标准化数据
+clustering_data_scaled <- scale(clustering_data)
+
+# 使用 Elbow 方法选择聚类数
+fviz_nbclust(clustering_data_scaled, kmeans, method = "wss") +
+  labs(title = "Elbow Plot for K-means Clustering", x = "Number of Clusters (k)", y = "Total Within-Cluster Sum of Square (WSS)")
+
+# 使用 K-means 聚类分析，设置聚类数为 5
+set.seed(123) # 确保结果可重复
+kmeans_result <- kmeans(clustering_data_scaled, centers = 3, nstart = 25)
+
+# 将聚类结果添加回数据框
+learning_behavior <- learning_behavior %>%
+  mutate(cluster = kmeans_result$cluster)
+
+# 计算每个聚类组的平均值 avg_rate, avg_time_consume,
+cluster_means <- learning_behavior %>%
+  group_by(cluster) %>%
+  summarise(across(c( avg_rate, avg_time_consume), mean, na.rm = TRUE))
+
+print(cluster_means)
+print(learning_behavior)
+```
+
+```{r}
+# 选择用于绘图的列
+plot_data <- learning_behavior %>%
+  select(avg_rate, avg_time_consume, cluster)
+
+# 绘制散点图
+ggplot(plot_data, aes(x = avg_rate, y = avg_time_consume, color = factor(cluster))) +
+  geom_point(size = 1) +
+  labs(title = "Scatter Plot of Average Rate vs Average Time Consume",
+       x = "Average Rate",
+       y = "Average Time Consume",
+       color = "Cluster") +
+  theme_minimal()
 ```
