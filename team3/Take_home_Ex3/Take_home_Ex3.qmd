@@ -1,0 +1,563 @@
+---
+title: "Take-home Ex3"
+author: "Jayexx"
+date: "May 29, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  warning: false
+  freeze: true
+---
+
+## Introduction
+
+This take-home exercise is centred on the learning patterns of learners in a programming course conducted by NorthClass Education Training Institute. The primary focus is to support the institution's endeavor to analyze and visualise learners' knowledge mastery levels, monitor the patterns and trends in their learning behaviors, identify and dissect potential factors that contribute to learning difficulties, and hence to derive feasible suggestions to adjust teaching strategies and course design.
+
+### Objective & Task Requirements
+
+To address the above, the key objective of this exercise is:
+
+-   To analyse and provide a visual representation of the relationship between learning modes and knowledge acquisition (learners' ability to absorb, integrate, and apply knowledge)
+
+This would entail the following sub-task requirements: 
+
+-   To visualise and uncover the various learning modes, and 
+-   To visualise and uncover the patterns in distribution in learner's performance in each various learning modes, and 
+-   To visualise and determine the statistical differences and correlations that learning mode may have with learners' performance
+
+## Getting Started
+
+### Loading Required R Package Libraries
+
+The code chunk below loads the following libraries:
+
+-   [`tidyverse`](https://www.tidyverse.org/packages/): an amalgamation of libraries for data handling (including ggplot2, dplyr, tidyr, readr, tibble)
+-   `knitr`: for creating dynamic html tables/reports
+-   `ggridges`: extension of ggplot2 designed for plotting ridgeline plots
+-   `ggdist`: extension of ggplot2 designed for visualising distribution and uncertainty,
+-   `colorspace`: provides a broad toolbox for selecting individual colors or color palettes, manipulating these colors, and employing them in various kinds of visualisations.
+-   `ggrepel`: provides geoms for ggplot2 to repel overlapping text labels.
+-   `ggthemes`: provides additional themes, geoms, and scales for ggplot package
+-   `hrbrthemes`: provides typography-centric themes and theme components for ggplot package
+-   `patchwork`: preparing composite figure created using ggplot package
+-   `lubridate`: for wrangling of date-time data
+-   `ggstatplot`: provides alternative statistical inference methods by default as an extension of the ggplot2 package
+-   `plotly`: R library for plotting interactive statistical graphs.
+-   [`rjson`](https://cran.r-project.org/web/packages/cluster/index.html): Methods for Cluster analysis.
+-   [`visNetwork`](https://cran.r-project.org/web/packages/factoextra/readme/README.html#:~:text=The%20R%20package%20factoextra%20has,data%20visualization%20with%20less%20typing.): Extract and Visualize the Results of Multivariate Data Analyses.
+-   [`BiocManager`](https://ggobi.github.io/ggally/): Extension of `ggplot2` by adding several functions to reduce the complexity of combining geometric objects with transformed data.
+-   [`igraph`](https://ggobi.github.io/ggally/): Extension of `ggplot2` by adding several functions to reduce the complexity of combining geometric objects with transformed data.
+-   cluster
+-   factoextra
+-   stats
+-   hms
+-   caret
+```{r}
+pacman::p_load(tidyverse, knitr, ggridges, ggdist, colorspace, ggrepel, ggthemes, hrbrthemes, patchwork, lubridate, ggstatsplot, plotly, rjson, visNetwork, BiocManager, igraph, cluster, factoextra, stats, hms, caret) 
+```
+
+### Importing the Data
+
+The data for this exercise was collected from a select group of learners over a specified set of programming tasks over a particular learning period, which was compiled in 3 datasets described below. It is accompanied by a separate document providing a more detailed description of the data and variables.
+
+-   Dataset 1: Student Information - This comprises of 5 Cols, 1364 Rows, providing individualised demographic variables of the learners (a.k.a students) within the scope this project
+-   Dataset 2: Learning Subject Title Information - This comprises of 5 Cols, 44 Rows, providing variables of the questions from the programming tasks which are collated in the scope of this project
+-   Dataset 3: Class Submission Records - This comprises of 15 datasets, each with 10 Cols and various number of rows, providing supposedly the participating learners' answering variables to the questions collated in the scope of this project
+
+The code chunk below imports the dataset into R environment by using [*`read_csv()`*](https://readr.tidyverse.org/reference/read_delim.html) function of [`readr`](https://readr.tidyverse.org/), which is part of the tidyverse package.
+
+```{r}
+df_StudentInfo <- read_csv("data/Data_StudentInfo.csv")
+```
+
+```{r}
+df_TitleInfo <- read_csv("data/Data_TitleInfo.csv")
+```
+
+```{r}
+csv_file_list <- dir('data/Data_SubmitRecord')
+csv_file_list <- paste0("./data/Data_SubmitRecord/",csv_file_list)
+
+df_StudentRecord <- NULL
+for (file in csv_file_list) { # for every file...
+  file <- read_csv(file)
+    df_StudentRecord <- rbind(df_StudentRecord, file) # then stick together by rows
+}
+```
+
+## Data Preparation
+
+### Data Cleaning
+
+Before data transformation, the cleanliness of the data set is first ascertained by checking for missing and duplicate data.
+
+#### Missing Data
+
+colSums() and is.NA() functions are used to search for missing values as a whole for the 3 data sets in the code chunks as follows.
+
+```{R}
+#| warning: false
+
+#Find the number of missing values for each col
+colSums(is.na(df_StudentInfo))
+```
+
+```{R}
+#| warning: false
+
+#Find the number of missing values for each col
+colSums(is.na(df_TitleInfo))
+```
+
+```{R}
+#| warning: false
+
+#Find the number of missing values for each col
+colSums(is.na(df_StudentRecord))
+```
+
+From the outputs above, none of the variables contain missing values.
+
+#### Check for duplicate rows
+
+Using duplicated(), duplicate rows in each of the 3 data sets are identified and extracted in the following code chunks.
+
+```{R}
+df_StudentInfo[duplicated(df_StudentInfo), ]
+```
+
+```{R}
+df_TitleInfo[duplicated(df_TitleInfo), ]
+```
+
+```{R}
+df_StudentRecord[duplicated(df_StudentRecord), ]
+```
+
+From the outputs above, there were no duplicate rows found.
+
+### Data Wrangling for Inconsistencies
+
+To get a better understanding of the variables in the original dataset, the glimpse() function is used in the following code chunks.
+
+```{R}
+glimpse(df_StudentInfo)
+```
+
+```{R}
+glimpse(df_TitleInfo)
+```
+
+```{R}
+glimpse(df_StudentRecord)
+```
+
+#### Identifying Other Unexpected Duplicate Values
+
+Considering intuitively unique values for certain variables or dependent variables, other forms of duplicates are also identified and cleaned where relevant.
+
+1.  Duplicate student_ID in StudentInfo
+
+```{r}
+# Find the duplicated student_IDs
+duplicates <- df_StudentInfo[duplicated(df_StudentInfo$student_ID) | duplicated(df_StudentInfo$student_ID, fromLast = TRUE), ]
+
+# Display the rows with duplicate student_IDs
+duplicates
+```
+From the output above, no duplicates found.
+
+2.  Duplicate title_ID (aka questions) in TitleInfo
+
+```{r}
+# Find the duplicated title_IDs
+duplicates <- df_TitleInfo[duplicated(df_TitleInfo$title_ID) | duplicated(df_TitleInfo$title_ID, fromLast = TRUE), ]
+
+# Display the rows with duplicate title_IDs
+duplicates
+```
+```{r}
+unique(duplicates$knowledge)
+unique(duplicates$sub_knowledge)
+```
+From the outputs above, some questions (title_ID) belong to up to 2 knowledge areas or 2 sub-knowledge areas, where the scores for the former are consistently 3, and for the latter, 1. This overlap in title_ID affects 6 title_IDs, spreads across 6 knowledge areas and 7 sub-knowledge areas.
+
+The unique values for knowledge and sub-knowledge areas are obtained in the following code chunk to better understand the complexity of these 2 variables.
+
+```{R}
+unique(df_TitleInfo$knowledge)
+unique(df_TitleInfo$sub_knowledge)
+```
+Based on the output above, there is a total of 8 knowledge areas and 15 sub-knowledge areas. This suggests that majority of the knowledge areas and approximately half of sub-knowledge areas have overlapping title_ID. From the nomenclature, each sub-knowledge area is tagged to only 1 knowledge area.
+
+To meaningfully analyse the relationship between knowledge areas & sub knowledge areas and other variables, additional columns are introduced where the values in these 2 columnns are transposed as column labels with binary values to indicate the tagging of each question to that value. This is done in the following code chunk.
+
+```{r}
+# Transpose the knowledge column to create new columns for each unique value
+df_TitleInfo1 <- df_TitleInfo %>%
+  mutate(knowledge_presence = 1) %>%
+  spread(key = knowledge, value = knowledge_presence, fill = 0)
+
+# Transpose the sub_knowledge column to create new columns for each unique value
+df_TitleInfo2 <- df_TitleInfo %>%
+  mutate(sub_knowledge_presence = 1) %>%
+  spread(key = sub_knowledge, value = sub_knowledge_presence, fill = 0)
+
+# Combine the new columns with the original dataframe
+df_TitleInfo3 <- df_TitleInfo %>%
+  distinct(title_ID, .keep_all = TRUE) %>%
+  left_join(df_TitleInfo1, by = "title_ID") %>%
+  distinct(title_ID, .keep_all = TRUE) %>%
+  left_join(df_TitleInfo2, by = "title_ID") %>%
+  
+  rename(knowledge = knowledge.x,
+         sub_knowledge = sub_knowledge.x) %>%
+  select(-index.y,
+         -score.y,
+         -knowledge.y,
+         -sub_knowledge.y,
+         -index.x,
+         -score.x,
+         -index)
+
+# Reassign values to the knowledge & sub_knowledge columns for repeated title_ID rows
+df_TitleInfo3 <- df_TitleInfo3 %>%
+  group_by(title_ID) %>%
+  mutate(knowledge = paste(unique(df_TitleInfo$knowledge[df_TitleInfo$title_ID == title_ID]), collapse = "_"),
+         sub_knowledge = paste(unique(df_TitleInfo$sub_knowledge[df_TitleInfo$title_ID == title_ID]), collapse = "_")) %>%
+  ungroup() %>%
+  distinct(title_ID, .keep_all = TRUE)
+
+
+# Group by title_ID
+df_TitleInfo_gp <- df_TitleInfo3 %>%
+  group_by(title_ID) %>%
+  summarise_all(~first(.))
+
+glimpse(df_TitleInfo_gp)
+unique(df_TitleInfo_gp$knowledge)
+unique(df_TitleInfo_gp$sub_knowledge)
+```
+
+3.  Duplicate class for each Individual Students in StudentRecord
+
+```{r}
+# Identify students with multiple classes
+students_multiple_classes <- df_StudentRecord %>%
+  group_by(student_ID) %>%
+  summarise(unique_classes = n_distinct(class)) %>%
+  filter(unique_classes > 1)
+
+students_multiple_classes_entries <- df_StudentRecord %>%
+  filter(student_ID %in% students_multiple_classes$student_ID) %>%
+  group_by(student_ID, class) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  arrange(desc(student_ID))
+
+# Display the results
+print(students_multiple_classes_entries)
+```
+Based on the output above, it is apparent that the 2nd class for each of the student above is an erroneous value. Hence this inconsistency will be cleaned in the following code chunk 
+
+```{r}
+# Step 1: Identify the correct class for each student (the class with the highest frequency)
+correct_classes <- df_StudentRecord %>%
+  filter(student_ID %in% students_multiple_classes$student_ID) %>%
+  group_by(student_ID, class) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  slice(1) %>%
+  select(student_ID, correct_class = class)
+
+# Step 2: Replace wrong class values
+df_StudentRecord <- df_StudentRecord %>%
+  left_join(correct_classes, by = "student_ID") %>%
+  mutate(class = ifelse(!is.na(correct_class), correct_class, class)) %>%
+  select(-correct_class)
+```
+For completeness, a check is done for existence of other students with class that has no class number in the following code chunk.
+
+```{R}
+MissingClassNo <- df_StudentRecord %>%
+  filter(class == "class")
+MissingClassNo
+```
+Based on the output above, there are no further students with class without number.
+
+#### Identifying Other Unexpected and/or Missing Values
+
+1.  Missing Student_ID and title_ID in StudentRecord are also identified.
+
+```{r}
+missing_students <- anti_join(df_StudentRecord, df_StudentInfo, by = "student_ID")
+
+# Display the missing student IDs
+missing_student_ids <- missing_students %>% select(student_ID) %>% distinct()
+print(missing_student_ids)
+```
+```{r}
+missing_questions <- anti_join(df_StudentRecord, df_TitleInfo, by = "title_ID")
+
+# Display the missing title IDs
+missing_questions <- missing_questions %>% select(title_ID) %>% distinct()
+print(missing_questions)
+```
+There is 1 missing student between either StudentRecord or StudentInfo, but no missing questions. Since there is partial missing info on this student, it isn't meaningful to include in this analysis, hence the student_ID will be excluded in the following code chunk.
+
+```{R}
+df_StudentInfo <- df_StudentInfo %>%
+  filter (student_ID != '44c7cf3881ae07f7fb3eD')
+df_StudentRecord <- df_StudentRecord %>%
+  filter (student_ID != '44c7cf3881ae07f7fb3eD')
+```
+
+2.  Other unexpected values
+
+The unique values for each column is queried to check for unexpected values in the following code chunk, wherein Index, time, class, title_ID and student_ID are excluded since they will be dealt with separately
+
+```{R}
+unique(df_StudentRecord$state)
+unique(df_StudentRecord$score)
+unique(df_StudentRecord$method)
+unique(df_StudentRecord$memory)
+unique(df_StudentRecord$timeconsume)
+```
+
+```{R}
+unique(df_StudentInfo$sex)
+unique(df_StudentInfo$age)
+unique(df_StudentInfo$major)
+```
+
+```{R}
+unique(df_TitleInfo$score)
+unique(df_TitleInfo$knowledge)
+unique(df_TitleInfo$sub_knowledge)
+```
+From the outputs above, there is an unexpected value for state and timeconsume in StudentRecord.
+
+Starting with  state, the rows with unexpected value(s) are queried in the following code chunk to better understand the number of affected rows.
+
+```{R}
+Outlier_state <- df_StudentRecord %>%
+  filter (state == '�������')
+Outlier_state
+```
+From the output above, there are only 6 rows that are affected. Further cross-validation with the data description document found that there should only be 12 unique values for this variable, and including this outlier state value will give 13. Hence this is likely a wrong entry, and so it will be excluded from the analysis in the following code chunk.
+
+```{R}
+df_StudentRecord <- df_StudentRecord %>%
+  filter (state != '�������')
+```
+
+For timeconsume, the rows with unexpected value(s) are queried in the following code chunk to better understand the number of affected rows.
+
+```{R}
+Outlier_timeconsume <- df_StudentRecord %>%
+  filter (timeconsume %in% c('-', '--'))
+Outlier_timeconsume
+```
+Based on the output, there is a significant number of 2,612 rows with the unexpected value. Hence these rows will be kept in the analysis and replaced with 0 (since there is no existing values of 0 too), however subsequent analysis in this exercise involving the timeconsume variable will treat these values as missing values. This is done in the following code chunk
+
+```{r}
+df_StudentRecord <- df_StudentRecord %>%
+  mutate(timeconsume = ifelse(timeconsume %in% c("-", "--"), 0, timeconsume))
+unique(df_StudentRecord$timeconsume)
+```
+
+#### Removing Index Col
+
+Each data set contains an index column, which is possibly to keep track of the original order and the total number of rows. This is no longer required and relevant in the analysis, hence it will be excluded.
+
+```{r}
+#remove index column
+df_StudentRecord <- df_StudentRecord %>% select(-1)
+df_TitleInfo <- df_TitleInfo %>% select(-1)
+df_StudentInfo <- df_StudentInfo %>% select(-1)
+
+```
+
+#### Correcting Data Types
+
+Based on the glimpse() function, the time variable of the StudentRecord is currently in numerical format. This will be corrected to date time format with the following steps.
+
+Step 1: From the data description document, the data collection period spans 148 days from 31/8/2023 to 25/1/2024, and the time variable of the StudentRecord in this data set is in seconds. This is compared against the min and max values of the time variable converted to days and deducted from the given start and end date of the collection period given, in the following code chunk.
+
+```{R}
+# Get the min and max values of the time column
+min_time <- min(df_StudentRecord$time, na.rm = TRUE)
+max_time <- max(df_StudentRecord$time, na.rm = TRUE)
+
+# Display the min & max values
+date_adjustment1 <- as.numeric(as.Date("2023-08-31")) - (min_time / 24 / 60 / 60)
+date_adjustment2 <- as.numeric(as.Date("2024-01-25")) - (max_time / 24 / 60 / 60)
+date_adjustmentavg <- as.Date((date_adjustment1 + date_adjustment2)/2, origin = "1970-01-01")
+date_adjustmentavg
+```
+Step 2: Apply date_adjustmentavg to the time variable to amend the data type to date time format in the folloiwing code chunk
+
+```{r}
+# Convert time from timestamp to POSIXct
+df_StudentRecord$time_change <- as.POSIXct(df_StudentRecord$time, origin=date_adjustmentavg, tz="UTC")
+
+glimpse(df_StudentRecord)
+```
+Further, additional timeconsume will be converted to numeric, wherein the '-' and '--' values found earlier had taken the value of 0 and will be treated as missing values in subsequent analysis.
+
+```{R}
+df_StudentRecord <- df_StudentRecord %>%
+  mutate(timeconsume = as.numeric(timeconsume))
+
+glimpse(df_StudentRecord)
+```
+
+### Create Merged Dataset
+
+To prepare for cross dataset analysis of variables, the 3 data sets are joined on title_id and student_id variables in the following code chunks.
+
+```{r}
+# Merge StudentInfo with SubmitRecord based on student_ID
+merged_data <- merge(df_StudentRecord, df_StudentInfo, by = "student_ID")
+
+# Merge TitleInfo with the already merged data based on title_ID
+merged_data <- merge(merged_data, df_TitleInfo_gp, by = "title_ID")
+
+merged_data <- merged_data %>%
+  rename(
+    actual_score = score.x,
+    question_score = score.y
+  )
+```
+
+```{r}
+saveRDS(merged_data, "merged_data_df.rds")
+```
+
+```{r}
+summary (merged_data)
+```
+
+## Learner modes
+
+### Feature engineering
+
+Splitting Date and time up from the earlier created time_change date-time variable with the following code chunk
+
+```{R}
+merged_data <- merged_data %>%
+  mutate(
+    date = as.Date(time_change),
+    time = as_hms(format(time_change, "%H:%M:%S"))
+)
+glimpse(merged_data)
+
+```
+
+
+
+### Determine number of cluster for KMeans
+
+#### Silhouette analysis
+
+```{r}
+# Function to compute silhouette width for different numbers of clusters
+silhouette_analysis <- function(merged_data, max_clusters) {
+  # Convert character columns to factors
+  merged_data <- merged_data %>%
+    mutate_if(is.character, as.factor)
+  
+    # Compute Gower distance matrix
+  gower_dist <- daisy(merged_data, metric = "gower")
+  
+  avg_sil_widths <- numeric(max_clusters)
+  
+  for (k in 2:max_clusters) {
+    # Perform clustering using PAM
+    pam_result <- pam(gower_dist, diss = TRUE, k = k)
+    
+    # Compute silhouette widths
+    sil <- silhouette(pam_result$clustering, gower_dist)
+    
+    # Calculate average silhouette width
+    avg_sil_widths[k] <- mean(sil[, 3])
+  }
+  
+  return(avg_sil_widths)
+}
+
+# Sample data (replace this with your actual data)
+set.seed(123)
+merged_data <- data.frame(
+  x = rnorm(100),
+  y = rnorm(100),
+  category = sample(LETTERS[1:3], 100, replace = TRUE) # Categorical column
+)
+
+# Determine the maximum number of clusters to test
+max_clusters <- 10
+
+# Perform silhouette analysis
+avg_sil_widths <- silhouette_analysis(merged_data, max_clusters)
+
+# Plot the average silhouette widths
+plot(2:max_clusters, avg_sil_widths[2:max_clusters], type = "b", pch = 19, frame = FALSE,
+     xlab = "Number of clusters", ylab = "Average silhouette width",
+     main = "Silhouette Analysis for Determining Optimal Number of Clusters")
+
+# Highlight the optimal number of clusters
+optimal_clusters <- which.max(avg_sil_widths)
+points(optimal_clusters, avg_sil_widths[optimal_clusters], col = "red", pch = 19)
+```
+
+#### SSE-Elbow method
+
+```{r}
+# Function to one-hot encode categorical variables
+one_hot_encode <- function(df) {
+  # Convert character columns to factors
+  df <- df %>%
+    mutate_if(is.character, as.factor)
+  
+  # Apply one-hot encoding
+  dummies <- dummyVars(~ ., data = df)
+  df_encoded <- data.frame(predict(dummies, newdata = df))
+  
+  return(df_encoded)
+}
+
+# Function to compute SSE for different numbers of clusters
+compute_sse <- function(data, max_clusters) {
+  sse <- numeric(max_clusters)
+  
+  for (k in 1:max_clusters) {
+    # Perform k-means clustering
+    kmeans_result <- kmeans(data, centers = k, nstart = 25)
+    
+    # Compute SSE
+    sse[k] <- kmeans_result$tot.withinss
+  }
+  
+  return(sse)
+}
+
+# One-hot encode the merged_data
+merged_data_encoded <- one_hot_encode(merged_data)
+
+# Determine the maximum number of clusters to test
+max_clusters <- 10
+
+# Compute SSE for each number of clusters
+sse_values <- compute_sse(merged_data_encoded, max_clusters)
+
+# Plot SSE against number of clusters
+plot(1:max_clusters, sse_values, type = "b", pch = 19, frame = FALSE,
+     xlab = "Number of clusters", ylab = "SSE",
+     main = "Elbow Method for Optimal Number of Clusters")
+
+# Add text for elbow point
+elbow_point <- which.min(diff(sse_values)) + 1
+text(elbow_point, sse_values[elbow_point], labels = paste("Elbow Point:", elbow_point), pos = 4, col = "red")
+```
+
