@@ -6,5 +6,5 @@
 .quarto
 
 /.quarto/
-/team2/data
-.RDataTmp
+
+data/
