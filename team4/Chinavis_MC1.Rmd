@@ -195,7 +195,6 @@ merged_data <- merged_data %>%
 
 If student get partially correct, award 1 point, if student get abosultely correct, award 2 points. When the student keep practicing the question, we assume he will be a master of the topic.
 
-
 ```{r}
 
 merged_data <- merged_data %>%
@@ -246,7 +245,6 @@ never_absolutely_correct <- merged_data %>%
   filter(never_absolutely_correct)
 
 ```
-
 
 ```{r}
 saveRDS(merged_data, "merged_data_df.rds")
@@ -574,7 +572,6 @@ filtered_questions <- never_correct_questions %>%
       left_join(title_info, by = c("title_ID" = "title_ID"))
 ```
 
-
 ```{r}
 
 calculate_threshold_scores <- function(knowledge_mastery, threshold) {
@@ -617,23 +614,101 @@ low_mastery_students <- knowledge_mastery %>%
 
 ```
 
-
-```{r}
+```{r, fig.width= 15}
 filtered_never_correct <- never_absolutely_correct %>%
       filter(student_ID %in% high_mastery_students$student_ID) %>%
+      distinct(student_ID, title_ID) %>%
       group_by(title_ID) %>%
       summarise(number_of_students = n(), .groups = 'drop') %>%
-      left_join(title_info, by = "title_ID")
+      left_join(aggregate_title_info, by = "title_ID") %>%
+      mutate(percentage_of_student_wrong = (number_of_students/length(high_mastery_students$student_ID)*100)) 
 
 
 bottom_percentage_never_correct <- knowledge_expanded %>%
-  filter(student_ID %in% low_mastery_students$student_ID) %>%
-  filter(title_ID %in% filtered_never_correct$title_ID) %>%
-  filter(state == "Absolutely_Correct") %>%
-  distinct(student_ID, title_ID) %>%
-  group_by(title_ID) %>%
-  summarise(no_of_students = n(), .groups = 'drop')
+      filter(student_ID %in% low_mastery_students$student_ID) %>%
+      filter(title_ID %in% filtered_never_correct$title_ID) %>%
+      filter(state == "Absolutely_Correct") %>%
+      distinct(student_ID, title_ID) %>%
+      group_by(title_ID) %>%
+      summarise(no_of_students = n(), .groups = 'drop') %>%
+      mutate(percentage_of_student_right = (no_of_students/length(low_mastery_students$student_ID)*100)) 
 
 
+# Calculate percentages for high mastery and low mastery students
+    high_mastery_percent <- filtered_never_correct %>%
+      mutate(high_mastery = number_of_students / nrow(high_mastery_students) * 100) %>%
+      select (title_ID, high_mastery)
+    
+    low_mastery_percent <- bottom_percentage_never_correct %>%
+      mutate(low_mastery = no_of_students / nrow(low_mastery_students) * 100) %>%
+      select (title_ID, low_mastery)
+    
+    comparison_data <- high_mastery_percent %>%
+      left_join(low_mastery_percent, by = "title_ID") %>%
+      mutate(diff = round(low_mastery - high_mastery, digits=2)) %>%
+      pivot_longer (cols = c(low_mastery,high_mastery)) %>%
+      rename (type_of_student = name,
+              percentage = value)
+    
+    low_mastery <-  comparison_data %>%
+      filter(type_of_student == "low_mastery")
+    
+    high_mastery <-  comparison_data %>%
+      filter(type_of_student == "high_mastery")
+    
+    
+    ggplot(comparison_data) +
+        geom_segment(data = low_mastery,
+                     aes(x = percentage, y = title_ID,
+                         yend = high_mastery$title_ID, xend = high_mastery$percentage),
+                     color = "#aeb6bf",
+                     size = 4.5,
+                     alpha = 0.5) +
+        geom_point(aes(x = percentage, y = title_ID, color = type_of_student), size = 4, show.legend = TRUE) +
+        ggtitle("Comparison of High Mastery Student vs Low Mastery Student")+
+        geom_text (data = diff,
+                   aes(label = paste("D:", diff, "%"), x = x_pos, y = title_ID),
+                   fill = "white",
+                   color = "#4a4e4d",
+                   size = 2.5)+
+        facet_grid(title_ID ~ ., scales = "free", switch = "y") +
+        theme_minimal()+
+        theme(panel.grid.major.y = element_blank(),
+              panel.grid.minor.y = element_blank(),
+              panel.grid.major.x = element_blank(),
+              panel.grid.minor.x = element_blank(),
+              axis.title.y = element_blank(),
+              axis.text.y = element_blank(),
+              axis.ticks.y = element_blank(),
+              axis.ticks.x = element_line(color = "#4a4e4d"),
+              text = element_text(family = "Segoe UI Semibold", color = "#4a4e4d"),
+              strip.text.y.left  = element_text(angle = 0),
+              panel.background = element_rect(fill = "white", color = "white"),
+              strip.background = element_rect(fill = "white", color = "white"),
+              strip.text = element_text(color = "#4a4e4d", family = "Segoe UI"),
+              plot.background = element_rect(fill = "white", color = "white"),
+              panel.spacing = unit(0, "lines"),
+              plot.margin = margin(1,1,.5,1, "cm"))
+
+```
+
+
+```{r}
+
+    stats <- comparison_data %>%
+      group_by(type_of_student) %>%
+      summarise(mean = mean(percentage),
+                SE = sd(percentage)) %>%
+      mutate(meanpos = mean + 1 *SE,
+             meanneg = mean - 1 *SE)
+    
+    stats_low_mastery <- stats %>%
+      filter(type_of_student == "low_mastery")
+    stats_high_mastery <- stats %>%
+      filter(type_of_student == "high_mastery")
+    
+    diff <- comparison_data %>% 
+      filter(type_of_student == "low_mastery") %>%
+      mutate(x_pos = percentage + (-diff/2)) 
 
 ```
