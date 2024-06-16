@@ -8,6 +8,8 @@ library(ggplot2)
 library(ggalluvial)
 library(ggalt)
 library(tidyverse)
+library(reshape2)
+
 
 
 # Load preprocessed RDS files
@@ -16,6 +18,7 @@ knowledge_expanded <- readRDS("knowledge_expanded.RDS")
 never_absolutely_correct <- readRDS("never_absolutely_correct.RDS")
 knowledge_mastery <- readRDS("knowledge_mastery.RDS")
 aggregate_title_info <- readRDS("aggregate_title_info.RDS")
+percentage_correct <- readRDS("percentage_correct.RDS")
 
 
 # Ensure class is a factor with ordered levels
@@ -37,6 +40,7 @@ ui <- fluidPage(
     mainPanel(
       div(style = "overflow-y: scroll; width: 100%;",
           plotOutput("dumbbellPlot", height = "600px")),
+      plotOutput("heatmapPlot"),
       plotOutput("networkPlot"),
       plotOutput("associationPlot"),
       dataTableOutput("questionsTable"),
@@ -165,7 +169,7 @@ server <- function(input, output, session) {
     
     comparison_data <- high_mastery_percent %>%
       left_join(low_mastery_percent, by = "title_ID") %>%
-      mutate(diff = low_mastery - high_mastery) %>%
+      mutate(diff = round(low_mastery - high_mastery),digits = 2) %>%
       pivot_longer (cols = c(low_mastery,high_mastery)) %>%
       rename (type_of_student = name,
               percentage = value)
@@ -195,6 +199,15 @@ server <- function(input, output, session) {
     
     output$dumbbellPlot <- renderPlot({
       ggplot(comparison_data) +
+        geom_rect(xmin = stats_low_mastery$meanneg, xmax = stats_low_mastery$meanpos,
+                  ymin = 0, ymax = 38, fill = "#762a83", alpha = .05) +
+        geom_vline(xintercept = stats_low_mastery$mean, linetype = "solid", size = .5, alpha = .8, color = "#762a83")+
+        
+        geom_rect(xmin = stats_high_mastery$meanneg, xmax = stats_high_mastery$meanpos,
+                  ymin = 0, ymax = 38, fill = "#009688", alpha = .05)+  
+        geom_vline(xintercept = stats_high_mastery$mean, color = "#009688", linetype = "solid",  size = .5, alpha = .8) +
+        
+        
         geom_segment(data = low_mastery,
                      aes(x = percentage, y = title_ID,
                          yend = high_mastery$title_ID, xend = high_mastery$percentage),
@@ -202,7 +215,12 @@ server <- function(input, output, session) {
                      size = 4.5,
                      alpha = 0.5) +
         geom_point(aes(x = percentage, y = title_ID, color = type_of_student), size = 4, show.legend = TRUE) +
-        ggtitle("Comparison of High Mastery Student vs Low Mastery Student") +
+        #color points
+        scale_color_manual(values = c("#009688","#762a83"))+
+        #add annotations for mean and standard deviations
+        geom_text(x = stats_low_mastery$mean + 5, y = 38, label = "MEAN", angle = 90, size = 2.5, color = "#009688")+
+        geom_text(x = stats_low_mastery$meanpos + 5, y = 38, label = "STDEV", angle = 90, size = 2.5, color = "#009688")+
+        ggtitle("Comparison of High Mastery Student Incorrectness vs Low Mastery Student Correctness") +
         geom_text (data = diff,
                    aes(label = paste("D:", diff, "%"), x = x_pos, y = title_ID),
                    fill = "white",
@@ -227,6 +245,25 @@ server <- function(input, output, session) {
               panel.spacing = unit(0, "lines"),
               plot.margin = margin(1,1,.5,1, "cm"))
         
+    })
+    
+    # Calculate average wrong percentage for each title ID and knowledge group
+    avg_wrong_percentage <- percentage_correct %>%
+      inner_join(high_mastery_students %>% select(student_ID, knowledge), by = "student_ID") %>%
+      group_by(title_ID, knowledge) %>%
+      summarise(avg_wrong_percentage = mean(percentage_wrong), .groups = 'drop')
+    
+    # Reshape the data for heatmap
+    heatmap_data <- dcast(avg_wrong_percentage, title_ID ~ knowledge, value.var = "avg_wrong_percentage")
+    
+    output$heatmapPlot <- renderPlot({
+      ggplot(melt(heatmap_data, id.vars = "title_ID"), aes(x = variable, y = title_ID, fill = value)) +
+        geom_tile() +
+        scale_fill_gradient(low = "white", high = "red") +
+        labs(title = "Average Wrong Percentage for Each Title ID by Knowledge Group",
+             x = "Knowledge Group",
+             y = "Title ID") +
+        theme_minimal()
     })
     
     

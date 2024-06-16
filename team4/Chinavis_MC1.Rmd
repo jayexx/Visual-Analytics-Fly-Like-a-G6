@@ -234,6 +234,24 @@ saveRDS(knowledge_mastery, file = "knowledge_mastery.RDS")
 ```
 
 ```{r}
+percentage_correct <- merged_data %>%
+  group_by(student_ID, title_ID) %>%
+  summarise(
+    total_attempts = n(),
+    wrong_attempts = sum(state != "Absolutely_Correct"),
+    percentage_wrong = wrong_attempts / total_attempts * 100,
+    .groups = 'drop'
+  )
+
+# Save processed dataset
+saveRDS(percentage_correct, file = "percentage_correct.RDS")
+
+
+```
+
+
+
+```{r}
 
 # Identify students who have never gotten a title_ID Absolutely Correct
 never_absolutely_correct <- merged_data %>%
@@ -691,7 +709,6 @@ bottom_percentage_never_correct <- knowledge_expanded %>%
               plot.margin = margin(1,1,.5,1, "cm"))
 
 ```
-
 
 ```{r}
 
