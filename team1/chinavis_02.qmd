@@ -1,0 +1,513 @@
+---
+title: "chinavis_02"
+format: html
+editor: visual
+---
+
+```{r}
+pacman::p_load(dplyr,tidyr,stringr,readr,fs,purrr,ggplot2, plotly, ggstatsplot,igraph,lubridate,hms, vcd)
+```
+
+```{r}
+df_StudentInfo <- read_csv("data/Data_StudentInfo.csv")
+df_TitleInfo <- read_csv("data/Data_TitleInfo.csv")
+
+```
+
+```         
+saveRDS(title_info_aggregated, "aggregate_title_info.RDS")
+```
+
+```{r}
+csv_file_list <- dir('data/Data_SubmitRecord')
+csv_file_list <- paste0("./data/Data_SubmitRecord/",csv_file_list)
+
+
+df_StudentRecord <- NULL
+for (file in csv_file_list) { # for every file...
+  file <- read_csv(file)
+    df_StudentRecord <- rbind(df_StudentRecord, file) # then stick together by rows
+}
+df_StudentRecord %>% glimpse()
+```
+
+```{r}
+# Step 1: Identify students with multiple classes
+students_multiple_classes <- df_StudentRecord %>%
+  group_by(student_ID) %>%
+  summarise(unique_classes = n_distinct(class)) %>%
+  filter(unique_classes > 1)
+
+# Step 2: Identify the correct class for each student (the class with the highest frequency)
+correct_classes <- df_StudentRecord %>%
+  filter(student_ID %in% students_multiple_classes$student_ID) %>%
+  group_by(student_ID, class) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  slice(1) %>%
+  select(student_ID, correct_class = class)
+
+# Step 3: Replace wrong class values
+df_StudentRecord <- df_StudentRecord %>%
+  left_join(correct_classes, by = "student_ID") %>%
+  mutate(class = ifelse(!is.na(correct_class), correct_class, class)) %>%
+  select(-correct_class)
+
+# Display the updated dataframe
+print(df_StudentRecord)
+
+```
+
+```{r}
+
+# Identify students with multiple classes
+students_multiple_classes <- df_StudentRecord %>%
+  group_by(student_ID) %>%
+  summarise(unique_classes = n_distinct(title_ID)) %>%
+  filter(unique_classes > 1)
+
+# Display the results
+print(students_multiple_classes)
+```
+
+```{r}
+#remove index column
+#df_StudentRecord <- df_StudentRecord %>% select(-1)
+df_TitleInfo <- df_TitleInfo %>% select(-1)
+df_StudentInfo <- df_StudentInfo %>% select(-1)
+
+```
+
+```{r}
+# Convert time from timestamp to POSIXct
+df_StudentRecord$time_change <- as.POSIXct(df_StudentRecord$time, origin="1970-01-01", tz="UTC")
+
+df_StudentRecord <- df_StudentRecord %>%
+  mutate(
+    time_change = ymd_hms(time_change),
+    date = as.Date(time_change),
+    time = as_hms(format(time_change, "%H:%M:%S")),
+    score = as.factor(score),
+    timeconsume = as.numeric(timeconsume)
+  ) 
+
+df_TitleInfo <- df_TitleInfo %>%
+  rename (
+     question_score = score
+  )
+```
+
+```{r}
+missing_students <- anti_join(df_StudentRecord, df_StudentInfo, by = "student_ID")
+
+# Display the missing student IDs
+missing_student_ids <- missing_students %>% select(student_ID) %>% distinct()
+print(missing_student_ids)
+
+
+unique(df_StudentRecord$state)
+
+df_StudentRecord <- df_StudentRecord %>%
+  filter (state != '�������')%>%
+  filter (class != "class")
+```
+
+```{r}
+
+# Aggregate knowledge and sub_knowledge into lists
+title_info_aggregated <- df_TitleInfo %>%
+  group_by(title_ID, question_score) %>%
+  summarise(knowledge_list = list(unique(knowledge)),
+            sub_knowledge_list = list(unique(sub_knowledge)),
+            .groups = 'drop')
+
+# View the first few rows of the aggregated data to confirm it looks correct
+head(title_info_aggregated)
+
+```
+
+```{r}
+# Merge StudentInfo with SubmitRecord based on student_ID
+merged_data <- merge(df_StudentRecord, df_StudentInfo, by = "student_ID")
+
+# Merge TitleInfo with the already merged data based on title_ID
+merged_data <- merge(merged_data, df_TitleInfo, by = "title_ID")
+
+merged_data <- merged_data %>%
+  rename(
+    actual_score = score
+  ) %>%
+  mutate (actual_score = as.numeric(as.character(actual_score)))
+```
+
+### Based on point system for mastery.
+
+If student get partially correct, award 1 point, if student get abosultely correct, award 2 points. When the student keep practicing the question, we assume he will be a master of the topic.
+
+```{r}
+
+merged_data <- merged_data %>%
+  mutate(true_points = case_when(
+    state == "Absolutely_Correct" ~ 2,
+    state == "Partially_Correct" ~  actual_score / question_score ,
+    TRUE ~ -1
+  )) 
+
+# Expand rows for questions with multiple knowledge groups
+knowledge_expanded <- merged_data %>%
+  separate_rows(knowledge, sep = ",") %>%
+  mutate(knowledge = str_trim(knowledge))
+
+# Identify students who have never gotten a title_ID Absolutely Correct
+never_absolutely_correct <- knowledge_expanded %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(
+    never_absolutely_correct = all(state != "Absolutely_Correct"),
+    .groups = 'drop'
+  ) %>%
+  filter(never_absolutely_correct)
+
+# Calculate knowledge mastery scores for each student
+knowledge_mastery <- knowledge_expanded %>%
+  group_by(student_ID, class, knowledge) %>%
+  summarise(average_score = mean(true_points), .groups = 'drop') %>%
+  left_join(df_StudentInfo %>% select(student_ID, sex, age, major), by = "student_ID") %>%
+  mutate(age = as.character(age))
+
+# Save processed datasets
+saveRDS(merged_data, file = "merged_data.RDS")
+saveRDS(knowledge_expanded, file = "knowledge_expanded.RDS")
+saveRDS(never_absolutely_correct, file = "never_absolutely_correct.RDS")
+saveRDS(knowledge_mastery, file = "knowledge_mastery.RDS")
+
+```
+
+
+
+
+
+
+
+##Points for each student for each question
+
+```{r}
+
+# Load necessary libraries
+library(dplyr)
+
+# Convert 'true_points' to numeric if necessary
+knowledge_expanded$true_points <- as.numeric(as.character(knowledge_expanded$true_points))
+
+# Check for any conversion errors
+sum(is.na(knowledge_expanded$true_points))
+
+# Calculate scores for each student for each question
+points_by_student_question <- knowledge_expanded %>%
+  group_by(student_ID, title_ID) %>%
+  summarise(
+    Average_point = mean(true_points, na.rm = TRUE),  # Average score per question per student
+    Max_point = max(true_points, na.rm = TRUE),       # Maximum score per question per student
+    Min_point = min(true_points, na.rm = TRUE),       # Minimum score per question per student
+    Median_point = median(true_points, na.rm = TRUE), # Median score per question per student
+    IQR_point = IQR(true_points, na.rm = TRUE),       # Interquartile Range per question per student
+    Total_Attempts = n(),                             # Total number of attempts per question per student
+    .groups = 'drop'
+  )
+
+# View the first few rows of the resulting dataframe to confirm it looks correct
+head(points_by_student_question)
+
+```
+
+```{r}
+# View the results
+summary(points_by_student_question)
+```
+
+
+
+##points for each knowledge area per question
+```{r}
+
+# Load necessary libraries
+library(dplyr)
+
+
+knowledge_points <- knowledge_expanded %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(
+    Average_point = mean(true_points, na.rm = TRUE),  # Average score per knowledge area per question
+    Max_ponit = max(true_points, na.rm = TRUE),       # Maximum score per knowledge area per question
+    Min_point = min(true_points, na.rm = TRUE),       # Minimum score per knowledge area per question
+    Median_ponit = median(true_points, na.rm = TRUE), # Median score per knowledge area per question
+    IQR_point = IQR(true_points, na.rm = TRUE),       # Interquartile Range per knowledge area per question
+    Total_Attempts = n(),                             # Total number of attempts per knowledge area per question
+    .groups = 'drop'                                  # Ensure the data is no longer grouped after summarization
+  )
+
+# View the results
+summary(knowledge_points)
+
+# View the first few rows of the resulting dataframe
+
+```
+```{r}
+# View the results
+summary(knowledge_points)
+
+```
+
+##points for each sub_knowledge area per question
+```{r}
+
+# Calculate scores for each sub_knowledge area per question
+sub_knowledge_points <- knowledge_expanded %>%
+  group_by(student_ID, title_ID, sub_knowledge) %>%
+  summarise(
+    Average_point = mean(true_points, na.rm = TRUE),  # Average score per sub_knowledge area per question
+    Max_point = max(true_points, na.rm = TRUE),       # Maximum score per sub_knowledge area per question
+    Min_point = min(true_points, na.rm = TRUE),       # Minimum score per sub_knowledge area per question
+    Median_point = median(true_points, na.rm = TRUE), # Median score per sub_knowledge area per question
+    IQR_point = IQR(true_points, na.rm = TRUE),       # Interquartile Range per sub_knowledge area per question
+    Total_Attempts = n(),                             # Total number of attempts per sub_knowledge area per question
+    .groups = 'drop'                                  # Ensure the data is no longer grouped after summarization
+  )
+
+# View the results
+summary(sub_knowledge_points)
+
+# View the first few rows of the resulting dataframe
+
+
+```
+
+
+###Visulization
+Overview distribution
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(patchwork)
+
+# Ensure actual_score is numeric
+merged_data$actual_score <- as.numeric(as.character(merged_data$actual_score))
+
+# Convert necessary columns to factors if they are not numeric
+merged_data$title_ID <- as.factor(merged_data$title_ID)
+merged_data$state <- as.factor(merged_data$state)
+merged_data$method <- as.factor(merged_data$method)
+merged_data$class <- as.factor(merged_data$class)
+merged_data$sex <- as.factor(merged_data$sex)
+merged_data$major <- as.factor(merged_data$major)
+merged_data$age <- as.numeric(as.character(merged_data$age))
+
+# Plot distributions
+p1 <- ggplot(merged_data, aes(x = title_ID)) +
+  geom_bar(fill = 'steelblue', color = 'black') +
+  labs(title = 'Questions', x = 'Title ID', y = 'Frequency') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+
+p2 <- ggplot(merged_data, aes(x = actual_score)) +
+  geom_histogram(binwidth = 1, fill = 'steelblue', color = 'black') +
+  labs(title = 'Actual Scores', x = 'Actual Score', y = 'Frequency')
+
+p3 <- ggplot(merged_data, aes(x = state)) +
+  geom_bar(fill = 'steelblue', color = 'black') +
+  labs(title = 'State', x = 'State', y = 'Frequency') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+
+p4 <- ggplot(merged_data, aes(x = major)) +
+  geom_bar(fill = 'steelblue', color = 'black') +
+  labs(title = 'Major', x = 'Major', y = 'Frequency') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+
+p5 <- ggplot(merged_data, aes(x = age)) +
+  geom_histogram(binwidth = 1, fill = 'steelblue', color = 'black') +
+  labs(title = 'Age', x = 'Age', y = 'Frequency')
+
+p6 <- ggplot(merged_data, aes(x = class)) +
+  geom_bar(fill = 'steelblue', color = 'black') +
+  labs(title = 'Class', x = 'Class', y = 'Frequency') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+
+p7 <- ggplot(merged_data, aes(x = sex)) +
+  geom_bar(fill = 'steelblue', color = 'black') +
+  labs(title = 'Sex', x = 'Sex', y = 'Frequency')
+
+# Combine the plots into one layout
+combined_plot <- (p1 | p2 | p3) / (p4 | p5 | p6 | p7)
+
+# Display the combined plot
+print(combined_plot)
+
+
+```
+
+
+
+Visualize points for Each Knowledge Area per Question
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+
+# Check the column names in knowledge_points
+colnames(knowledge_points)
+
+# Ensure that 'true_points' column is numeric
+knowledge_points <- knowledge_expanded %>%
+  mutate(true_points = as.numeric(true_points))
+
+# Reorder title_ID based on knowledge
+knowledge_points <- knowledge_points %>%
+  mutate(title_ID = factor(title_ID, levels = unique(title_ID[order(knowledge)])))
+
+# Create the box plot
+p2 <- ggplot(knowledge_points, aes(x = title_ID, y = true_points, fill = knowledge)) +
+  geom_boxplot() +
+  labs(title = "Score Distribution per Knowledge Area per Question", x = "Question ID", y = "Score") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 8)) +
+  scale_fill_brewer(palette = "Set3")
+
+# Print plot
+print(p2)
+
+```
+```{r}
+# Ensure that 'true_points' column is numeric in knowledge_points
+knowledge_points <- knowledge_points %>%
+  mutate(true_points = as.numeric(true_points))
+
+# Get the number of unique sub_knowledge levels
+num_sub_knowledge_levels <- length(unique(knowledge_points$sub_knowledge))
+
+# Create a custom color palette using RColorBrewer's Set3 and extend it if needed
+library(RColorBrewer)
+if (num_sub_knowledge_levels <= 12) {
+  custom_colors <- brewer.pal(num_sub_knowledge_levels, "Set3")
+} else {
+  custom_colors <- colorRampPalette(brewer.pal(12, "Set3"))(num_sub_knowledge_levels)
+}
+
+# Create the box plot with knowledge on x-axis, filled by sub_knowledge with custom colors
+p_knowledge_subknowledge_custom <- ggplot(knowledge_points, aes(x = knowledge, y = true_points, fill = sub_knowledge)) +
+  geom_boxplot() +
+  labs(title = "Score Distribution per Knowledge Area", x = "Knowledge Area", y = "Score") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 8)) +
+  scale_fill_manual(values = custom_colors)
+
+# Print plot
+print(p_knowledge_subknowledge_custom)
+
+```
+```{r}
+
+colnames(knowledge_expanded)
+
+knowledge_expanded <- knowledge_expanded %>%
+  mutate(attempts = 1)  # if each row represents an attempt
+
+# Aggregate data to count attempts per question and knowledge area
+attempt_counts <- knowledge_expanded %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(attempt_count = sum(attempts)) %>%
+  ungroup()
+
+# Convert data to wide format for heatmap
+attempt_counts_wide <- attempt_counts %>%
+  pivot_wider(names_from = knowledge, values_from = attempt_count, values_fill = 0)
+
+# Normalize the data
+attempt_counts_matrix <- as.matrix(attempt_counts_wide[, -1])
+rownames(attempt_counts_matrix) <- attempt_counts_wide$title_ID
+normalized_attempt_counts <- scale(attempt_counts_matrix)
+
+# Create heatmap using heatmaply
+heatmaply(normalized_attempt_counts,
+          Colv = NA,
+          seriate = "none",
+          colors = Blues,
+          k_row = 5,
+          margins = c(NA, 200, 60, NA),
+          fontsize_row = 4,
+          fontsize_col = 5,
+          main = "Distribution of Attempt Counts per Knowledge Area per Question",
+          xlab = "Knowledge Areas",
+          ylab = "Question IDs"
+)
+
+```
+
+
+
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# Expand rows for questions with multiple knowledge groups
+knowledge_expanded <- merged_data %>%
+  separate_rows(knowledge, sep = ",") %>%
+  mutate(knowledge = str_trim(knowledge))
+
+# Calculate the count of questions for each knowledge area
+knowledge_counts <- knowledge_expanded %>%
+  group_by(knowledge) %>%
+  summarise(count = n(), .groups = 'drop')
+
+# Calculate the total number of questions
+total_questions <- nrow(merged_data)
+
+# Calculate the percentage of questions for each knowledge area
+knowledge_percentages <- knowledge_counts %>%
+  mutate(percentage = count / total_questions * 100)
+
+# Check the calculated percentages
+print(knowledge_percentages)
+
+```
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# Ensure 'knowledge' is a factor
+knowledge_expanded$knowledge <- as.factor(knowledge_expanded$knowledge)
+
+# Calculate the count of questions for each knowledge area
+knowledge_counts <- knowledge_expanded %>%
+  group_by(knowledge) %>%
+  summarise(count = n(), .groups = 'drop')
+
+# Calculate the total number of questions
+total_questions <- nrow(merged_data)
+
+# Calculate the percentage of questions for each knowledge area
+knowledge_percentages <- knowledge_counts %>%
+  mutate(percentage = count / total_questions * 100)
+
+# Add percentage labels to the data frame
+knowledge_percentages <- knowledge_percentages %>%
+  mutate(label = paste0(round(percentage, 1), "%"))
+
+# Pie chart for knowledge percentages with percentage labels
+p_knowledge_pie <- ggplot(knowledge_percentages, aes(x = "", y = percentage, fill = knowledge)) +
+  geom_bar(stat = "identity", width = 1, color = 'black') +
+  coord_polar(theta = "y") +
+  labs(title = 'Percentage of Questions per Knowledge Area') +
+  theme_void() +
+  scale_fill_brewer(palette = "Set3") +
+  geom_text(aes(label = label), position = position_stack(vjust = 0.5), size = 1.5, color = "black")
+
+# Print pie chart
+print(p_knowledge_pie)
+
+
+
+```
+
