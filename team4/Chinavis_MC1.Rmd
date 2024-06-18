@@ -38,7 +38,7 @@ For this analysis, we will use the following packages from CRAN.
 [`visNetwork`](https://cran.r-project.org/web/packages/factoextra/readme/README.html#:~:text=The%20R%20package%20factoextra%20has,data%20visualization%20with%20less%20typing.) - Extract and Visualize the Results of Multivariate Data Analyses. [`ggasym`](https://ggobi.github.io/ggally/) Extension of `ggplot2` by adding several functions to reduce the complexity of combining geometric objects with transformed data. [`igraph`](https://ggobi.github.io/ggally/) Extension of `ggplot2` by adding several functions to reduce the complexity of combining geometric objects with transformed data.
 
 ```{r}
-pacman::p_load(dplyr,tidyr,stringr,readr,fs,purrr,ggplot2, plotly, ggstatsplot,igraph,lubridate,hms, vcd)
+pacman::p_load(dplyr,tidyr,stringr,readr,fs,purrr,ggplot2, plotly, ggstatsplot,igraph,lubridate,hms, tidyverse)
 ```
 
 ```{r}
@@ -107,6 +107,7 @@ print(students_multiple_classes)
 ```{r}
 #remove index column
 #df_StudentRecord <- df_StudentRecord %>% select(-1)
+
 df_TitleInfo <- df_TitleInfo %>% select(-1)
 df_StudentInfo <- df_StudentInfo %>% select(-1)
 
@@ -197,12 +198,22 @@ If student get partially correct, award 1 point, if student get abosultely corre
 
 ```{r}
 
-merged_data <- merged_data %>%
-  mutate(true_points = case_when(
-    state == "Absolutely_Correct" ~ 2,
-    state == "Partially_Correct" ~ question_score / actual_score,
-    TRUE ~ -1
-  )) 
+adjusted_scores <- merged_data %>%
+  group_by(student_ID, title_ID, knowledge,class) %>%
+  summarise(
+    unique_methods = n_distinct(method),
+    total_points = sum(case_when(
+      state == "Absolutely_Correct" ~ 2,
+      state == "Partially_Correct" ~ actual_score/question_score,
+      TRUE ~ -1
+    )),
+    attempts = n(),
+    .groups = 'drop'
+  ) %>%
+  mutate(
+    method_bonus = (unique_methods - 1) * 0.5,
+    adjusted_total_points = total_points + method_bonus
+  )
 
 # Expand rows for questions with multiple knowledge groups
 knowledge_expanded <- merged_data %>%
@@ -219,9 +230,9 @@ never_absolutely_correct <- knowledge_expanded %>%
   filter(never_absolutely_correct)
 
 # Calculate knowledge mastery scores for each student
-knowledge_mastery <- knowledge_expanded %>%
+knowledge_mastery <- adjusted_scores %>%
   group_by(student_ID, class, knowledge) %>%
-  summarise(average_score = mean(true_points), .groups = 'drop') %>%
+  summarise(average_score = mean(adjusted_total_points / attempts, na.rm = TRUE), .groups = 'drop') %>%
   left_join(df_StudentInfo %>% select(student_ID, sex, age, major), by = "student_ID") %>%
   mutate(age = as.character(age))
 
@@ -245,278 +256,6 @@ percentage_correct <- merged_data %>%
 
 # Save processed dataset
 saveRDS(percentage_correct, file = "percentage_correct.RDS")
-
-
-```
-
-
-
-```{r}
-
-# Identify students who have never gotten a title_ID Absolutely Correct
-never_absolutely_correct <- merged_data %>%
-  group_by(student_ID, title_ID) %>%
-  summarise(
-    never_absolutely_correct = all(state != "Absolutely_Correct"),
-    .groups = 'drop'
-  ) %>%
-  filter(never_absolutely_correct)
-
-```
-
-```{r}
-saveRDS(merged_data, "merged_data_df.rds")
-#merged_data <- readRDS("merged_data_df.rds")
-```
-
-```{r}
-summary (merged_data)
-```
-
-```{r}
-df_StudentRecord_duplicate <- merged_data %>%
-  group_by(student_ID, title_ID) %>%
-  arrange(student_ID, title_ID, time) %>%
-  mutate(cumulative_correct = cumsum(state == "Absolutely_Correct")) %>%
-  filter(cumulative_correct <= 1) %>%
-  ungroup() %>%
-  select(-cumulative_correct)
-
-```
-
-## Assign Points and Calculate Weighted Scores
-
-Calculate the total points and weighted score for each student per title, and then compute the overall performance for each student.
-
-```{r}
-
-# Calculate total points and number of attempts for each student per title
-attempt_scores <- merged_data %>%
-  group_by(student_ID, title_ID) %>%
-  summarise(total_points = sum(points),
-            attempts = n(),
-            .groups = 'drop')
-
-# Calculate the weighted score by dividing total points by number of attempts
-attempt_scores <- attempt_scores %>%
-  mutate(weighted_score = total_points / attempts)
-
-# Calculate the overall weighted score for each student
-overall_weighted_score <- attempt_scores %>%
-  group_by(student_ID) %>%
-  summarise(overall_weighted_score = mean(weighted_score, na.rm = TRUE), .groups = 'drop')
-
-# Calculate the completion rate for each student (number of titles attempted)
-completion_rate <- merged_data %>%
-  group_by(student_ID) %>%
-  summarise(titles_attempted = n_distinct(title_ID), .groups = 'drop')
-
-# Merge all metrics
-student_performance <- overall_weighted_score %>%
-  left_join(completion_rate, by = "student_ID") %>%
-  left_join(df_StudentInfo %>% select(student_ID, major), by = "student_ID") %>%
-  left_join(merged_data %>% select(student_ID, class) %>% distinct(), by = "student_ID") %>%
-  filter (titles_attempted > 7) ## There are only 2 students who attempted 1 question, we will remove them from the analysis
-
-
-```
-
-```{r}
-check_partially <- merged_data %>%
-  filter (state == "Partially_Correct")
-
-print(unique(check_partially$actual_score))
-```
-
-## Assign True Points and Calculate Weighted Scores
-
-```{r}
-
-# Calculate total points and number of attempts for each student per title
-attempt_scores_true <- merged_data %>%
-  group_by(student_ID, title_ID) %>%
-  summarise(total_points = sum(true_points),
-            attempts = n(),
-            .groups = 'drop')
-
-# Calculate the weighted score by dividing total points by number of attempts
-attempt_scores_true <- attempt_scores_true %>%
-  mutate(weighted_score = total_points / attempts)
-
-# Calculate the overall weighted score for each student
-overall_weighted_score_true <- attempt_scores_true %>%
-  group_by(student_ID) %>%
-  summarise(overall_weighted_score = mean(weighted_score, na.rm = TRUE), .groups = 'drop')
-
-# Calculate the completion rate for each student (number of titles attempted)
-completion_rate_true <- merged_data %>%
-  group_by(student_ID) %>%
-  summarise(titles_attempted = n_distinct(title_ID), .groups = 'drop')
-
-# Merge all metrics
-student_performance_true <- overall_weighted_score %>%
-  left_join(completion_rate_true, by = "student_ID") %>%
-  left_join(df_StudentInfo %>% select(student_ID, major), by = "student_ID") %>%
-  left_join(merged_data %>% select(student_ID, class) %>% distinct(), by = "student_ID") %>%
-  filter (titles_attempted > 7) ## There are only 2 students who attempted 1 question, we will remove them from the analysis
-
-
-```
-
-## Calculate Performance Metrics
-
-Determine the performance metrics for each student within each domain.
-
-```{r}
-
-# Calculate the total points and number of attempts for each student per title in each domain
-attempt_scores_domain <- merged_data %>%
-  group_by(domain, student_ID, title_ID) %>%
-  summarise(total_points = sum(points),
-            attempts = n(),
-            .groups = 'drop')
-
-# Calculate the weighted score by dividing total points by number of attempts for each domain
-attempt_scores_domain <- attempt_scores_domain %>%
-  mutate(weighted_score = total_points / attempts)
-
-# Calculate the overall weighted score for each student within each domain
-overall_weighted_score_domain <- attempt_scores_domain %>%
-  group_by(domain, student_ID) %>%
-  summarise(overall_weighted_score = mean(weighted_score, na.rm = TRUE), .groups = 'drop')
-
-# Calculate the completion rate for each student within each domain (number of titles attempted)
-completion_rate_domain <- merged_data %>%
-  group_by(domain, student_ID) %>%
-  summarise(titles_attempted = n_distinct(title_ID), .groups = 'drop')
-
-# Merge all metrics for each domain
-student_performance_domain <- overall_weighted_score_domain %>%
-  left_join(completion_rate_domain, by = c("domain", "student_ID"))
-
-```
-
-Determine the True_Score performance metrics for each student within each domain.
-
-```{r}
-
-# Calculate the total points and number of attempts for each student per title in each domain
-attempt_scores_domain_true <- merged_data %>%
-  group_by(domain, student_ID, title_ID) %>%
-  summarise(total_points = sum(true_points),
-            attempts = n(),
-            .groups = 'drop')
-
-# Calculate the weighted score by dividing total points by number of attempts for each domain
-attempt_scores_domain_true <- attempt_scores_domain_true %>%
-  mutate(weighted_score = total_points / attempts,
-         Never_correct = case_when(
-           total_points == -attempts ~ "yes",
-           TRUE ~ "no"
-         ))
-
-# Calculate the overall weighted score for each student within each domain
-overall_weighted_score_domain_true <- attempt_scores_domain_true %>%
-  group_by(domain, student_ID) %>%
-  summarise(overall_mean_score = mean(total_points, na.rm = TRUE), .groups = 'drop')
-
-# Calculate the completion rate for each student within each domain (number of titles attempted)
-completion_rate_domain <- merged_data %>%
-  group_by(domain, student_ID) %>%
-  summarise(titles_attempted = n_distinct(title_ID), .groups = 'drop')
-
-# Merge all metrics for each domain
-student_performance_domain <- overall_weighted_score_domain_true %>%
-  left_join(completion_rate_domain, by = c("domain", "student_ID"))
-
-```
-
-## Identify Students with Mastery in Each Domain
-
-Define mastery criteria and identify students who have attained mastery in each domain.
-
-```{r}
-
-# Determine high knowledge students within each domain based on the top 25% of the overall weighted score
-high_knowledge_threshold_domain <- student_performance_domain %>%
-  group_by(domain) %>%
-  summarise(threshold = quantile(overall_mean_score, 0.75), .groups = 'drop')
-
-# Merge the threshold back with the performance data
-student_performance_domain <- student_performance_domain %>%
-  left_join(high_knowledge_threshold_domain, by = "domain")
-
-# Identify high knowledge students within each domain
-high_knowledge_students_domain <- student_performance_domain %>%
-  filter(overall_mean_score >= threshold)
-
-# Calculate the percentage of correct answers for each student within each domain
-correct_answers_domain <- merged_data %>%
-  filter(state == "Absolutely_Correct") %>%
-  group_by(domain, student_ID) %>%
-  summarise(correct_count = n(), .groups = 'drop')
-
-total_answers_domain <- merged_data %>%
-  group_by(domain, student_ID) %>%
-  summarise(total_count = n(), .groups = 'drop')
-
-correct_percentage_domain <- correct_answers_domain %>%
-  left_join(total_answers_domain, by = c("domain", "student_ID")) %>%
-  mutate(correct_percentage = correct_count / total_count)
-
-# Merge correct percentage with high knowledge students within each domain
-high_knowledge_students_domain <- high_knowledge_students_domain %>%
-  left_join(correct_percentage_domain, by = c("domain", "student_ID"))
-
-# Identify high knowledge students with low correct percentage (e.g., below 50%) within each domain
-low_correct_students_domain <- high_knowledge_students_domain %>%
-  filter(correct_percentage < 0.5)
-
-```
-
-```{r}
-
-low_correct_students_domain_id <- low_correct_students_domain$student_ID
-
-tough_qns <- attempt_scores_domain_true %>%
-  filter (student_ID %in% low_correct_students_domain_id) %>%
-  filter (Never_correct == "yes")
-
-tough_details <- df_TitleInfo %>%
-  filter (title_ID %in% tough_qns$title_ID)
-
-```
-
-```{r}
-
-# - high_knowledge_students_domain: high mastery students in each domain
-# - merged_data: merged data of student records and question info
-
-# Filter merged_data for high mastery students
-high_mastery_attempts <- merged_data %>%
-  inner_join(high_knowledge_students_domain %>% select(student_ID, domain), by = c("student_ID", "domain"))
-
-# Identify questions never answered correctly by high mastery students within each domain
-questions_never_correct <- high_mastery_attempts %>%
-  group_by(domain, title_ID) %>%
-  summarise(never_correct = all(state != "Absolutely_Correct"), .groups = 'drop') %>%
-  filter(never_correct)
-
-# Extract the title_IDs
-titles_never_correct <- questions_never_correct %>% select(domain, title_ID)
-
-# Display the title_IDs that were never answered correctly by high mastery students
-print(titles_never_correct)
-
-# Optional: Display additional details about these titles if needed
-detailed_questions_never_correct <- merged_data %>%
-  filter(title_ID %in% titles_never_correct$title_ID) %>%
-  group_by(domain, title_ID) %>%
-  summarise(incorrect_count = sum(state != "Absolutely_Correct"), .groups = 'drop') %>%
-  arrange(desc(incorrect_count))
-
-print(detailed_questions_never_correct)
-
 
 ```
 
@@ -727,5 +466,149 @@ bottom_percentage_never_correct <- knowledge_expanded %>%
     diff <- comparison_data %>% 
       filter(type_of_student == "low_mastery") %>%
       mutate(x_pos = percentage + (-diff/2)) 
+
+```
+
+### NEW ANALYSIS
+
+```{r}
+
+calculate_threshold_scores <- function(knowledge_mastery, threshold) {
+  percentile <- as.numeric(sub("%", "", threshold)) / 100
+  threshold_scores <- knowledge_mastery %>%
+    group_by(knowledge) %>%
+    summarise(threshold_score = quantile(average_score, percentile, na.rm = TRUE))
+}
+
+get_high_mastery_students <- function(knowledge_mastery, threshold_scores) {
+  high_mastery_students <- knowledge_mastery %>%
+    inner_join(threshold_scores, by = "knowledge") %>%
+    filter(average_score > threshold_score) %>%
+    ungroup()
+  return(high_mastery_students)
+}
+
+get_low_mastery_students <- function(knowledge_mastery, low_threshold_scores) {
+  low_mastery_students <- knowledge_mastery %>%
+    inner_join(low_threshold_scores, by = "knowledge") %>%
+    filter(average_score < threshold_score) %>%
+    ungroup()
+  return(low_mastery_students)
+}
+
+threshold_scores <- calculate_threshold_scores(knowledge_mastery, "99%")
+    
+high_mastery_students <- get_high_mastery_students(knowledge_mastery, threshold_scores)
+
+low_threshold_scores <- calculate_threshold_scores(knowledge_mastery, "1%")
+
+```
+
+```{r}
+
+high_mastery_incorrect <- merged_data %>%
+  filter(student_ID %in% high_mastery_students$student_ID) %>%
+  filter(state != "Absolutely_Correct") %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(incorrect_count = n(),
+            total_attempts = n_distinct(student_ID),
+            incorrect_percentage = incorrect_count / total_attempts * 100,
+            .groups = 'drop')
+
+# Plot: Incorrect Attempts by High Mastery Students
+ggplot(high_mastery_incorrect, aes(x = knowledge, y = title_ID, fill = incorrect_percentage)) +
+  geom_tile() +
+  scale_fill_gradient(low = "lightblue", high = "red") +
+  theme_minimal() +
+  labs(title = "Incorrect Attempts by High Mastery Students", x = "Knowledge Group", y = "Title ID", fill = "Incorrect %")
+
+
+
+```
+
+```{r}
+
+# Data Cleaning and Preparation
+method_impact <- adjusted_scores %>%
+  group_by(unique_methods) %>%
+  summarise(average_score = mean(adjusted_total_points / attempts, na.rm = TRUE), .groups = 'drop')
+
+# Plot: Method Usage Impact
+plot4 <- ggplot(method_impact, aes(x = factor(unique_methods), y = average_score)) +
+  geom_bar(stat = "identity", fill = "lightblue") +
+  theme_minimal() +
+  labs(title = "Impact of Method Usage on Mastery Scores", x = "Unique Methods Used", y = "Average Adjusted Score")
+
+plotly::ggplotly(plot4)
+
+```
+
+```{r}
+
+# Data Cleaning and Preparation
+library(ltm)
+
+irt_data <- adjusted_scores %>%
+  mutate(correct = ifelse(adjusted_total_points > 0, 1, 0))
+
+# Fit IRT model
+irt_model <- ltm(correct ~ z1, data = irt_data)
+
+# Plot: Item Characteristic Curves
+plot5 <- plot(irt_model, type = "ICC", lwd = 2, col = c("blue", "red", "green"))
+
+plotly::ggplotly(plot5)
+
+```
+
+```{r}
+reliability_data <- adjusted_scores %>%
+  select(student_ID, title_ID, adjusted_total_points) %>%
+  spread(title_ID, adjusted_total_points, fill = NA)
+
+# Calculate Cronbach's alpha
+cronbach_alpha <- alpha(reliability_data)
+
+# Display Result
+print(cronbach_alpha)
+
+
+```
+
+```{r}
+# Data Cleaning and Preparation
+distractor_analysis <- adjusted_scores %>%
+  filter(attempts > 0) %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(distractor_count = n(), .groups = 'drop')
+
+# Plot: Distractor Analysis
+plot7 <- ggplot(distractor_analysis, aes(x = knowledge, y = title_ID, fill = distractor_count)) +
+  geom_tile() +
+  scale_fill_gradient(low = "yellow", high = "red") +
+  theme_minimal() +
+  labs(title = "Distractor Analysis", x = "Knowledge Group", y = "Title ID", fill = "Distractor Count")
+
+plotly::ggplotly(plot7)
+
+
+
+```
+
+```{r}
+
+# Data Cleaning and Preparation
+biserial_data <- adjusted_scores %>%
+  filter(student_ID %in% high_mastery_students$student_ID) %>%
+  group_by(title_ID) %>%
+  summarise(biserial_correlation = biserial.cor(adjusted_total_points, as.numeric(adjusted_total_points > 0)), .groups = 'drop')
+
+# Plot: Biserial Correlation
+plot8 <- ggplot(biserial_data, aes(x = reorder(title_ID, biserial_correlation), y = biserial_correlation)) +
+  geom_bar(stat = "identity", fill = "purple") +
+  theme_minimal() +
+  labs(title = "Biserial Correlation", x = "Title ID", y = "Biserial Correlation")
+
+plotly::ggplotly(plot8)
 
 ```
