@@ -1,0 +1,423 @@
+---
+title: "Take Home Exercise 3: Learning Behavior Patterns Analysis"
+author: "Wang Yuhui"
+date: "June 2, 2024"
+date-modified: "last-modified"
+execute: 
+  warning: false
+  freeze: true
+---
+
+```{r}
+#| code-fold: true
+#| code-summary: "show the code"
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(lubridate)
+library(cluster)
+library(factoextra)
+library(fmsb)
+library(reshape2)
+library(networkD3)
+library(ggalluvial)
+library(fastDummies)
+```
+
+# 1 Objective
+
+Mine **personalized learning behavior patterns** based on **learners' characteristics**.
+
+Design and present **learners' profiles** from various perspectives, including:
+
+**-peak answering hours,**
+
+**-preferred question types,**
+
+**-correct answering rates, etc.**
+
+# 2 Data Preparation
+
+## 2.1 Data Observation
+
+first, we merge all the submission record.
+
+```{r}
+#| code-fold: true
+#| code-summary: "show the code"
+file1 <- "data/Data_SubmitRecord/SubmitRecord-Class1.csv"
+file2 <- "data/Data_SubmitRecord/SubmitRecord-Class2.csv"
+file3 <- "data/Data_SubmitRecord/SubmitRecord-Class3.csv"
+file4 <- "data/Data_SubmitRecord/SubmitRecord-Class4.csv"
+file5 <- "data/Data_SubmitRecord/SubmitRecord-Class5.csv"
+file6 <- "data/Data_SubmitRecord/SubmitRecord-Class6.csv"
+file7 <- "data/Data_SubmitRecord/SubmitRecord-Class7.csv"
+file8 <- "data/Data_SubmitRecord/SubmitRecord-Class8.csv"
+file9 <- "data/Data_SubmitRecord/SubmitRecord-Class9.csv"
+file10 <- "data/Data_SubmitRecord/SubmitRecord-Class10.csv"
+file11 <- "data/Data_SubmitRecord/SubmitRecord-Class11.csv"
+file12 <- "data/Data_SubmitRecord/SubmitRecord-Class12.csv"
+file13 <- "data/Data_SubmitRecord/SubmitRecord-Class13.csv"
+file14 <- "data/Data_SubmitRecord/SubmitRecord-Class14.csv"
+file15 <- "data/Data_SubmitRecord/SubmitRecord-Class15.csv"
+
+# 读取 CSV 文件
+data1 <- read.csv(file1)
+data2 <- read.csv(file2)
+data3 <- read.csv(file3)
+data4 <- read.csv(file4)
+data5 <- read.csv(file5)
+data6 <- read.csv(file6)
+data7 <- read.csv(file7)
+data8 <- read.csv(file8)
+data9 <- read.csv(file9)
+data10 <- read.csv(file10)
+data11 <- read.csv(file11)
+data12 <- read.csv(file12)
+data13 <- read.csv(file13)
+data14 <- read.csv(file14)
+data15 <- read.csv(file15)
+
+submit_data <- bind_rows(data1, data2, data3, data4, data5, data6, data7, data8, data9, data10, data11, data12, data13, data14, data15,)
+
+head(submit_data)
+write.csv(submit_data, "data/submit_data.csv", row.names = FALSE)
+```
+
+Now we have 3 data sets in total, which are:
+
+-   Student information data
+
+-   Question title information
+
+-   Submission record information
+
+```{r}
+#| code-fold: true
+#| code-summary: "Show the code"
+stu_info <- read.csv('data/Data_Studentinfo.csv')
+tit_info <- read.csv('data/Data_Titleinfo.csv')
+sub_info <- read.csv('data/submit_data.csv')
+summary(stu_info)
+summary(tit_info)
+summary(sub_info)
+```
+
+## 2.2 Data Clean
+
+### 2.2.1 Missing Value
+
+First, we check if there is missing value in these 3 data sets.
+
+```{r}
+#| code-fold: true
+#| code-summary: "show the code"
+missing_values1 <- colSums(is.na(stu_info))
+print(missing_values1)
+
+missing_values2 <- colSums(is.na(tit_info))
+print(missing_values2)
+
+missing_values3 <- colSums(is.na(sub_info))
+print(missing_values3)
+```
+
+### 2.2.2 Outliers
+
+There is no missing value in all 3 data sets. Now we see if there are outliers. :
+
+::: panel-tabset
+## state
+
+```{r}
+#| code-fold: true
+#| code-summary: "show the code"
+unique_state <- unique(sub_info$state)
+print(unique_state)
+```
+
+## class
+
+```{r}
+#| code-fold: true
+#| code-summary: "show the code"
+unique_class <- unique(sub_info$class)
+print(unique_class)
+```
+
+## time consume
+
+```{r}
+#| code-fold: true
+#| code-summary: "show the code"
+unique_timeconsume <- unique(sub_info$timeconsume) 
+print(unique_timeconsume)
+```
+:::
+
+For outliers "�������" , simply remove it.
+
+```{r}
+valid_states <- c("Absolutely_Correct", "Absolutely_Error", "Error1", "Error2", "Error3", "Error4", "Error6", "Error7", "Error8", "Error9", "Partially_Correct")
+
+# 过滤数据，只保留 state 列中包含指定值的行
+sub_info <- sub_info %>%
+  filter(state %in% valid_states)
+unique(sub_info$state)
+```
+
+For outliers "class" , replace with the highest frequency of the corresponding student_ID.
+
+```{r}
+replace_class <- function(df) {
+  df$class <- as.character(df$class)
+  
+  class_indices <- which(df$class == 'class')
+  
+  for (index in class_indices) {
+    student_id <- df$student_ID[index]
+    student_classes <- df$class[df$student_ID == student_id & df$class != 'class']
+    class_counts <- table(student_classes)
+    
+    if (length(class_counts) > 0) {
+      most_common_class <- names(which.max(class_counts))
+      df$class[index] <- most_common_class
+    }
+  }
+  
+  return(df)
+}
+sub_info <- replace_class(sub_info)
+unique(sub_info$class)
+```
+
+For outliers '-' and '--', remove the corresponding rows.
+
+```{r}
+sub_info <- sub_info %>%
+  filter(!(timeconsume %in% c('-', '--')))
+unique(sub_info$timeconsume)
+```
+
+Save the dataset and name it 'sub_info.csv'
+
+```{r}
+write.csv(sub_info, 'data/sub_info.csv', row.names = FALSE)
+head(sub_info)
+```
+
+### 2.2.3 Convert datetime
+
+The time span is from August 31, 2023 to January 25, 2024, a total of 148 days. However, the content in column 'time' is actually in seconds. So we need to convert to datetime.
+
+```{r}
+sub_info <- sub_info %>%
+  mutate(day = wday(as.POSIXct(time, origin = "1970-01-01", tz = "UTC"), week_start = 1))
+unique(sub_info$day)
+```
+
+### 2.2.4 Match the unique title_ID with unique knowledge
+
+From the code below we can see some titles match multiple knowledge
+
+```{r}
+title_knowledge_check <- tit_info %>%
+  group_by(title_ID) %>%
+  summarise(knowledge_count = n_distinct(knowledge)) %>%
+  filter(knowledge_count > 1)
+
+print(title_knowledge_check)
+```
+
+Since we don't know when the students submit the questions, which knowledge they actually focus on, so we use the probability to match the knowledge.
+
+```{r}
+title_knowledge_count <- tit_info %>%
+  group_by(title_ID) %>%
+  summarise(knowledge_list = list(unique(knowledge))) %>%
+  mutate(knowledge = sapply(knowledge_list, function(x) ifelse(length(x) > 0, x[1], NA)),
+         knowledge1 = sapply(knowledge_list, function(x) ifelse(length(x) > 1, x[2], NA))) %>%
+  select(-knowledge_list)
+
+# 合并知识信息到sub_info
+set.seed(123) # 确保结果可重复
+sub_info <- sub_info %>%
+  left_join(title_knowledge_count, by = "title_ID") %>%
+  rowwise() %>%
+  mutate(knowledge = ifelse(!is.na(knowledge1), 
+                            sample(c(knowledge, knowledge1), 1), 
+                            knowledge)) %>%
+  ungroup() %>%
+  select(-knowledge1)
+
+# 查看处理后的数据框前几行
+head(sub_info)
+```
+
+Finally, we need to calculate the average answering correct rate and average consuming time for each student.
+
+```{r}
+sub_info <- sub_info %>%
+  left_join(tit_info %>% select(title_ID, score), by = "title_ID")
+sub_info <- sub_info %>%
+  mutate(rate = score.x / score.y) %>%
+  select(-score.x, -score.y)
+
+head(sub_info)
+write.csv(sub_info,'data/sub_info.csv',row.names = FALSE)
+```
+
+### 2.2.5 Final data
+
+Now we merged with student information and rearrange the column for the further analysis.
+
+```{r}
+# 计算每个学生的平均rate
+avg_rate <- sub_info %>%
+  group_by(student_ID) %>%
+  summarise(average_rate = mean(rate, na.rm = TRUE))
+
+# 将day中的1 2 3 4 5计为'week'，6 7计为'weekend'
+sub_info <- sub_info %>%
+  mutate(week_category = ifelse(day %in% 1:5, "week", "weekend"))
+
+# 计算每个学生每种knowledge的百分比
+knowledge_percentage <- sub_info %>%
+  group_by(student_ID, knowledge) %>%
+  summarise(counts = n()) %>%
+  ungroup() %>%
+  group_by(student_ID) %>%
+  mutate(total_counts = sum(counts),
+         percentage = counts / total_counts) %>%
+  select(student_ID, knowledge, percentage) %>%
+  spread(key = knowledge, value = percentage, fill = 0)
+
+# 计算每个学生在week和weekend的百分比
+weekend_percentage <- sub_info %>%
+  group_by(student_ID, week_category) %>%
+  summarise(counts = n()) %>%
+  ungroup() %>%
+  group_by(student_ID) %>%
+  mutate(total_counts = sum(counts),
+         percentage = counts / total_counts) %>%
+  select(student_ID, week_category, percentage) %>%
+  spread(key = week_category, value = percentage, fill = 0)
+
+# 合并学生信息和计算结果
+final_data <- stu_info %>%
+  select(-index) %>%
+  left_join(avg_rate, by = "student_ID") %>%
+  left_join(sub_info %>% select(student_ID, -day) %>% distinct(), by = "student_ID") %>%
+  left_join(knowledge_percentage, by = "student_ID") %>%
+  left_join(weekend_percentage, by = "student_ID")
+
+
+# 查看结果
+head(final_data)
+write.csv(final_data, 'data/final_data.csv')
+```
+
+# 3 feature
+
+## 3.1 time
+
+week = 1
+
+weekend = 0
+
+```{r}
+# 读取数据集
+data <- read.csv("data/final_data.csv")
+
+# 创建时间偏好列
+data <- data %>%
+  mutate(time_pre = ifelse(week > weekend, 1, 0))
+
+# 创建新的dataframe
+time <- data %>%
+  select(student_ID, time_pre)
+
+# 查看结果
+head(time)
+```
+
+## 3.2 question
+
+```{r}
+# 读取第二个数据集
+data2 <- read.csv("data/cleaned_data.csv")
+
+# 提取每个学生提交记录中出现频率最高的title
+title_frequency <- data2 %>%
+  group_by(student_ID, title_ID) %>%
+  summarise(frequency = n(), .groups = 'drop') %>%
+  arrange(student_ID, desc(frequency)) %>%
+  distinct(student_ID, .keep_all = TRUE) %>%
+  select(student_ID, title_ID)
+
+# 合并数据框 time 和 title_frequency
+question <- time %>%
+  left_join(title_frequency, by = "student_ID")
+
+# 查看结果
+head(question)
+```
+
+```{r}
+# 读取编码表
+title_encoding <- read.csv("data/title_encode.csv")
+
+# 重命名编码表列
+colnames(title_encoding) <- c("title_ID", "title_pre")
+
+# 合并title_frequency和title_encoding
+title_frequency_encoded <- title_frequency %>%
+  left_join(title_encoding, by = "title_ID") %>%
+  select(student_ID, title_pre)
+
+# 合并数据框 time 和 title_frequency_encoded
+question <- time %>%
+  left_join(title_frequency_encoded, by = "student_ID")
+
+# 查看结果
+head(question)
+```
+
+## 3.3 method
+
+```{r}
+# 提取每个学生提交记录中出现频率最高的title
+method_frequency <- data2 %>%
+  group_by(student_ID, method) %>%
+  summarise(frequency = n(), .groups = 'drop') %>%
+  arrange(student_ID, desc(frequency)) %>%
+  distinct(student_ID, .keep_all = TRUE) %>%
+  select(student_ID, method)
+
+# 合并数据框 time 和 title_frequency
+method <- question %>%
+  left_join(method_frequency, by = "student_ID")
+
+# 查看结果
+head(method)
+```
+
+```{r}
+# 读取编码表
+method_encoding <- read.csv("data/method_encode.csv")
+
+# 重命名编码表列
+colnames(method_encoding) <- c("method", "method_pre")
+
+# 合并title_frequency和title_encoding
+method_frequency_encoded <- method_frequency %>%
+  left_join(method_encoding, by = "method") %>%
+  select(student_ID, method_pre)
+
+# 合并数据框 time 和 title_frequency_encoded
+method <- question %>%
+  left_join(method_frequency_encoded, by = "student_ID")
+
+# 查看结果
+head(method)
+```

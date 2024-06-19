@@ -183,6 +183,10 @@ saveRDS(knowledge_mastery, file = "knowledge_mastery.RDS")
 ```
 
 
+```{r}
+
+```
+
 
 
 
@@ -302,38 +306,47 @@ merged_data$sex <- as.factor(merged_data$sex)
 merged_data$major <- as.factor(merged_data$major)
 merged_data$age <- as.numeric(as.character(merged_data$age))
 
+# Aggregate data by student_ID to ensure unique counts for class, age, sex, and major
+unique_students <- merged_data %>%
+  group_by(student_ID) %>%
+  summarise(class = first(class),
+            age = first(age),
+            sex = first(sex),
+            major = first(major),
+            .groups = 'drop')
+
 # Plot distributions
 p1 <- ggplot(merged_data, aes(x = title_ID)) +
   geom_bar(fill = 'steelblue', color = 'black') +
-  labs(title = 'Questions', x = 'Title ID', y = 'Frequency') +
+  labs(x = 'Title ID', y = 'Frequency') +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
 
 p2 <- ggplot(merged_data, aes(x = actual_score)) +
   geom_histogram(binwidth = 1, fill = 'steelblue', color = 'black') +
-  labs(title = 'Actual Scores', x = 'Actual Score', y = 'Frequency')
+  labs(x = 'Actual Score', y = 'Frequency')
 
 p3 <- ggplot(merged_data, aes(x = state)) +
   geom_bar(fill = 'steelblue', color = 'black') +
-  labs(title = 'State', x = 'State', y = 'Frequency') +
+  labs(x = 'State', y = 'Frequency') +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
 
-p4 <- ggplot(merged_data, aes(x = major)) +
+p4 <- ggplot(unique_students, aes(x = major)) +
   geom_bar(fill = 'steelblue', color = 'black') +
-  labs(title = 'Major', x = 'Major', y = 'Frequency') +
+  labs(x = 'Major', y = 'Counts') +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
 
-p5 <- ggplot(merged_data, aes(x = age)) +
+p5 <- ggplot(unique_students, aes(x = age)) +
   geom_histogram(binwidth = 1, fill = 'steelblue', color = 'black') +
-  labs(title = 'Age', x = 'Age', y = 'Frequency')
+  labs(x = 'Age', y = 'Counts')
 
-p6 <- ggplot(merged_data, aes(x = class)) +
+p6 <- ggplot(unique_students, aes(x = class)) +
   geom_bar(fill = 'steelblue', color = 'black') +
-  labs(title = 'Class', x = 'Class', y = 'Frequency') +
+  labs(x = 'Class', y = 'Counts') +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
 
-p7 <- ggplot(merged_data, aes(x = sex)) +
+p7 <- ggplot(unique_students, aes(x = sex)) +
   geom_bar(fill = 'steelblue', color = 'black') +
-  labs(title = 'Sex', x = 'Sex', y = 'Frequency')
+  labs(x = 'Sex', y = 'Counts')
 
 # Combine the plots into one layout
 combined_plot <- (p1 | p2 | p3) / (p4 | p5 | p6 | p7)
@@ -341,151 +354,31 @@ combined_plot <- (p1 | p2 | p3) / (p4 | p5 | p6 | p7)
 # Display the combined plot
 print(combined_plot)
 
-
-```
-
-
-
-Visualize points for Each Knowledge Area per Question
-```{r}
-# Load necessary libraries
-library(ggplot2)
-library(dplyr)
-
-# Check the column names in knowledge_points
-colnames(knowledge_points)
-
-# Ensure that 'true_points' column is numeric
-knowledge_points <- knowledge_expanded %>%
-  mutate(true_points = as.numeric(true_points))
-
-# Reorder title_ID based on knowledge
-knowledge_points <- knowledge_points %>%
-  mutate(title_ID = factor(title_ID, levels = unique(title_ID[order(knowledge)])))
-
-# Create the box plot
-p2 <- ggplot(knowledge_points, aes(x = title_ID, y = true_points, fill = knowledge)) +
-  geom_boxplot() +
-  labs(title = "Score Distribution per Knowledge Area per Question", x = "Question ID", y = "Score") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 8)) +
-  scale_fill_brewer(palette = "Set3")
-
-# Print plot
-print(p2)
-
-```
-```{r}
-# Ensure that 'true_points' column is numeric in knowledge_points
-knowledge_points <- knowledge_points %>%
-  mutate(true_points = as.numeric(true_points))
-
-# Get the number of unique sub_knowledge levels
-num_sub_knowledge_levels <- length(unique(knowledge_points$sub_knowledge))
-
-# Create a custom color palette using RColorBrewer's Set3 and extend it if needed
-library(RColorBrewer)
-if (num_sub_knowledge_levels <= 12) {
-  custom_colors <- brewer.pal(num_sub_knowledge_levels, "Set3")
-} else {
-  custom_colors <- colorRampPalette(brewer.pal(12, "Set3"))(num_sub_knowledge_levels)
-}
-
-# Create the box plot with knowledge on x-axis, filled by sub_knowledge with custom colors
-p_knowledge_subknowledge_custom <- ggplot(knowledge_points, aes(x = knowledge, y = true_points, fill = sub_knowledge)) +
-  geom_boxplot() +
-  labs(title = "Score Distribution per Knowledge Area", x = "Knowledge Area", y = "Score") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 8)) +
-  scale_fill_manual(values = custom_colors)
-
-# Print plot
-print(p_knowledge_subknowledge_custom)
-
-```
-```{r}
-
-colnames(knowledge_expanded)
-
-knowledge_expanded <- knowledge_expanded %>%
-  mutate(attempts = 1)  # if each row represents an attempt
-
-# Aggregate data to count attempts per question and knowledge area
-attempt_counts <- knowledge_expanded %>%
-  group_by(title_ID, knowledge) %>%
-  summarise(attempt_count = sum(attempts)) %>%
-  ungroup()
-
-# Convert data to wide format for heatmap
-attempt_counts_wide <- attempt_counts %>%
-  pivot_wider(names_from = knowledge, values_from = attempt_count, values_fill = 0)
-
-# Normalize the data
-attempt_counts_matrix <- as.matrix(attempt_counts_wide[, -1])
-rownames(attempt_counts_matrix) <- attempt_counts_wide$title_ID
-normalized_attempt_counts <- scale(attempt_counts_matrix)
-
-# Create heatmap using heatmaply
-heatmaply(normalized_attempt_counts,
-          Colv = NA,
-          seriate = "none",
-          colors = Blues,
-          k_row = 5,
-          margins = c(NA, 200, 60, NA),
-          fontsize_row = 4,
-          fontsize_col = 5,
-          main = "Distribution of Attempt Counts per Knowledge Area per Question",
-          xlab = "Knowledge Areas",
-          ylab = "Question IDs"
-)
-
 ```
 
 
 
 
-```{r}
-# Load necessary libraries
-library(ggplot2)
-library(dplyr)
-library(tidyr)
 
-# Expand rows for questions with multiple knowledge groups
-knowledge_expanded <- merged_data %>%
-  separate_rows(knowledge, sep = ",") %>%
-  mutate(knowledge = str_trim(knowledge))
-
-# Calculate the count of questions for each knowledge area
-knowledge_counts <- knowledge_expanded %>%
-  group_by(knowledge) %>%
-  summarise(count = n(), .groups = 'drop')
-
-# Calculate the total number of questions
-total_questions <- nrow(merged_data)
-
-# Calculate the percentage of questions for each knowledge area
-knowledge_percentages <- knowledge_counts %>%
-  mutate(percentage = count / total_questions * 100)
-
-# Check the calculated percentages
-print(knowledge_percentages)
-
-```
 
 ```{r}
-# Load necessary libraries
-library(ggplot2)
-library(dplyr)
-library(tidyr)
-
 # Ensure 'knowledge' is a factor
 knowledge_expanded$knowledge <- as.factor(knowledge_expanded$knowledge)
 
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+
+# Check the column names in knowledge_expanded
+print(colnames(knowledge_expanded))
+
 # Calculate the count of questions for each knowledge area
 knowledge_counts <- knowledge_expanded %>%
   group_by(knowledge) %>%
   summarise(count = n(), .groups = 'drop')
 
 # Calculate the total number of questions
-total_questions <- nrow(merged_data)
+total_questions <- nrow(knowledge_expanded)
 
 # Calculate the percentage of questions for each knowledge area
 knowledge_percentages <- knowledge_counts %>%
@@ -495,19 +388,432 @@ knowledge_percentages <- knowledge_counts %>%
 knowledge_percentages <- knowledge_percentages %>%
   mutate(label = paste0(round(percentage, 1), "%"))
 
-# Pie chart for knowledge percentages with percentage labels
-p_knowledge_pie <- ggplot(knowledge_percentages, aes(x = "", y = percentage, fill = knowledge)) +
-  geom_bar(stat = "identity", width = 1, color = 'black') +
-  coord_polar(theta = "y") +
-  labs(title = 'Percentage of Questions per Knowledge Area') +
-  theme_void() +
+# Reorder knowledge areas by percentage
+knowledge_percentages <- knowledge_percentages %>%
+  arrange(desc(percentage)) %>%
+  mutate(knowledge = factor(knowledge, levels = knowledge))
+
+# Create a histogram for knowledge percentages with percentage labels
+p_knowledge_histogram <- ggplot(knowledge_percentages, aes(x = knowledge, y = percentage, fill = knowledge)) +
+  geom_bar(stat = "identity", color = 'black') +
+  labs(title = 'Percentage of Knowledge Area', x = 'Knowledge Area', y = 'Percentage') +
   scale_fill_brewer(palette = "Set3") +
-  geom_text(aes(label = label), position = position_stack(vjust = 0.5), size = 1.5, color = "black")
+  geom_text(aes(label = label), vjust = -0.5, size = 3, color = "black") +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.title.x = element_text(size = 14, margin = margin(t = 20)),
+    axis.title.y = element_text(size = 14, margin = margin(r = 20)),
+    plot.title = element_text(size = 16, face = "bold", margin = margin(b = 20)),
+    legend.position = "none"
+  )
 
-# Print pie chart
-print(p_knowledge_pie)
+# Print histogram
+print(p_knowledge_histogram)
 
+```
+```{r}
+
+# Check the column names in knowledge_expanded
+print(colnames(knowledge_expanded))
+
+# Ensure that 'true_points' column is numeric
+knowledge_points <- knowledge_expanded %>%
+  mutate(true_points = as.numeric(true_points))
+
+# Check for missing values
+print(summary(knowledge_points))
+
+# Aggregate the total sum of points by student_ID, title_ID, and knowledge area
+sum_true_points <- knowledge_points %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(total_sum_points = sum(true_points, na.rm = TRUE), .groups = 'drop')
+
+# Aggregate to get the total sum of points for each title_ID and knowledge area
+total_sum_points <- sum_true_points %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(total_sum_points = sum(total_sum_points, na.rm = TRUE), .groups = 'drop')
+
+# Check the aggregated data
+print(head(total_sum_points))
+
+# Create the ridge plot with quantiles and quartiles
+p_ridge_sum_quantiles <- ggplot(total_sum_points, aes(x = total_sum_points, y = knowledge, fill = factor(stat(quantile)))) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE,
+    quantiles = 4,
+    quantile_lines = TRUE
+  ) +
+  scale_fill_viridis_d(name = "Quartiles") +
+  labs(title = "Total Sum Points Distribution per Knowledge Area ", x = "Total Sum Points", y = "Knowledge Area") +
+  theme_ridges() +
+  theme(
+    axis.text.y = element_text(size = 8),
+    axis.title.x = element_text(size = 14, margin = margin(t = 20)),
+    axis.title.y = element_text(size = 14, margin = margin(r = 20)),
+    plot.title = element_text(size = 16, face = "bold", margin = margin(b = 20)),
+    legend.position = "right"
+  )
+
+# Print the ridge plot
+print(p_ridge_sum_quantiles)
+
+```
+
+
+
+```{r}
+
+# Check the column names in knowledge_expanded
+print(colnames(knowledge_expanded))
+
+# Ensure that 'true_points' column is numeric
+knowledge_points <- knowledge_expanded %>%
+  mutate(true_points = as.numeric(true_points))
+
+# Check for missing values
+print(summary(knowledge_points))
+
+# Aggregate the total true points by student_ID, title_ID, and knowledge area
+knowledge_points_agg <- knowledge_points %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(avg_true_points = mean(true_points, na.rm = TRUE), .groups = 'drop')
+
+# Calculate median average points for each knowledge area
+medians <- knowledge_points_agg %>%
+  group_by(knowledge) %>%
+  summarise(median_avg_points = median(avg_true_points), .groups = 'drop')
+
+# Check the aggregated data
+print(head(knowledge_points_agg))
+print(medians)
+
+# Create the box plot for average points distribution by knowledge area
+p4 <- ggplot(knowledge_points_agg, aes(x = knowledge, y = avg_true_points, fill = knowledge)) +
+  geom_boxplot() +
+  geom_point(data = medians, aes(x = knowledge, y = median_avg_points), color = "black", size = 3) +
+  geom_text_repel(data = medians, aes(x = knowledge, y = median_avg_points, label = round(median_avg_points, 2)),
+                  nudge_y = 0.5, size = 3, color = "black") +
+  labs(title = "Students Average Points Distribution by Knowledge Area", x = "Knowledge Area", y = "Average Points") +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 10),
+    axis.title.x = element_text(size = 14, margin = margin(t = 20)),
+    axis.title.y = element_text(size = 14, margin = margin(r = 20)),
+    plot.title = element_text(size = 16, face = "bold", margin = margin(b = 20)),
+    legend.position = "none"
+  ) +
+  scale_fill_brewer(palette = "Set3")
+
+# Print plot
+print(p4)
+
+```
+
+
+Visualize points for Each Knowledge Area per Question
+```{r}
+
+# Check the column names in knowledge_expanded
+print(colnames(knowledge_expanded))
+
+# Ensure that 'true_points' column is numeric
+knowledge_points <- knowledge_expanded %>%
+  mutate(true_points = as.numeric(true_points))
+
+# Check for missing values
+print(summary(knowledge_points))
+
+# Aggregate the total true points by student_ID and title_ID
+knowledge_points_agg <- knowledge_points %>%
+  group_by(student_ID, title_ID) %>%
+  summarise(total_true_points = sum(true_points, na.rm = TRUE)) %>%
+  ungroup()
+
+# Join back with the knowledge data to include the knowledge area
+knowledge_points_agg <- knowledge_points_agg %>%
+  left_join(knowledge_points %>% select(title_ID, knowledge) %>% distinct(), by = "title_ID")
+
+# Check the aggregated data
+print(head(knowledge_points_agg))
+
+# Reorder title_ID based on knowledge
+knowledge_points_agg <- knowledge_points_agg %>%
+  mutate(title_ID = factor(title_ID, levels = unique(title_ID[order(knowledge)])))
+
+# Check levels of title_ID after reordering
+print(levels(knowledge_points_agg$title_ID))
+
+# Create the box plot
+p2 <- ggplot(knowledge_points_agg, aes(x = title_ID, y = total_true_points, fill = knowledge)) +
+  geom_boxplot() +
+  labs(title = "Total Points Distribution per Knowledge Area per Question", x = "Question ID", y = "Total Score") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 8)) +
+  scale_fill_brewer(palette = "Set3")
+
+# Print plot
+print(p2)
 
 
 ```
+
+
+```{r}
+
+# Check the column names in knowledge_expanded
+print(colnames(knowledge_expanded))
+
+# Ensure 'true_points' and 'method' columns are present and numeric if needed
+knowledge_expanded <- knowledge_expanded %>%
+  mutate(true_points = as.numeric(true_points), method = as.numeric(method))
+
+# Aggregate data to calculate the average number of different methods per question and knowledge area
+method_counts <- knowledge_expanded %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(avg_methods = mean(method, na.rm = TRUE), .groups = 'drop')
+
+# Further aggregate to get the average number of methods across all students for each title_ID and knowledge
+method_counts_summary <- method_counts %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(avg_methods = mean(avg_methods, na.rm = TRUE), .groups = 'drop')
+
+# Ensure 'knowledge' is treated as a factor for ggplot2 aesthetics
+method_counts_summary <- method_counts_summary %>%
+  mutate(knowledge = as.factor(knowledge))
+
+# Create the heatmap using ggplot2
+p_heatmap <- ggplot(method_counts_summary, aes(x = knowledge, y = title_ID, fill = avg_methods)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "white", high = "blue", mid = "lightblue", midpoint = 2, limits = c(1, 4), name = "Avg Methods") +
+  labs(title = "Average Number Methods per Knowledge Area per Question",
+       x = "Knowledge Areas",
+       y = "Question IDs",
+       fill = "Avg Methods") +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y = element_text(size = 8),
+    axis.title.x = element_text(size = 14, margin = margin(t = 20)),
+    axis.title.y = element_text(size = 14, margin = margin(r = 20)),
+    plot.title = element_text(size = 16, face = "bold", margin = margin(b = 20)),
+    legend.position = "right"
+  )
+
+# Convert the ggplot object to a plotly object for interactivity
+p_heatmap_interactive <- ggplotly(p_heatmap)
+
+# Print the interactive heatmap
+p_heatmap_interactive
+
+
+```
+
+
+
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(RColorBrewer)
+library(plotly)
+
+# Check the column names in knowledge_expanded
+print(colnames(knowledge_expanded))
+
+# Ensure 'true_points' is numeric
+knowledge_expanded <- knowledge_expanded %>%
+  mutate(true_points = as.numeric(true_points))
+
+# Calculate total attempts per question per knowledge area for each student
+knowledge_expanded <- knowledge_expanded %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  mutate(attempts = n()) %>%
+  ungroup()
+
+# Aggregate data to calculate the total true points and total attempts per question and knowledge area for each student
+total_points_attempts <- knowledge_expanded %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(total_points_sum = sum(true_points, na.rm = TRUE),
+            total_attempts = sum(attempts, na.rm = TRUE), .groups = 'drop')
+
+# Further aggregate to get the total points sum and total attempts across all students for each title_ID and knowledge
+total_summary <- total_points_attempts %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(total_points_sum = sum(total_points_sum, na.rm = TRUE),
+            total_attempts = sum(total_attempts, na.rm = TRUE), .groups = 'drop')
+
+# Ensure 'knowledge' is treated as a factor for ggplot2 aesthetics
+total_summary <- total_summary %>%
+  mutate(knowledge = as.factor(knowledge))
+
+# Define the color scale limits based on your data range
+color_scale_limits <- range(total_summary$total_points_sum, na.rm = TRUE)
+
+# Create the heatmap using ggplot2 with custom hover text
+p_heatmap <- ggplot(total_summary, aes(x = knowledge, y = title_ID, fill = total_points_sum,
+                                       text = paste("Total Points:", total_points_sum, "<br>Total Attempts:", total_attempts))) +
+  geom_tile() +
+  scale_fill_gradient(low = "skyblue", high = "red", limits = color_scale_limits, name = "Total Points") +
+  labs(title = "Total Point Score Sum per Knowledge Area per Question",
+       x = "Knowledge Areas",
+       y = "Question IDs",
+       fill = "Total Points") +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y = element_text(size = 8),
+    axis.title.x = element_text(size = 14, margin = margin(t = 20)),
+    axis.title.y = element_text(size = 14, margin = margin(r = 20)),
+    plot.title = element_text(size = 16, face = "bold", margin = margin(b = 20)),
+    legend.position = "right"
+  )
+
+# Convert the ggplot object to a plotly object for interactivity
+p_heatmap_interactive <- ggplotly(p_heatmap, tooltip = "text")
+
+# Print the interactive heatmap
+p_heatmap_interactive
+
+
+```
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(RColorBrewer)
+library(plotly)
+
+# Check the column names in knowledge_expanded
+print(colnames(knowledge_expanded))
+
+# Ensure 'true_points' is numeric
+knowledge_expanded <- knowledge_expanded %>%
+  mutate(true_points = as.numeric(true_points))
+
+# Calculate total attempts per question per knowledge area for each student
+knowledge_expanded <- knowledge_expanded %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  mutate(attempts = n()) %>%
+  ungroup()
+
+# Aggregate data to calculate the total true points and total attempts per question and knowledge area for each student
+total_points_attempts <- knowledge_expanded %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(total_points_sum = sum(true_points, na.rm = TRUE),
+            total_attempts = sum(attempts, na.rm = TRUE), .groups = 'drop')
+
+# Further aggregate to get the total points sum and total attempts across all students for each title_ID and knowledge
+total_summary <- total_points_attempts %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(total_points_sum = sum(total_points_sum, na.rm = TRUE),
+            total_attempts = sum(total_attempts, na.rm = TRUE), .groups = 'drop')
+
+# Ensure 'knowledge' is treated as a factor for ggplot2 aesthetics
+total_summary <- total_summary %>%
+  mutate(knowledge = as.factor(knowledge))
+
+# Define the color scale limits based on your data range
+color_scale_limits <- range(total_summary$total_points_sum, na.rm = TRUE)
+
+# Create the heatmap using ggplot2 with custom hover text
+p_heatmap <- ggplot(total_summary, aes(x = knowledge, y = title_ID, fill = total_points_sum,
+                                       text = paste("Total Points:", total_points_sum, "<br>Total Attempts:", total_attempts))) +
+  geom_tile(color = "blue") +
+  scale_fill_gradient2(low = "blue", mid = "green", high = "red", midpoint = -5000, 
+                       limits = color_scale_limits, name = "Total Points") +
+  labs(title = "Total Point Score Sum per Knowledge Area per Question",
+       x = "Knowledge Areas",
+       y = "Question IDs",
+       fill = "Total Points") +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y = element_text(size = 8),
+    axis.title.x = element_text(size = 14, margin = margin(t = 20)),
+    axis.title.y = element_text(size = 14, margin = margin(r = 20)),
+    plot.title = element_text(size = 16, face = "bold", margin = margin(b = 20)),
+    legend.position = "right"
+  )
+
+# Convert the ggplot object to a plotly object for interactivity
+p_heatmap_interactive <- ggplotly(p_heatmap, tooltip = "text")
+
+# Print the interactive heatmap
+p_heatmap_interactive
+
+
+```
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(RColorBrewer)
+library(plotly)
+
+# Check the column names in knowledge_expanded
+print(colnames(knowledge_expanded))
+
+# Ensure 'actual_score' and 'question_score' are numeric
+knowledge_expanded <- knowledge_expanded %>%
+  mutate(actual_score = as.numeric(actual_score),
+         question_score = as.numeric(question_score))
+
+# Calculate the highest actual_score for each student for each question and knowledge area
+highest_scores <- knowledge_expanded %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(highest_actual_score = max(actual_score, na.rm = TRUE), .groups = 'drop')
+
+# Calculate the average highest actual_score for each title_ID and knowledge area
+average_highest_scores <- highest_scores %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(average_highest_score = mean(highest_actual_score, na.rm = TRUE), .groups = 'drop')
+
+# Retrieve the question_score for each title_ID and knowledge
+average_highest_scores <- average_highest_scores %>%
+  left_join(knowledge_expanded %>% select(title_ID, question_score) %>% distinct(), by = "title_ID")
+
+# Ensure 'knowledge' is treated as a factor for ggplot2 aesthetics
+average_highest_scores <- average_highest_scores %>%
+  mutate(knowledge = as.factor(knowledge))
+
+# Define the color scale limits based on your data range
+color_scale_limits <- range(average_highest_scores$average_highest_score, na.rm = TRUE)
+
+# Create the heatmap using ggplot2 with custom hover text
+p_heatmap <- ggplot(average_highest_scores, aes(x = knowledge, y = title_ID, fill = average_highest_score,
+                                       text = paste("Avg Highest Score:", round(average_highest_score, 2),
+                                                    "<br>Question Score:", question_score))) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", mid = "green", high = "red", midpoint = 2.5, 
+                       limits = color_scale_limits, name = "Avg Highest Score") +
+  labs(title = "Average Highest Actual Score per Knowledge Area per Question",
+       x = "Knowledge Areas",
+       y = "Question IDs",
+       fill = "Avg Highest Score") +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y = element_text(size = 8),
+    axis.title.x = element_text(size = 14, margin = margin(t = 20)),
+    axis.title.y = element_text(size = 14, margin = margin(r = 20)),
+    plot.title = element_text(size = 16, face = "bold", margin = margin(b = 20)),
+    legend.position = "right"
+  )
+
+# Convert the ggplot object to a plotly object for interactivity
+p_heatmap_interactive <- ggplotly(p_heatmap, tooltip = "text")
+
+# Print the interactive heatmap
+p_heatmap_interactive
+
+```
+
+
+
 

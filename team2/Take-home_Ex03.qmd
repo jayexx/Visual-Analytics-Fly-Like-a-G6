@@ -1,0 +1,661 @@
+---
+title: "Take Home Exercise 3: Learning Behavior Patterns Analysis"
+author: "Wang Yuhui"
+date: "June 2, 2024"
+date-modified: "last-modified"
+execute: 
+  warning: false
+  freeze: true
+---
+
+```{r}
+#| code-fold: true
+#| code-summary: "show the code"
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(lubridate)
+library(cluster)
+library(factoextra)
+library(fmsb)
+library(reshape2)
+library(networkD3)
+library(ggalluvial)
+library(fastDummies)
+```
+
+# 1 Objective
+
+Mine **personalized learning behavior patterns** based on **learners' characteristics**.
+
+Design and present **learners' profiles** from various perspectives, including:
+
+**-peak answering hours,**
+
+**-preferred question types,**
+
+**-correct answering rates, etc.**
+
+# 2 Data Preparation
+
+## 2.1 Data Observation
+
+first, we merge all the submission record.
+
+```{r}
+#| code-fold: true
+#| code-summary: "show the code"
+file1 <- "data/Data_SubmitRecord/SubmitRecord-Class1.csv"
+file2 <- "data/Data_SubmitRecord/SubmitRecord-Class2.csv"
+file3 <- "data/Data_SubmitRecord/SubmitRecord-Class3.csv"
+file4 <- "data/Data_SubmitRecord/SubmitRecord-Class4.csv"
+file5 <- "data/Data_SubmitRecord/SubmitRecord-Class5.csv"
+file6 <- "data/Data_SubmitRecord/SubmitRecord-Class6.csv"
+file7 <- "data/Data_SubmitRecord/SubmitRecord-Class7.csv"
+file8 <- "data/Data_SubmitRecord/SubmitRecord-Class8.csv"
+file9 <- "data/Data_SubmitRecord/SubmitRecord-Class9.csv"
+file10 <- "data/Data_SubmitRecord/SubmitRecord-Class10.csv"
+file11 <- "data/Data_SubmitRecord/SubmitRecord-Class11.csv"
+file12 <- "data/Data_SubmitRecord/SubmitRecord-Class12.csv"
+file13 <- "data/Data_SubmitRecord/SubmitRecord-Class13.csv"
+file14 <- "data/Data_SubmitRecord/SubmitRecord-Class14.csv"
+file15 <- "data/Data_SubmitRecord/SubmitRecord-Class15.csv"
+
+# 读取 CSV 文件
+data1 <- read.csv(file1)
+data2 <- read.csv(file2)
+data3 <- read.csv(file3)
+data4 <- read.csv(file4)
+data5 <- read.csv(file5)
+data6 <- read.csv(file6)
+data7 <- read.csv(file7)
+data8 <- read.csv(file8)
+data9 <- read.csv(file9)
+data10 <- read.csv(file10)
+data11 <- read.csv(file11)
+data12 <- read.csv(file12)
+data13 <- read.csv(file13)
+data14 <- read.csv(file14)
+data15 <- read.csv(file15)
+
+submit_data <- bind_rows(data1, data2, data3, data4, data5, data6, data7, data8, data9, data10, data11, data12, data13, data14, data15,)
+
+head(submit_data)
+write.csv(submit_data, "data/submit_data.csv", row.names = FALSE)
+```
+
+Now we have 3 data sets in total, which are:
+
+-   Student information data
+
+-   Question title information
+
+-   Submission record information
+
+```{r}
+#| code-fold: true
+#| code-summary: "Show the code"
+stu_info <- read.csv('data/Data_Studentinfo.csv')
+tit_info <- read.csv('data/Data_Titleinfo.csv')
+sub_info <- read.csv('data/submit_data.csv')
+summary(stu_info)
+summary(tit_info)
+summary(sub_info)
+```
+
+## 2.2 Data Clean
+
+### 2.2.1 Missing Value
+
+First, we check if there is missing value in these 3 data sets.
+
+```{r}
+#| code-fold: true
+#| code-summary: "show the code"
+missing_values1 <- colSums(is.na(stu_info))
+print(missing_values1)
+
+missing_values2 <- colSums(is.na(tit_info))
+print(missing_values2)
+
+missing_values3 <- colSums(is.na(sub_info))
+print(missing_values3)
+```
+
+### 2.2.2 Outliers
+
+There is no missing value in all 3 data sets. Now we see if there are outliers. :
+
+::: panel-tabset
+## state
+
+```{r}
+#| code-fold: true
+#| code-summary: "show the code"
+unique_state <- unique(sub_info$state)
+print(unique_state)
+```
+
+## class
+
+```{r}
+#| code-fold: true
+#| code-summary: "show the code"
+unique_class <- unique(sub_info$class)
+print(unique_class)
+```
+
+## time consume
+
+```{r}
+#| code-fold: true
+#| code-summary: "show the code"
+unique_timeconsume <- unique(sub_info$timeconsume) 
+print(unique_timeconsume)
+```
+:::
+
+For outliers "�������" , simply remove it.
+
+```{r}
+valid_states <- c("Absolutely_Correct", "Absolutely_Error", "Error1", "Error2", "Error3", "Error4", "Error6", "Error7", "Error8", "Error9", "Partially_Correct")
+
+# 过滤数据，只保留 state 列中包含指定值的行
+sub_info <- sub_info %>%
+  filter(state %in% valid_states)
+unique(sub_info$state)
+```
+
+For outliers "class" , replace with the highest frequency of the corresponding student_ID.
+
+```{r}
+replace_class <- function(df) {
+  df$class <- as.character(df$class)
+  
+  class_indices <- which(df$class == 'class')
+  
+  for (index in class_indices) {
+    student_id <- df$student_ID[index]
+    student_classes <- df$class[df$student_ID == student_id & df$class != 'class']
+    class_counts <- table(student_classes)
+    
+    if (length(class_counts) > 0) {
+      most_common_class <- names(which.max(class_counts))
+      df$class[index] <- most_common_class
+    }
+  }
+  
+  return(df)
+}
+sub_info <- replace_class(sub_info)
+unique(sub_info$class)
+```
+
+For outliers '-' and '--', remove the corresponding rows.
+
+```{r}
+sub_info <- sub_info %>%
+  filter(!(timeconsume %in% c('-', '--')))
+unique(sub_info$timeconsume)
+```
+
+Save the dataset and name it 'sub_info.csv'
+
+```{r}
+write.csv(sub_info, 'data/sub_info.csv', row.names = FALSE)
+head(sub_info)
+```
+
+### 2.2.3 Convert datetime
+
+The time span is from August 31, 2023 to January 25, 2024, a total of 148 days. However, the content in column 'time' is actually in seconds. So we need to convert to datetime.
+
+```{r}
+sub_info <- sub_info %>%
+  mutate(day = wday(as.POSIXct(time, origin = "1970-01-01", tz = "UTC"), week_start = 1))
+unique(sub_info$day)
+```
+
+### 2.2.4 Match the unique title_ID with unique knowledge
+
+From the code below we can see some titles match multiple knowledge
+
+```{r}
+title_knowledge_check <- tit_info %>%
+  group_by(title_ID) %>%
+  summarise(knowledge_count = n_distinct(knowledge)) %>%
+  filter(knowledge_count > 1)
+
+print(title_knowledge_check)
+```
+
+Since we don't know when the students submit the questions, which knowledge they actually focus on, so we use the probability to match the knowledge.
+
+```{r}
+title_knowledge_count <- tit_info %>%
+  group_by(title_ID) %>%
+  summarise(knowledge_list = list(unique(knowledge))) %>%
+  mutate(knowledge = sapply(knowledge_list, function(x) ifelse(length(x) > 0, x[1], NA)),
+         knowledge1 = sapply(knowledge_list, function(x) ifelse(length(x) > 1, x[2], NA))) %>%
+  select(-knowledge_list)
+
+# 合并知识信息到sub_info
+set.seed(123) # 确保结果可重复
+sub_info <- sub_info %>%
+  left_join(title_knowledge_count, by = "title_ID") %>%
+  rowwise() %>%
+  mutate(knowledge = ifelse(!is.na(knowledge1), 
+                            sample(c(knowledge, knowledge1), 1), 
+                            knowledge)) %>%
+  ungroup() %>%
+  select(-knowledge1)
+
+# 查看处理后的数据框前几行
+head(sub_info)
+```
+
+Finally, we need to calculate the average answering correct rate and average consuming time for each student.
+
+```{r}
+sub_info <- sub_info %>%
+  left_join(tit_info %>% select(title_ID, score), by = "title_ID")
+sub_info <- sub_info %>%
+  mutate(rate = score.x / score.y) %>%
+  select(-score.x, -score.y)
+
+head(sub_info)
+write.csv(sub_info,'data/sub_info.csv',row.names = FALSE)
+```
+
+### 2.2.5 Final data
+
+Now we merged with student information and rearrange the column for the further analysis.
+
+```{r}
+# 计算每个学生的平均rate
+avg_rate <- sub_info %>%
+  group_by(student_ID) %>%
+  summarise(average_rate = mean(rate, na.rm = TRUE))
+
+# 将day中的1 2 3 4 5计为'week'，6 7计为'weekend'
+sub_info <- sub_info %>%
+  mutate(week_category = ifelse(day %in% 1:5, "week", "weekend"))
+
+# 计算每个学生每种knowledge的百分比
+knowledge_percentage <- sub_info %>%
+  group_by(student_ID, knowledge) %>%
+  summarise(counts = n()) %>%
+  ungroup() %>%
+  group_by(student_ID) %>%
+  mutate(total_counts = sum(counts),
+         percentage = counts / total_counts) %>%
+  select(student_ID, knowledge, percentage) %>%
+  spread(key = knowledge, value = percentage, fill = 0)
+
+# 计算每个学生在week和weekend的百分比
+weekend_percentage <- sub_info %>%
+  group_by(student_ID, week_category) %>%
+  summarise(counts = n()) %>%
+  ungroup() %>%
+  group_by(student_ID) %>%
+  mutate(total_counts = sum(counts),
+         percentage = counts / total_counts) %>%
+  select(student_ID, week_category, percentage) %>%
+  spread(key = week_category, value = percentage, fill = 0)
+
+# 合并学生信息和计算结果
+final_data <- stu_info %>%
+  select(-index) %>%
+  left_join(avg_rate, by = "student_ID") %>%
+  left_join(sub_info %>% select(student_ID, -day) %>% distinct(), by = "student_ID") %>%
+  left_join(knowledge_percentage, by = "student_ID") %>%
+  left_join(weekend_percentage, by = "student_ID")
+
+
+# 查看结果
+head(final_data)
+write.csv(final_data, 'data/final_data.csv')
+```
+
+# 3 Clustering Analysis
+
+::: panel-tabset
+## code
+
+```{r,eval=FALSE}
+cluster_data <- final_data %>%
+  select(b3C9s, g7R2j, k4W1c, m3D1v, r8S3g, s8Y2f, t5V9e, y9W5d)
+cluster_data[is.na(cluster_data)] <- 0
+cluster_data_scaled <- scale(cluster_data)
+
+# define the number of clusters
+wss <- (nrow(cluster_data_scaled)-1)*sum(apply(cluster_data_scaled, 2, var))
+for (i in 2:15) wss[i] <- sum(kmeans(cluster_data_scaled, centers=i)$tot.withinss)
+
+# elbow plot
+plot(1:15, wss, type="b", xlab="Number of Clusters", ylab="Within groups sum of squares")
+
+set.seed(123)
+kmeans_result <- kmeans(cluster_data_scaled, centers=3, nstart=20)
+
+final_data <- final_data %>%
+  mutate(cluster = kmeans_result$cluster)
+print(final_data)
+
+cluster_means <- final_data %>%
+  group_by(cluster) %>%
+  summarise(across(c(b3C9s, g7R2j, k4W1c, m3D1v, r8S3g, s8Y2f, t5V9e, y9W5d), mean, na.rm = TRUE))
+print(cluster_means)
+
+# PCA scatter plot
+pca <- prcomp(cluster_data_scaled)
+pca_data <- data.frame(pca$x[, 1:2], cluster=as.factor(final_data$cluster))
+
+ggplot(pca_data, aes(x = PC1, y = PC2, color = cluster)) + 
+  geom_point() + 
+  labs(title="K-means Clustering", x="Principal Component 1", y="Principal Component 2")
+
+
+```
+
+```{r,eval=FALSE}
+# 排除第一列计算最大值和最小值
+max_values <- apply(cluster_means[, -1], 2, max)
+min_values <- apply(cluster_means[, -1], 2, min)
+
+# 将最大值行、最小值行和聚类均值数据结合起来
+radar_data <- rbind(max_values, min_values, cluster_means[, -1])
+
+# 查看准备好的数据
+print(radar_data)
+
+# 生成雷达图
+colors_border <- c("blue", "green", "red", "orange", "purple")
+
+# 生成雷达图
+radarchart(radar_data, axistype = 1,
+           pcol = colors_border, plwd = 2, plty = 1,
+           cglcol = "grey", cglty = 1, cglwd = 0.8,
+           vlcex = 0.8, title = "Cluster Comparison Radar Chart")
+
+# 添加图例
+legend(x = "topright", legend = rownames(cluster_means), bty = "n",
+       pch = 20, col = colors_border, text.col = "grey", cex = 1.2, pt.cex = 3)
+```
+
+## elbow plot
+
+![](images/clipboard-3716576842.png)
+
+## PCA scatter plot
+
+![](images/clipboard-2838082180.png)
+
+## radar plot
+
+![](images/clipboard-1014584142.png)
+:::
+
+```{r}
+head(final_data)
+```
+
+Cluster by gender
+
+```{r}
+# 过滤出男性数据
+final_data_male <- final_data %>% filter(sex == 'male')
+
+# 准备聚类数据
+cluster_data <- final_data_male %>%
+  select(b3C9s, g7R2j, k4W1c, m3D1v, r8S3g, s8Y2f, t5V9e, y9W5d)
+
+# 替换NA值为0
+cluster_data[is.na(cluster_data)] <- 0
+
+# 标准化数据
+cluster_data_scaled <- scale(cluster_data)
+
+# 确定聚类数量的肘部图
+wss <- (nrow(cluster_data_scaled)-1)*sum(apply(cluster_data_scaled, 2, var))
+for (i in 2:15) wss[i] <- sum(kmeans(cluster_data_scaled, centers=i)$tot.withinss)
+
+# 绘制肘部图
+plot(1:15, wss, type="b", xlab="Number of Clusters", ylab="Within groups sum of squares")
+
+# 设置随机种子并进行K-means聚类，假设最佳k值为3
+set.seed(123)
+kmeans_result <- kmeans(cluster_data_scaled, centers=3, nstart=20)
+
+# 将聚类结果添加到数据中
+final_data_male <- final_data_male %>%
+  mutate(cluster = kmeans_result$cluster)
+
+# 打印带有聚类标签的数据
+print(final_data_male)
+
+# 计算每个聚类的均值
+cluster_means <- final_data_male %>%
+  group_by(cluster) %>%
+  summarise(across(c(b3C9s, g7R2j, k4W1c, m3D1v, r8S3g, s8Y2f, t5V9e, y9W5d), mean, na.rm = TRUE))
+
+# 打印聚类均值
+print(cluster_means)
+
+# 排除第一列计算最大值和最小值
+max_values <- apply(cluster_means[, -1], 2, max)
+min_values <- apply(cluster_means[, -1], 2, min)
+
+# 将最大值行、最小值行和聚类均值数据结合起来
+radar_data <- rbind(max_values, min_values, cluster_means[, -1])
+
+# 查看准备好的数据
+print(radar_data)
+
+# 生成雷达图
+colors_border <- c("blue", "green", "red", "orange", "purple")
+
+# 生成雷达图
+radarchart(radar_data, axistype = 1,
+           pcol = colors_border, plwd = 2, plty = 1,
+           cglcol = "grey", cglty = 1, cglwd = 0.8,
+           vlcex = 0.8, title = "Cluster Comparison Radar Chart")
+
+# 添加图例
+legend(x = "topright", legend = rownames(cluster_means), bty = "n",
+       pch = 20, col = colors_border, text.col = "grey", cex = 1.2, pt.cex = 3)
+```
+
+```{r}
+# 准备Sankey图数据
+sankey_data <- final_data_male %>%
+  pivot_longer(cols = c(b3C9s, g7R2j, k4W1c, m3D1v, r8S3g, s8Y2f, t5V9e, y9W5d),
+               names_to = "knowledge",
+               values_to = "value") %>%
+  group_by(cluster, knowledge) %>%
+  summarise(value = sum(value)) %>%
+  ungroup()
+
+# 创建节点和链接
+nodes <- data.frame(name = c(unique(sankey_data$knowledge), unique(as.character(sankey_data$cluster))))
+links <- sankey_data %>%
+  mutate(source = match(knowledge, nodes$name) - 1,
+         target = match(as.character(cluster), nodes$name) - 1 + length(unique(sankey_data$knowledge))) %>%
+  select(source, target, value)
+
+# 绘制Sankey图
+sankeyNetwork(Links = links, Nodes = nodes, Source = "source", Target = "target", Value = "value", NodeID = "name",
+              sinksRight=FALSE, fontSize = 12, nodeWidth = 30)
+```
+
+```{r}
+# 计算每个年龄在每个day的计数
+age_day_counts <- final_data_male %>%
+  group_by(age, day) %>%
+  summarise(count = n(), .groups = 'drop')
+
+# 计算每个day的总计数
+day_totals <- age_day_counts %>%
+  group_by(day) %>%
+  summarise(total = sum(count), .groups = 'drop')
+
+# 计算每个年龄在每个day的占比
+age_day_percentages <- age_day_counts %>%
+  left_join(day_totals, by = "day") %>%
+  mutate(percentage = count / total * 100)
+
+# 可视化每个年龄在每个day的占比
+ggplot(age_day_percentages, aes(x = as.factor(day), y = percentage, fill = as.factor(age))) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(title = "Percentage of Each Age within Each Day",
+       x = "Day",
+       y = "Percentage",
+       fill = "Age") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+# 准备聚类数据
+cluster_data <- final_data_male %>%
+  select(age, day)
+
+# 替换NA值为0
+cluster_data[is.na(cluster_data)] <- 0
+
+# 标准化数据
+cluster_data_scaled <- scale(cluster_data)
+
+# 确定聚类数量的肘部图
+wss <- (nrow(cluster_data_scaled)-1)*sum(apply(cluster_data_scaled, 2, var))
+for (i in 2:15) wss[i] <- sum(kmeans(cluster_data_scaled, centers=i)$tot.withinss)
+
+# 绘制肘部图并标注最佳的聚类数量
+plot(1:15, wss, type="b", xlab="Number of Clusters", ylab="Within groups sum of squares",
+     main="Elbow Plot for Male Students")
+# 设置随机种子并进行K-means聚类
+set.seed(123)
+kmeans_result <- kmeans(cluster_data_scaled, centers=4, nstart=20)
+
+# 将聚类结果添加到数据中
+final_data_male <- final_data_male %>%
+  mutate(cluster = kmeans_result$cluster)
+
+# 打印带有聚类标签的数据
+print(final_data_male)
+
+# 计算每个聚类的均值
+cluster_means <- final_data_male %>%
+  group_by(cluster) %>%
+  summarise(across(c(age, day), mean, na.rm = TRUE))
+
+# 打印聚类均值
+print(cluster_means)
+```
+
+```{r}
+ggplot(final_data_male, aes(x = age, y = day, color = as.factor(cluster))) +
+  geom_point(size = 3, alpha = 0.6) +
+  labs(title = "Scatter Plot of Clusters", x = "Age", y = "Day", color = "Cluster") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+colnames(final_data)
+```
+
+```{r}
+# 读取数据
+final_data <- read.csv('data/final_data.csv')
+
+# 计算每位学生占比最高的knowledge并创建新列pre_knowledge
+knowledge_columns <- c("b3C9s", "g7R2j", "k4W1c", "m3D1v", "r8S3g", "s8Y2f", "t5V9e", "y9W5d")
+
+final_data <- final_data %>%
+  rowwise() %>%
+  mutate(pre_knowledge = knowledge_columns[which.max(c_across(all_of(knowledge_columns)))]) %>%
+  ungroup()
+
+# 查看数据以确认pre_knowledge列是否正确创建
+head(final_data)
+
+# 将sex、major和pre_knowledge列转换为因子
+final_data <- final_data %>%
+  mutate(sex = as.factor(sex),
+         major = as.factor(major),
+         pre_knowledge = as.factor(pre_knowledge))
+
+# 将非numeric列转换为dummy变量
+final_data_dummies <- final_data %>%
+  select(-student_ID) %>%
+  mutate(across(where(is.factor), as.character)) %>%
+  fastDummies::dummy_cols(select_columns = c('sex', 'major', 'pre_knowledge'), remove_first_dummy = TRUE, remove_selected_columns = TRUE)
+
+# 进行聚类分析
+set.seed(123)
+k <- 5 # 可以调整聚类数量
+final_data_dummies <- final_data_dummies %>% na.omit()  # 移除NA值
+clustering <- kmeans(final_data_dummies, centers = k)
+
+# 将聚类结果添加到原始数据中，并将cluster转换为因子
+final_data$cluster <- as.factor(clustering$cluster)
+
+# 使用ggalluvial创建Sankey图
+p <- ggplot(final_data,
+       aes(axis1 = sex, axis2 = major, axis3 = pre_knowledge, axis4 = cluster)) +
+  geom_alluvium(aes(fill = cluster), width = 1/12) +
+  geom_stratum(width = 1/12, fill = "white", color = "black") +
+  geom_label(stat = "stratum", aes(label = after_stat(stratum))) +
+  scale_x_discrete(limits = c("Sex", "Major",  "Pre_knowledge", "Cluster"), expand = c(0.15, 0.05)) +
+  scale_fill_brewer(type = "qual", palette = "Set1") +
+  ggtitle("Sankey Diagram of Students Clustering") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 24), 
+        axis.text.x = element_text(size = 18), 
+        axis.text.y = element_text(size = 18), 
+        legend.text = element_text(size = 18),
+        legend.title = element_text(size = 18))
+
+# 保存图像，调整图像大小
+ggsave("sankey_plot.png", plot = p, width = 40, height = 30)
+
+```
+
+# 4 Conclusions
+
+## **Radar Chart Analysis**
+
+The radar chart shows the comparison of knowledge distribution across three clusters. Here are the key observations: 1. Cluster 1 (Blue) • Exhibits a balanced performance across most knowledge areas, with relatively high percentages in y9W5d, g7R2j, and t5V9e. • It shows the highest values in several knowledge areas, indicating a well-rounded skill set among the students in this cluster.
+
+2.  Cluster 2 (Green)
+
+    • Shows a distinctive peak in r8S3g, suggesting that students in this cluster excel particularly in this knowledge area.
+
+    • Has lower percentages in areas like t5V9e and y9W5d compared to the other clusters.
+
+3.  Cluster 3 (Red)
+
+    • Dominates in m3D1v and k4W1c, indicating a specialized skill set focused on these areas.
+
+    • Displays lower values in other knowledge areas such as g7R2j and b3C9s.
+
+Overall, the radar chart indicates that each cluster has distinct strengths and weaknesses across different knowledge areas.
+
+## **PCA Scatter Plot Analysis**
+
+The PCA scatter plot visualizes the distribution of students based on their principal components, colored by their assigned clusters:
+
+1.  Cluster Separation
+
+    • The three clusters are well-separated in the PCA space, indicating that the clustering algorithm effectively distinguished between different student groups.
+
+2.  Cluster Characteristics
+
+    • The separation suggests that students within each cluster share similar characteristics and knowledge distributions.
+
+    • The spread of points within each cluster implies some degree of variability, with Cluster 2 appearing to be the most dispersed.
+
+## **Summary**
+
+The combined analysis of the radar chart and PCA scatter plot indicates that the clustering algorithm successfully identified three distinct groups of students with unique knowledge profiles. Cluster 1 has a balanced and well-rounded skill set, Cluster 2 is specialized in specific areas, and Cluster 3 shows a different specialization pattern. The clear separation in the PCA plot further supports the validity of these clusters.

@@ -1,6 +1,6 @@
 ---
 title: "ChinaVis"
-author: "Jordan""wang yuhui"
+author: "Xiao Fudi"
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -34,7 +34,7 @@ Note that the `echo = FALSE` parameter was added to the code chunk to prevent pr
 We load the following R packages using the `pacman::p_load()` function:
 
 ```{r}
-pacman::p_load(geojsonR,rjson,sf, dplyr,tidyr,stringr,readr,fs,purrr,ggplot2, plotly, ggstatsplot,igraph,lubridate,hms, vcd, ggalluvial, ggforce)
+pacman::p_load(geojsonR,rjson,sf, dplyr,tidyr,stringr,readr,fs,purrr,ggplot2, plotly, ggstatsplot,igraph,lubridate,hms, vcd, ggalluvial, ggforce, tidyverse, reshape2, melt)
 
 ```
 
@@ -91,6 +91,7 @@ df_StudentRecord <- df_StudentRecord %>%
 print(df_StudentRecord)
 
 ```
+
 ```{r}
 
 # Identify students with multiple classes
@@ -117,8 +118,6 @@ summary (df_TitleInfo)
 summary (df_StudentInfo)
 ```
 
-
-
 ```{r}
 # Convert time from timestamp to POSIXct
 df_StudentRecord$time_change <- as.POSIXct(df_StudentRecord$time, origin="1970-01-01", tz="UTC")
@@ -138,7 +137,7 @@ df_TitleInfo <- df_TitleInfo %>%
   )
 ```
 
-Check missing values 
+Check missing values
 
 ```{r}
 missing_students <- anti_join(df_StudentRecord, df_StudentInfo, by = "student_ID")
@@ -168,13 +167,12 @@ merged_data <- merged_data %>%
   )
 ```
 
-
 ```{r}
 summary (merged_data)
 ```
 
+Distributions
 
-Distributions 
 ```{r}
 create_bar_plot <- function(data, variable, title) {
   p <- ggplot(data, aes_string(x = variable)) +
@@ -226,8 +224,8 @@ ggsave("distribution_of_age.png", width = 10, height = 8, dpi = 300)
 
 ```
 
+score &knowledge
 
-score &knowledge 
 ```{r}
 library(ggplot2)
 
@@ -238,7 +236,6 @@ ggplot(merged_data, aes(x = actual_score)) +
   labs(title = "Distribution of Actual Scores by Knowledge Type", x = "Actual Score", y = "Count")
 
 ```
-
 
 ```{r}
 library(ggplot2)
@@ -251,6 +248,7 @@ ggplot(merged_data, aes(x = actual_score)) +
 ```
 
 score & state
+
 ```{r}
 library(ggplot2)
 
@@ -282,7 +280,8 @@ ggsave("heatmap_scores_by_state.png", width = 12, height = 8, dpi = 300)
 
 ```
 
-Score & method 
+Score & method
+
 ```{r}
 library(ggplot2)
 
@@ -294,7 +293,9 @@ ggplot(merged_data, aes(x = method, fill = factor(actual_score))) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
-method & knowledge 
+
+method & knowledge
+
 ```{r}
 
 table_method_knowledge <- table(merged_data$method, merged_data$knowledge)
@@ -307,6 +308,7 @@ ggplot(merged_data, aes(x = knowledge, fill = method)) +
 
 
 ```
+
 ```{r}
 summary_stats <- merged_data %>%
   group_by(method) %>%
@@ -317,8 +319,8 @@ summary_stats <- merged_data %>%
             Min = min(timeconsume, na.rm = TRUE))
 ```
 
-
 Knowlege & subknowledge
+
 ```{r}
 table_knowledge_subknowledge <- table(merged_data$knowledge, merged_data$sub_knowledge)
 print(table_knowledge_subknowledge)
@@ -334,10 +336,8 @@ ggplot(melted_data, aes(x = Var1, y = Var2, fill = value)) +
 
 ```
 
-
 ```{r}
 ```
-
 
 ```{r}
 library(ggplot2)
@@ -351,7 +351,6 @@ ggplot(merged_data, aes(x=knowledge, y=actual_score, fill=knowledge)) +
 
 ```
 
-
 ```{r}
 # Box plot for actual_score grouped by sub_knowledge
 ggplot(merged_data, aes(x=sub_knowledge, y=actual_score, fill=sub_knowledge)) +
@@ -361,6 +360,7 @@ ggplot(merged_data, aes(x=sub_knowledge, y=actual_score, fill=sub_knowledge)) +
   theme(axis.text.x = element_text(angle=45, hjust=1))
 
 ```
+<<<<<<< HEAD
 
 
 
@@ -687,3 +687,5 @@ interactive_plot
 
 
 
+=======
+>>>>>>> cc9fea5bb5623bd3aa9c98d3bcdecc26014ca4b1
