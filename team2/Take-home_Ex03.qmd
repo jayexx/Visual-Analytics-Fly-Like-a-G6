@@ -20,6 +20,8 @@ library(factoextra)
 library(fmsb)
 library(reshape2)
 library(networkD3)
+library(ggalluvial)
+library(fastDummies)
 ```
 
 # 1 Objective
@@ -275,6 +277,10 @@ avg_rate <- sub_info %>%
   group_by(student_ID) %>%
   summarise(average_rate = mean(rate, na.rm = TRUE))
 
+# 将day中的1 2 3 4 5计为'week'，6 7计为'weekend'
+sub_info <- sub_info %>%
+  mutate(week_category = ifelse(day %in% 1:5, "week", "weekend"))
+
 # 计算每个学生每种knowledge的百分比
 knowledge_percentage <- sub_info %>%
   group_by(student_ID, knowledge) %>%
@@ -286,16 +292,29 @@ knowledge_percentage <- sub_info %>%
   select(student_ID, knowledge, percentage) %>%
   spread(key = knowledge, value = percentage, fill = 0)
 
+# 计算每个学生在week和weekend的百分比
+weekend_percentage <- sub_info %>%
+  group_by(student_ID, week_category) %>%
+  summarise(counts = n()) %>%
+  ungroup() %>%
+  group_by(student_ID) %>%
+  mutate(total_counts = sum(counts),
+         percentage = counts / total_counts) %>%
+  select(student_ID, week_category, percentage) %>%
+  spread(key = week_category, value = percentage, fill = 0)
+
 # 合并学生信息和计算结果
 final_data <- stu_info %>%
   select(-index) %>%
   left_join(avg_rate, by = "student_ID") %>%
-  left_join(sub_info %>% select(student_ID, day) %>% distinct(), by = "student_ID") %>%
-  left_join(knowledge_percentage, by = "student_ID")
+  left_join(sub_info %>% select(student_ID, -day) %>% distinct(), by = "student_ID") %>%
+  left_join(knowledge_percentage, by = "student_ID") %>%
+  left_join(weekend_percentage, by = "student_ID")
+
 
 # 查看结果
 head(final_data)
-write.csv(final_data,'data/final_data.csv')
+write.csv(final_data, 'data/final_data.csv')
 ```
 
 # 3 Clustering Analysis
@@ -540,6 +559,67 @@ ggplot(final_data_male, aes(x = age, y = day, color = as.factor(cluster))) +
   labs(title = "Scatter Plot of Clusters", x = "Age", y = "Day", color = "Cluster") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+colnames(final_data)
+```
+
+```{r}
+# 读取数据
+final_data <- read.csv('data/final_data.csv')
+
+# 计算每位学生占比最高的knowledge并创建新列pre_knowledge
+knowledge_columns <- c("b3C9s", "g7R2j", "k4W1c", "m3D1v", "r8S3g", "s8Y2f", "t5V9e", "y9W5d")
+
+final_data <- final_data %>%
+  rowwise() %>%
+  mutate(pre_knowledge = knowledge_columns[which.max(c_across(all_of(knowledge_columns)))]) %>%
+  ungroup()
+
+# 查看数据以确认pre_knowledge列是否正确创建
+head(final_data)
+
+# 将sex、major和pre_knowledge列转换为因子
+final_data <- final_data %>%
+  mutate(sex = as.factor(sex),
+         major = as.factor(major),
+         pre_knowledge = as.factor(pre_knowledge))
+
+# 将非numeric列转换为dummy变量
+final_data_dummies <- final_data %>%
+  select(-student_ID) %>%
+  mutate(across(where(is.factor), as.character)) %>%
+  fastDummies::dummy_cols(select_columns = c('sex', 'major', 'pre_knowledge'), remove_first_dummy = TRUE, remove_selected_columns = TRUE)
+
+# 进行聚类分析
+set.seed(123)
+k <- 5 # 可以调整聚类数量
+final_data_dummies <- final_data_dummies %>% na.omit()  # 移除NA值
+clustering <- kmeans(final_data_dummies, centers = k)
+
+# 将聚类结果添加到原始数据中，并将cluster转换为因子
+final_data$cluster <- as.factor(clustering$cluster)
+
+# 使用ggalluvial创建Sankey图
+p <- ggplot(final_data,
+       aes(axis1 = sex, axis2 = major, axis3 = pre_knowledge, axis4 = cluster)) +
+  geom_alluvium(aes(fill = cluster), width = 1/12) +
+  geom_stratum(width = 1/12, fill = "white", color = "black") +
+  geom_label(stat = "stratum", aes(label = after_stat(stratum))) +
+  scale_x_discrete(limits = c("Sex", "Major",  "Pre_knowledge", "Cluster"), expand = c(0.15, 0.05)) +
+  scale_fill_brewer(type = "qual", palette = "Set1") +
+  ggtitle("Sankey Diagram of Students Clustering") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 24), 
+        axis.text.x = element_text(size = 18), 
+        axis.text.y = element_text(size = 18), 
+        legend.text = element_text(size = 18),
+        legend.title = element_text(size = 18))
+
+# 保存图像，调整图像大小
+ggsave("sankey_plot.png", plot = p, width = 40, height = 30)
+
 ```
 
 # 4 Conclusions

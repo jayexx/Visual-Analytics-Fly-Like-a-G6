@@ -41,7 +41,6 @@ ui <- fluidPage(
       div(style = "overflow-y: scroll; width: 100%;",
           plotOutput("dumbbellPlot", height = "600px")),
       plotOutput("heatmapPlot"),
-      plotOutput("networkPlot"),
       plotOutput("associationPlot"),
       dataTableOutput("questionsTable"),
       dataTableOutput("bottomPercentageTable")
@@ -68,31 +67,6 @@ server <- function(input, output, session) {
       group_by(!!sym(attribute), knowledge) %>%
       summarise(student_count = n(), .groups = 'drop')
     
-    # Calculate the node sizes based on the attribute count
-    node_sizes <- high_mastery_students %>%
-      group_by(!!sym(attribute)) %>%
-      summarise(count = n()) %>%
-      rename(node = !!sym(attribute)) %>%
-      mutate(size = scales::rescale(count, to = c(8, 20)))
-    
-    g <- graph_from_data_frame(attribute_knowledge_edges, directed = FALSE)
-    
-    V(g)$shape <- ifelse(V(g)$name %in% node_sizes$node, "circle", "square")
-    V(g)$size <- ifelse(V(g)$name %in% node_sizes$node,
-                        node_sizes$size[match(V(g)$name, node_sizes$node)],
-                        8)
-    V(g)$color <- ifelse(V(g)$name %in% node_sizes$node, 
-                         hue_pal()(length(unique(node_sizes$node))), "red")
-    
-    output$networkPlot <- renderPlot({
-      plot(g, vertex.label.cex = 0.8, vertex.size = V(g)$size, vertex.shape = V(g)$shape,
-           vertex.color = V(g)$color)
-      
-      legend("topright", legend = c("Knowledge", "Attribute"), 
-             pch = c(15, 16), col = c("red", "blue"), 
-             pt.cex = 2, title = "Node Type")
-    })
-    
     # Generate the ggstatsplot for the association between the selected attribute and knowledge
     association_plot <- ggstatsplot::ggbarstats(
       data = high_mastery_students,
@@ -105,23 +79,6 @@ server <- function(input, output, session) {
       association_plot
     })
     
-    # Generate the alluvial plot for the character attributes
-    alluvial_data <- high_mastery_students %>%
-      select(sex, age, major, class) %>%
-      group_by(sex, age, major, class) %>%
-      summarise(Freq = n(), .groups = 'drop')
-    
-    output$alluvialPlot <- renderPlot({
-      ggplot(alluvial_data,
-             aes(axis1 = sex, axis2 = age, axis3 = major, axis4 = class, y = Freq)) +
-        geom_alluvium(aes(fill = class)) +
-        geom_stratum() +
-        geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
-        scale_x_discrete(limits = c("Sex", "Age", "Major", "Class"), expand = c(.1, .05)) +
-        scale_fill_manual(values = scales::hue_pal()(15)) +
-        theme_minimal() +
-        ggtitle("Distribution of Character Attributes for High Mastery Students")
-    })
     
     # Filter never absolutely correct questions based on high mastery students
     filtered_never_correct <- never_absolutely_correct %>%
@@ -131,10 +88,6 @@ server <- function(input, output, session) {
       summarise(number_of_students = n(), .groups = 'drop') %>%
       left_join(aggregate_title_info, by = "title_ID") %>%
       mutate(percentage_of_student_wrong = (number_of_students/length(high_mastery_students$student_ID)*100)) 
-    
-    output$questionsTable <- renderDataTable({
-      datatable(filtered_never_correct)
-    })
     
     # Identify bottom percentage students based on dynamic inputs
     bottom_threshold <- 100 - as.numeric(sub("%", "", threshold))
