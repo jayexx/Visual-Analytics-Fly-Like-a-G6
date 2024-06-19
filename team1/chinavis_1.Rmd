@@ -34,7 +34,7 @@ Note that the `echo = FALSE` parameter was added to the code chunk to prevent pr
 We load the following R packages using the `pacman::p_load()` function:
 
 ```{r}
-pacman::p_load(geojsonR,rjson,sf, dplyr,tidyr,stringr,readr,fs,purrr,ggplot2, plotly, ggstatsplot,igraph,lubridate,hms, vcd, ggalluvial, ggforce)
+pacman::p_load(geojsonR,rjson,sf, dplyr,tidyr,stringr,readr,fs,purrr,ggplot2, plotly, ggstatsplot,igraph,lubridate,hms, vcd, ggalluvial, ggforce, tidyverse, reshape2, melt)
 
 ```
 

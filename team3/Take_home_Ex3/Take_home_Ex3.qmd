@@ -59,10 +59,12 @@ The code chunk below loads the following libraries:
 -   parallelPlot
 -   seriation
 -   dendextend
--   heatmaply,
+-   heatmaply
+-   corrplot
+-   ggalluvial
 
 ```{r}
-pacman::p_load(tidyverse, knitr, ggridges, ggdist, colorspace, ggrepel, ggthemes, hrbrthemes, patchwork, lubridate, ggstatsplot, plotly, rjson, visNetwork, BiocManager, igraph, cluster, factoextra, stats, hms, caret, ggfortify, gridExtra, GGally, parallelPlot, seriation, dendextend, heatmaply) 
+pacman::p_load(tidyverse, knitr, ggridges, ggdist, colorspace, ggrepel, ggthemes, hrbrthemes, patchwork, lubridate, ggstatsplot, plotly, rjson, visNetwork, BiocManager, igraph, cluster, factoextra, stats, hms, caret, ggfortify, gridExtra, GGally, parallelPlot, seriation, dendextend, heatmaply, corrplot, ggalluvial) 
 ```
 
 ### Importing the Data
@@ -379,7 +381,7 @@ Outlier_timeconsume <- df_StudentRecord %>%
 Outlier_timeconsume
 ```
 
-Based on the output, there is a significant number of 2,612 rows with the unexpected value. Hence these rows will be kept in the analysis and replaced with 0 (since there is no existing values of 0 too), however subsequent analysis in this exercise involving the timeconsume variable will treat these values as missing values. This is done in the following code chunk
+Based on the output, there is a sizable number of 2,612 rows with the unexpected value. Hence these rows will be kept in the analysis and replaced with 0 (since there is no existing values of 0 too), however subsequent analysis in this exercise involving the timeconsume variable will note these values as missing values. This is done in the following code chunk
 
 ```{r}
 df_StudentRecord <- df_StudentRecord %>%
@@ -426,7 +428,7 @@ df_StudentRecord$time_change <- as.POSIXct(df_StudentRecord$time, origin=date_ad
 glimpse(df_StudentRecord)
 ```
 
-Further, the timeconsume variable will be converted to numeric, wherein since the '-' and '--' values found earlier had taken the value of 0 and there will not be an issue of NA values affecting subsequent analysis.
+Further, the timeconsume variable will be converted to numeric, wherein since the '-' and '--' values found earlier had taken the value of 0, there will not be an issue of NA values affecting subsequent analysis.
 
 ```{R}
 df_StudentRecord <- df_StudentRecord %>%
@@ -437,7 +439,7 @@ glimpse(df_StudentRecord)
 
 ### Create Merged Dataset
 
-To prepare for cross dataset visualisation and analysis of variables, the 3 data sets are joined on title_id and student_id variables in the following code chunks.
+To prepare for cross-dataset visualisation and analysis of variables, the 3 data sets are joined on title_id and student_id variables in the following code chunks.
 
 ```{r}
 # Merge StudentInfo with SubmitRecord based on student_ID
@@ -458,7 +460,7 @@ saveRDS(merged_data, "merged_data_df.rds")
 ```
 
 ```{r}
-summary (merged_data)
+glimpse (merged_data)
 ```
 
 ## Learning modes
@@ -467,8 +469,8 @@ Based on the given data, the relevant features that best defines a learner's lea
 
 -   Peak answering hours determined by (a) day of the week and (b) time of the day
 -   Variety of question types attempted determined by (a) total number of different questions attempted, (b) total number of different knowledge and sub knowledge areas covered,
--   Depth of question types and answers determined by (a) mean question scores, (b) mean memory size of file submissions
--   Level of learning effort determined by (a) total number of answering attempts, (b) total number of different answering methods, (C) total memory size of file submission
+-   Depth of question types and answers determined by (a) mean question scores, (b) mean memory size of file submissions across questions
+-   Level of learning effort determined by (a) total number of answering attempts, (b) average number of different answering methods used across questions, (C) total memory size of file submission
 
 ### Feature engineering
 
@@ -503,19 +505,18 @@ The following variables will be obtained with the code chunk below in preparatio
 (a) total number of different questions attempted,
 (b) total number of different knowledge and sub knowledge areas covered,
 
--   Depth of question types and answers
+-   Depth of question types
 
 (a) mean question scores,
-(b) mean memory size of file submissions
+(b) mean memory size of file submissions across questions
+(c) mean time consume across questions
 
--   Level of learning effort
+-   Level of learning effort in answers submitted
 
 (a) total number of answering attempts,
-(b) total number of different answering methods,
-
-<!-- -->
-
-(C) total memory size of file submission
+(b) average number of different answering methods used across questions,
+(c) total memory size of file submission
+(d) total time consume for answers submitted 
 
 ```{r}
 StudentLM_data <- merged_data_lm %>%
@@ -527,22 +528,79 @@ StudentLM_data <- merged_data_lm %>%
     total_diff_knowledge_areas = sum(colSums(across(16:23, as.numeric)) > 0),
     total_diff_sub_knowledge_areas = sum(colSums(across(25:39, as.numeric)) > 0),
     mean_question_scores = mean(question_score, na.rm = TRUE),
-    mean_memory_size = mean(memory, na.rm = TRUE),
+#    mean_memory_size = mean(memory, na.rm = TRUE),
+    mean_memory_size = mean(sapply(split(memory, title_ID), mean, na.rm = TRUE), na.rm = TRUE),
+    mean_timeconsume = mean(sapply(split(timeconsume, title_ID), mean, na.rm = TRUE), na.rm = TRUE),
     total_answering_attempts = n(),
-    total_diff_answering_methods = n_distinct(method, na.rm = TRUE),
-    total_memory_size = sum(memory, na.rm = TRUE)
+#    total_diff_answering_methods = n_distinct(method, na.rm = TRUE),
+    total_diff_answering_methods = mean(sapply(split(method, title_ID), function(x) n_distinct(x, na.rm = TRUE)), na.rm = TRUE),
+    total_memory_size = sum(memory, na.rm = TRUE),
+    total_timeconsume = sum(timeconsume, na.rm = TRUE)
   )
 
 glimpse(StudentLM_data)
 ```
 
-#### Removing highly skewed columns
+#### Univariate Analysis of features
 
-Inspecting the data frame, 3 variables were found to be highly skewed and concentrated within a small range of values, hence they are removed for more meaningful analysis, with the following code chunk.
+```{r}
+#| fig-width: 15
+#| fig-height: 12
+
+# Define the function to create combined box plot and histogram
+create_combined_plot <- function(data, variable) {
+  ggplot(data, aes_string(x = variable)) +
+    # Histogram
+    geom_histogram(aes(y = ..density..), bins = 30, fill = "skyblue", color = "black", alpha = 0.7) +
+    geom_density(alpha = 0.3, fill = "orange") +
+    # Box plot
+    geom_boxplot(aes(y = 0), width = 0.1, color = "red", position = position_nudge(y = -0.1)) +
+    theme_minimal() +
+    labs(x = variable, y = "Density") +
+    ggtitle(paste("Combined Histogram and Box Plot for", variable))
+}
+
+
+# Variables to plot
+variables <- names(StudentLM_data)[2:11]
+
+# Create combined plots for each variable
+plots <- lapply(variables, function(var) create_combined_plot(StudentLM_data, var))
+
+# Display the plots
+for (p in plots) {
+  print(p)
+}
+```
+
+#### Check for high colinearity
+
+```{r}
+#| fig-width: 12
+#| fig-height: 15
+
+SLM.cor <- cor(StudentLM_data[, 2:11])
+
+corrplot(SLM.cor, 
+         method = "ellipse", 
+         tl.pos = "lt",
+         tl.col = "black",
+         order="hclust",
+         hclust.method = "ward.D",
+         addrect = 3)
+
+ggstatsplot::ggcorrmat(
+  data = StudentLM_data, 
+  cor.vars = 2:11)
+```
+
+#### Removing highly skewed and correlated columns
+
+Inspecting the data frame, 2 variables were found to be highly skewed and concentrated within a small range of values, hence they are removed for more meaningful analysis, with the following code chunk. For high correlation with a threshold of >0.8, the removed variables are highly correlated to total different questions attempted, which is preserved in the data frame.
 
 ```{r}
 StudentLM_data <- StudentLM_data %>%
-  select(-total_diff_knowledge_areas, -total_diff_sub_knowledge_areas, -total_diff_answering_methods)
+  select(-total_diff_knowledge_areas, -total_diff_sub_knowledge_areas)
 
 glimpse(StudentLM_data)
 ```
@@ -577,7 +635,7 @@ silhouette_analysis <- function(data, max_clusters) {
 }
 
 # Determine the maximum number of clusters to test
-max_clusters <- 10
+max_clusters <- 18
 
 # Perform silhouette analysis
 avg_sil_widths <- silhouette_analysis(StudentLM_data_numeric, max_clusters)
@@ -611,7 +669,7 @@ compute_sse <- function(data, max_clusters) {
 }
 
 # Determine the maximum number of clusters to test
-max_clusters <- 10
+max_clusters <- 18
 
 # Compute SSE for each number of clusters
 sse_values <- compute_sse(StudentLM_data_numeric, max_clusters)
@@ -686,8 +744,8 @@ StudentLM_data_factor <- StudentLM_data
 StudentLM_data_factor$cluster <- as.character(StudentLM_data_factor$cluster)
 
 ggparcoord(data = StudentLM_data_factor, 
-           columns = c(2:8), 
-           groupColumn = 9,
+           columns = c(2:11), 
+           groupColumn = 12,
            scale = "uniminmax",
            alphaLines = 0.2,
            boxplot = TRUE, 
@@ -697,13 +755,44 @@ ggparcoord(data = StudentLM_data_factor,
 
 Based on the plot, there is varying degree of separation and distinctness between the 2 clusters across different variables. The more distinct separation are in variables such as total-memory size of answers, total answering attempt and mean memory size, where cluster 2 tends to fare better in these metrics suggesting that perhaps cluster 2 is the more hardworking learning mode among the 2.
 
+An Alluvial plot is also used in the following code chunk for an alterantive visualisation of the clustering, where variables are binned into 5 bin equally sized bins.
+
+```{r}
+# Define a function to bin numerical variables
+bin_variable <- function(x, bins = 3, labels = NULL) {
+  cut(x, breaks = bins, labels = labels)
+}
+
+# Apply binning to numerical columns
+StudentLM_data_binned <- StudentLM_data %>%
+  mutate(across(-student_ID, ~ bin_variable(., bins = 3)))
+
+# Convert data to long format
+StudentLM_data_long <- StudentLM_data_binned %>%
+  pivot_longer(cols = -c(student_ID, cluster), names_to = "variable", values_to = "value")
+
+# Create the alluvial plot
+ggplot(StudentLM_data_long,
+       aes(x = variable, stratum = value, alluvium = student_ID, fill = cluster, label = value)) +
+  geom_flow(stat = "alluvium", lode.guidance = "forward", color = "darkgray") +
+  geom_stratum() +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  scale_x_discrete(limits = unique(StudentLM_data_long$variable), expand = c(0.15, 0.05)) +
+  theme_minimal() +
+  labs(title = "Alluvial Plot of Clusters Dividing Among Variables",
+       x = "Variables",
+       y = "Count") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
 ### Hierarchical Clustering and Visualisation with heatmap
 
 As an alternative to K means, hierarchical clustering is also considered, and initiates with mapping the data frame into a data matrix, and thereby using the dend_expend function to determine the best clustering method.
 
 ```{r}
 row.names(StudentLM_data) <- StudentLM_data$student_ID
-StudentLM_data1 <- select(StudentLM_data, c(1, 2:8))
+StudentLM_data1 <- select(StudentLM_data, c(1, 2:11))
 StudentLM_data_matrix <- data.matrix(StudentLM_data1)
 
 StudentLM_data_d <- dist(normalize(StudentLM_data_matrix[, -c(1)]), method = "euclidean")
@@ -731,7 +820,7 @@ Now using the 2 parameters, the hierarchical clustering using an interactive hea
 heatmaply(normalize(StudentLM_data_matrix[, -c(1)]),
           dist_method = "euclidean",
           hclust_method = "average",
-          k_row = 2,
+          k_row = 10,
           margins = c(NA,200,60,NA),
           fontsize_row = 4,
           fontsize_col = 5,          
@@ -747,6 +836,7 @@ Based on the given data, the relevant features that best defines a learner's kno
 
 -   knowledge mastery determined by (a) overall sum of highest actual score for each question attempted and (b) sum of highest actual score of each question by knowledge area
 -   correct answering rate determined by (a) percentage of answers absolutely correct, (b) total number of questions with answers absolutely correct and partially correct
+-   
 
 ### Feature engineering
 
@@ -763,6 +853,9 @@ The following variables will be obtained with the code chunk below in preparatio
 
 (a) percentage of answers absolutely correct,
 (b) total number of questions with answers absolutely correct and partially correct
+
+-   Combined Metric
+
 
 ```{r}
 StudentKA_data <- merged_data %>%
