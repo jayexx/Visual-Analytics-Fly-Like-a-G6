@@ -1,57 +1,70 @@
 ---
-title: "Take-home_Ex03(vr2)"
+title: "Take-home Exercise 3"
+author: "Xiao Fudi"
+date: "June 09, 2024"
+
+
+execute:
+  warning: false
+  code-flow : true
+  output: html_document
 ---
 
----
-title: "ChinaVis"
-author: "SMU Student"
-date: "`r Sys.Date()`"
-output: html_document
----
+# 1. **Overview**
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,
-                      include = TRUE,
-                      warning = FALSE,
-                      message = FALSE)
+NorthClass, a prominent higher education institution with over 300,000 registered learners, offers more than 100 courses across various disciplines. To enhance its digital age competitiveness, NorthClass launched a programming course requiring learners to complete tasks with multiple submissions. Post-course, the institution collects learning data to assess instructional quality. NorthClass plans to form a Smart Education Development and Innovation Group to leverage AI for improving education and nurturing innovative talents. Visualization and Visual Analytics are proposed to transform complex learning data into intuitive graphical representations, aiding in diagnosing knowledge mastery, monitoring learning trends, and identifying factors causing learning difficulties. The task is to design and implement a Visual Analytics solution to help NorthClass perceive learners' progress and provide recommendations for teaching strategy adjustments and course design improvements.
 
-```
+# 2. **Our Task**
 
-## Introduction
+From the Challenge, the key problem statement was to perform a comprehensive analysis of multiple datasets that describe various aspects of the learner’s profile, learning patterns and status, to derive key insights to enhance teaching strategies and course design.
 
-NorthClass is a well-known higher education training institution that offers over 100 courses covering various academic disciplines such as literature, science, engineering, medicine, economics, and management, attracting approximately 300,000 registered learners. The institution establishes a flexible and convenient learning environment by providing excellent instructional services. In order to adapt to the development trend of the digital age and enhance its market competitiveness in the field of technology, the institution has planned and launched a programming course. Learners are required to complete specified programming tasks during the learning period, with multiple attempts and submissions allowed to ensure full mastery and application of the knowledge learned. After the completion of the course, the organization gathers learners' temporal learning data to assess whether the quality of instruction meets the predetermined standards and requirements. To optimize teaching resources and improve teaching quality, the institution aims to establish a dedicated Smart Education Development and Innovation Group that will explore how to empower education with next-generation artificial intelligence technology, in order to better cultivate innovative talents who are suited to the development needs of the new era. Visualization and Visual Analytics harness the power of high-bandwidth visual perception channels to transform complex temporal learning behavior data into comprehensible graphical representations. These techniques not only diagnose and analyze learners' knowledge mastery levels but also dynamically monitor the evolving trends in their learning behaviors. Additionally, they effectively identify and dissect potential factors that contribute to learning difficulties. If you were a member of the Smart Education Development and Innovation Group, please design and implement a Visual Analytics solution to help the institution intuitively perceive the learning status of learners and provide feasible suggestions for adjusting teaching strategies and course designs.
+Consequently the key requirements based on the 5 stipulated tasks in the challenge were as follows.
 
-## Tasks and Questions:
+-   Task 1: To provide a quantitative assessment of the learners’ knowledge mastery and identify weak links in their knowledge system, based on the multi-dimensional attributes such as answer scores and answer status in the learners’ log records of the learners’ question-answering behaviors.
 
-FishEye analysts need your help to perform geographic and temporal analysis of the CatchNet data so they can prevent illegal fishing from happening again. Your task is to develop new visual analytics tools and workflows that can be used to discover and understand signatures of different types of behavior. Can you use your tool to visualize a signature of SouthSeafood Express Corp’s illegal behavior? FishEye needs your help to develop a workflow to find other instances of illegal behavior.
+    This would entail an analysis of the learners’ aggregate performance in their programming tasks (a.k.a. questions in the dataset), including measures of central tendency, or any notable patterns that can glean insights towards knowledge mastery and weaknesses from the given datasets.
 
--   Analyze the log records of learners' question-answering behaviors, quantitatively assess the degree of knowledge mastery based on multi-dimensional attributes such as answer scores and answer status, and identify weak links in their knowledge system. (It is recommended that participants answer this question with no more than 800 words and no more than 5 pictures)
+# 3. **The Datasets**
 
--   Mine personalized learning behavior patterns based on learners' characteristics, and design and present learners' profiles from various perspectives, including peak answering hours, preferred question types, correct answering rates, etc. (It is recommended that participants answer this question with no more than 800 words and 5 pictures)
+The provided materials for the challenge include 3 datasets described below, as well as a separate document providing a more detailed description of the data and variables
 
--   Different learning modes directly impact learners' ability to absorb, integrate, and apply knowledge. Efficient learning modes can enhance deep understanding and long-term memory retention of knowledge. Please model the potential relationship between learning modes and knowledge acquisition, present the results in the form of a graph, and provide a brief analysis. (It is recommended that participants answer this question with no more than 800 words and 5 pictures)
+Dataset 1: Student Information - This comprises of 5 Cols, 1364 Rows, providing individualised demographic variables of the learners (a.k.a students) within the scope this project
 
--   The difficulty level of questions should align with the learner's level of knowledge. When a learner possesses a high level of knowledge but achieves a low percentage of correct answers, it indicates that the question's difficulty exceeds their ability. Please utilize Visual Analytics to identify these inappropriate questions. (It is recommended that participants answer this question with no more than 800 words and no more than 5 pictures)
+Dataset 2: Learning Subject Title Information - This comprises of 5 Cols, 44 Rows, providing variables of the questions from the programming tasks which are collated in the scope of this project
 
--   Based on the outcomes of the aforementioned analysis, it is crucial to offer valuable recommendations for topic designers and course managers to optimize question bank content settings and enhance the quality of teaching and learning. Please briefly explain the rationale behind these suggestions. (It is recommended that participants answer this question with no more than 800 words and 3 pictures)
+Dataset 3: Class Submission Records - This comprises of multiple datasets, each with 10 Cols and various number of rows, providing supposedly the participating learners’ answering variables to the questions collated in the scope of this project
 
-## Libraries
+# **4. Methodology**
 
-For this analysis, we will use the following packages from CRAN.
+Our methodology systematically integrates data collection, data processing, analysis, pattern mining, modeling, and recommendations to create a comprehensive Visual Analytics solution for improving teaching strategies and course designs at NorthClass Institute, showing as below: ![](images/IMG_5447.jpg){width="633"}
 
-[`rjson`](https://cran.r-project.org/web/packages/cluster/index.html) - Methods for Cluster analysis. Much extended the original from Peter Rousseeuw, Anja Struyf and Mia Hubert, based on Kaufman and Rousseeuw (1990) "Finding Groups in Data".\
-[`tidyverse`](https://www.tidyverse.org/packages/) - Loading the core tidyverse packages which will be used for data wrangling and visualisation.\
-[`visNetwork`](https://cran.r-project.org/web/packages/factoextra/readme/README.html#:~:text=The%20R%20package%20factoextra%20has,data%20visualization%20with%20less%20typing.) - Extract and Visualize the Results of Multivariate Data Analyses. [`ggasym`](https://ggobi.github.io/ggally/) Extension of `ggplot2` by adding several functions to reduce the complexity of combining geometric objects with transformed data. [`igraph`](https://ggobi.github.io/ggally/) Extension of `ggplot2` by adding several functions to reduce the complexity of combining geometric objects with transformed data.
+# **5. Getting Started**
+
+## **5.1 Loading R packages**
+
+The code chunk below imports the dataset into R environment by using [*`read_csv()`*](https://readr.tidyverse.org/reference/read_delim.html) function of [`readr`](https://readr.tidyverse.org/) package. **readr** is one of the tidyverse package.
+
+Read the individual CSV files into data frames. Check that the structure of each data frame is the same.
 
 ```{r}
-pacman::p_load(geojsonR,rjson,sf, dplyr,tidyr,stringr,readr,fs,purrr,ggplot2, plotly, ggstatsplot,igraph,lubridate,hms, vcd, ggalluvial, ggforce)
+pacman::p_load(dplyr,tidyr,stringr,readr,fs,purrr,ggplot2, plotly, ggstatsplot,igraph,lubridate,hms, vcd)
 ```
+
+## **5.2 Importing data**
+
+The code chunk below imports the dataset into R environment by using [*`read_csv()`*](https://readr.tidyverse.org/reference/read_delim.html) function of [`readr`](https://readr.tidyverse.org/) package. **readr** is one of the tidyverse package.
+
+Read the individual CSV files into data frames. Check that the structure of each data frame is the same.
 
 ```{r}
 df_StudentInfo <- read_csv("data/Data_StudentInfo.csv")
 df_TitleInfo <- read_csv("data/Data_TitleInfo.csv")
 
 ```
+
+<details>
+
+<summary>Click to show code</summary>
 
 ```{r}
 csv_file_list <- dir('data/Data_SubmitRecord')
@@ -65,6 +78,42 @@ for (file in csv_file_list) { # for every file...
 }
 df_StudentRecord %>% glimpse()
 ```
+
+</details>
+
+## 5.3 Data Preparation
+
+### 5.3.1 Check Missing Values
+
+First, we identify students who are enrolled in more than one class. This helps us focus on those who need their class assignments reviewed. For students enrolled in multiple classes, we determine the correct class by identifying which class they attended most frequently. Finally, we update the class assignments in the original dataset. We replace the incorrect class values with the correct class determined in the previous step. This ensures that each student is associated with the class they attended most often. \#### Missing Data
+
+colSums() and is.NA() functions are used to search for missing values as a whole for the 3 data sets in the code chunks as follows.
+
+```{R}
+#| warning: false
+
+#Find the number of missing values for each col
+colSums(is.na(df_StudentInfo))
+```
+
+```{R}
+#| warning: false
+
+#Find the number of missing values for each col
+colSums(is.na(df_TitleInfo))
+```
+
+```{R}
+#| warning: false
+
+#Find the number of missing values for each col
+colSums(is.na(df_StudentRecord))
+
+```
+
+<details>
+
+<summary>Click to show code</summary>
 
 ```{r}
 # Step 1: Identify students with multiple classes
@@ -93,6 +142,8 @@ print(df_StudentRecord)
 
 ```
 
+</details>
+
 ```{r}
 
 # Identify students with multiple classes
@@ -105,19 +156,27 @@ students_multiple_classes <- df_StudentRecord %>%
 print(students_multiple_classes)
 ```
 
+<details>
+
+<summary>Click to show code</summary>
+
 ```{r}
 #remove index column
-df_StudentRecord <- df_StudentRecord %>% select(-1)
+#df_StudentRecord <- df_StudentRecord %>% select(-1)
 df_TitleInfo <- df_TitleInfo %>% select(-1)
 df_StudentInfo <- df_StudentInfo %>% select(-1)
 
 ```
 
-```{r}
-summary(df_StudentRecord)
-summary (df_TitleInfo)
-summary (df_StudentInfo)
-```
+</details>
+
+### 5.3.2 Convert Data Type
+
+The `time_change` column in the `df_StudentRecord` dataset is converted from a timestamp to a `POSIXct` date-time format. This transformation allows for easier manipulation and analysis of time data in subsequent steps.
+
+<details>
+
+<summary>Click to show code</summary>
 
 ```{r}
 # Convert time from timestamp to POSIXct
@@ -133,10 +192,26 @@ df_StudentRecord <- df_StudentRecord %>%
   ) 
 
 df_TitleInfo <- df_TitleInfo %>%
-  mutate (
-    score = as.factor(score)
+  rename (
+     question_score = score
   )
 ```
+
+</details>
+
+### 5.3.2 Data Validation
+
+To validate the completeness of student records, we identify any students present in the `df_StudentRecord` dataset but missing in the `df_StudentInfo` dataset. This is done using the `anti_join` function, which performs a left join and returns only those records from `df_StudentRecord` that do not have a corresponding match in `df_StudentInfo`.
+
+To clean the dataset, we apply filters to remove records with erroneous or invalid data:
+
+-   **Remove Invalid States:** We filter out records with a specific invalid state (`'�������'`). This step ensures that only valid state values are retained in the dataset.
+
+-   **Remove Invalid Classes:** We filter out records with the class labeled as `"class"`, which is likely a placeholder or erroneous entry. This ensures that only legitimate class values are retained.
+
+<details>
+
+<summary>Click to show code</summary>
 
 ```{r}
 missing_students <- anti_join(df_StudentRecord, df_StudentInfo, by = "student_ID")
@@ -154,409 +229,593 @@ df_StudentRecord <- df_StudentRecord %>%
 ```
 
 ```{r}
-# Self join on knowledge to find pairs of title_IDs that share knowledge
-edges <- df_TitleInfo %>%
-  inner_join(df_TitleInfo, by = "knowledge") %>%
-  filter(title_ID.x != title_ID.y) %>%
-  select(title_ID.x, title_ID.y) %>%
-  distinct()
-```
 
-```{r}
-# Create a graph from the edges
-g <- graph_from_data_frame(edges, directed = FALSE)
-
-# Find connected components
-components <- clusters(g)
-
-# Map the component membership back to the title_info dataframe
-df_TitleInfo$domain <- components$membership[match(df_TitleInfo$title_ID, names(components$membership))]
-
-
-```
-
-```{r}
 # Aggregate knowledge and sub_knowledge into lists
 title_info_aggregated <- df_TitleInfo %>%
-  mutate (domain = as.factor(domain)) %>%
-  group_by(title_ID,score,domain) %>%
+  group_by(title_ID, question_score) %>%
   summarise(knowledge_list = list(unique(knowledge)),
             sub_knowledge_list = list(unique(sub_knowledge)),
             .groups = 'drop')
 
-# Add counts of knowledge and sub_knowledge elements
-title_info_aggregated <- title_info_aggregated %>%
-  mutate(knowledge_count = sapply(knowledge_list, length),
-         sub_knowledge_count = sapply(sub_knowledge_list, length))
+# View the first few rows of the aggregated data to confirm it looks correct
+head(title_info_aggregated)
+
 ```
+
+</details>
+
+<details>
+
+### 5.3.4 Merge data
+
+<summary>Click to show code</summary>
 
 ```{r}
 # Merge StudentInfo with SubmitRecord based on student_ID
 merged_data <- merge(df_StudentRecord, df_StudentInfo, by = "student_ID")
 
 # Merge TitleInfo with the already merged data based on title_ID
-merged_data <- merge(merged_data, title_info_aggregated, by = "title_ID")
+merged_data <- merge(merged_data, df_TitleInfo, by = "title_ID")
 
 merged_data <- merged_data %>%
   rename(
-    actual_score = score.x,
-    question_score = score.y
-  )
+    actual_score = score
+  ) %>%
+  mutate (actual_score = as.numeric(as.character(actual_score)))
 ```
 
-```{r}
-saveRDS(merged_data, "merged_data_df.rds")
-```
+</details>
+
+### 5.3.5 Point system for knowledge mastery
+
+The point system is designed to quantify a student's knowledge mastery based on their performance in answering questions. This system awards points based on the correctness of their answers, which helps in tracking their progress and identifying areas that need improvement.Point allocation as below:
+
+Absolutely Correct: If a student answers a question absolutely correctly, they are awarded 2 points. This indicates a strong understanding of the topic. Partially Correct: If a student answers a question partially correctly, the points awarded are proportional to their actual score relative to the question's total score. This scaled approach reflects the degree of correctness and understanding. Incorrect: If a student answers incorrectly, they are assigned a negative value (-1), indicating a lack of understanding or misconceptions that need to be addressed.
 
 ```{r}
-summary (merged_data)
-```
 
-```{r}
-create_summary_plots <- function(data) {
-  plots <- list()
-  
-  for (col in names(data)) {
-    if (is.numeric(data[[col]])) {
-      p <- ggplot(data, aes_string(x = col)) +
-        geom_histogram(binwidth = 1, fill = "blue", color = "black") +
-        ggtitle(paste("Histogram of", col)) +
-        theme_minimal()
-      plots[[col]] <- p
-    } else if (is.factor(data[[col]]) || is.character(data[[col]])) {
-      p <- ggplot(data, aes_string(x = col)) +
-        geom_bar(fill = "blue", color = "black") +
-        ggtitle(paste("Bar Plot of", col)) +
-        theme_minimal() +
-        theme(axis.text.x = element_text(angle = 45, hjust = 1))
-      plots[[col]] <- p
-    } else if (inherits(data[[col]], "Date")) {
-      p <- ggplot(data, aes_string(x = col)) +
-        geom_histogram(binwidth = 1, fill = "blue", color = "black") +
-        ggtitle(paste("Histogram of", col)) +
-        theme_minimal()
-      plots[[col]] <- p
-    } else if (inherits(data[[col]], "hms")) {
-      p <- ggplot(data, aes_string(x = col)) +
-        geom_histogram(binwidth = 60, fill = "blue", color = "black") +
-        ggtitle(paste("Histogram of", col)) +
-        theme_minimal()
-      plots[[col]] <- p
-    }
-  }
-  
-  return(plots)
-}
+merged_data <- merged_data %>%
+  mutate(true_points = case_when(
+    state == "Absolutely_Correct" ~ 2,
+    state == "Partially_Correct" ~  actual_score / question_score ,
+    TRUE ~ -1
+  )) 
 
-# Create the summary plots
-summary_plots <- create_summary_plots(merged_data)
+# Expand rows for questions with multiple knowledge groups
+knowledge_expanded <- merged_data %>%
+  separate_rows(knowledge, sep = ",") %>%
+  mutate(knowledge = str_trim(knowledge))
 
-# Print the plots
-for (plot_name in names(summary_plots)) {
-  print(summary_plots[[plot_name]])
-}
+# Identify students who have never gotten a title_ID Absolutely Correct
+never_absolutely_correct <- knowledge_expanded %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(
+    never_absolutely_correct = all(state != "Absolutely_Correct"),
+    .groups = 'drop'
+  ) %>%
+  filter(never_absolutely_correct)
+
+# Calculate knowledge mastery scores for each student
+knowledge_mastery <- knowledge_expanded %>%
+  group_by(student_ID, class, knowledge) %>%
+  summarise(average_score = mean(true_points), .groups = 'drop') %>%
+  left_join(df_StudentInfo %>% select(student_ID, sex, age, major), by = "student_ID") %>%
+  mutate(age = as.character(age))
+
+# Save processed datasets
+saveRDS(merged_data, file = "merged_data.RDS")
+saveRDS(knowledge_expanded, file = "knowledge_expanded.RDS")
+saveRDS(never_absolutely_correct, file = "never_absolutely_correct.RDS")
+saveRDS(knowledge_mastery, file = "knowledge_mastery.RDS")
 
 ```
 
 ```{r}
-check_state5 <- merged_data %>%
-  filter(state == "Error5")
+# View the results
+summary(points_by_student_question)
 ```
+
+# 6.Visualization on Learners Question-Answering Performance
+
+To provide a quantitative assessment of the learners’ knowledge mastery and identify weak links in their knowledge system.
+
+## 6.1 Overview
+
+::: {#overview .panel-tabset}
+### Distribution of Knowledge
 
 ```{r}
-check_na <- merged_data %>% filter(if_any(everything(), is.na))
-
-unique(check_na$state)
-```
-
-All Error 5 has no timeconsume, this could suggest Student skip the question.
-
-```{r}
-set.seed(123)  # For reproducibility
-sample_df <- merged_data %>%
-  sample_frac(0.10)
-
-```
-
-```{r}
-
-#ks_test <- ks.test(sample_df$timeconsume, "pnorm", mean(sample_df$timeconsume, na.rm = TRUE), sd(sample_df$timeconsume, na.rm = TRUE))
-#print(ks_test)
-
-kruskal_result <- kruskal.test(timeconsume ~ domain, data = sample_df)
-print(kruskal_result)
-
-```
-
-```{r}
-# Pairwise Comparisons using Dunn's Test (post hoc test for Kruskal-Wallis)
-install.packages("FSA")
-library(FSA)
-dunn_test <- dunnTest(timeconsume ~ domain, data = sample_df, method = "bonferroni")
-print(dunn_test)
-```
-
-```{r}
-# Pairwise comparisons using ggbetweenstats
-ggbetweenstats(
-  data = sample_df,
-  x = domain,
-  y = timeconsume,
-  pairwise.comparisons = TRUE,
-  pairwise.display = "significant",
-  p.adjust.method = "bonferroni",
-  title = "Time Consumed Across Various Domains with Pairwise Comparisons",
-  xlab = "Domain",
-  ylab = "Time Consumed (seconds)",
-  type = "nonparametric",  # Kruskal-Wallis is a nonparametric test
-  results.subtitle = TRUE,
-  messages = FALSE
-)
-
-
-```
-
-Are there association with the state of answer and domain?
-
-```{r}
-contingency_table <- table(merged_data$state, merged_data$domain)
-chi_squared_result <- chisq.test(contingency_table)
-print(chi_squared_result)
-if (chi_squared_result$p.value < 0.05) {
-  cat("There is a significant association between state and domain (p-value:", chi_squared_result$p.value, ")\n")
-} else {
-  cat("There is no significant association between state and domain (p-value:", chi_squared_result$p.value, ")\n")
-}
-```
-
-```{r, fig.height=15}
-
-sample_df_error <- sample_df %>%
-  filter (actual_score == "0")
-
-# Create an alluvial plot
-ggplot(as.data.frame(table(sample_df_error$domain, sample_df_error$state)),
-       aes(axis1 = Var1, axis2 = Var2, y = Freq)) +
-  geom_alluvium(aes(fill = Var2)) +
-  geom_stratum() +
-  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
-  labs(title = "Alluvial Plot of State by Domain",
-       x = "Category",
-       y = "Count",
-       fill = "State") +
-  theme_minimal()
-
-
-```
-
-```{r}
-ggstatsplot::ggbarstats(
-  data = sample_df,
-  x = state,
-  y = domain,
-  title = "Distribution of State across Domains",
-  xlab = "Domain",
-  ylab = "State",
-  messages = FALSE
-)
-
-```
-
-```{r}
-
-sample_df <- sample_df %>%
-  mutate (hour = hour(time) + minute(time)/60)
-
-```
-
-```{r}
-# Pairwise comparisons using ggbetweenstats
-ggbetweenstats(
-  data = sample_df,
-  x = class,
-  y = hour,
-  pairwise.comparisons = TRUE,
-  pairwise.display = "significant",
-  p.adjust.method = "bonferroni",
-  title = "Time Consumed Across Various Majors with Pairwise Comparisons",
-  xlab = "Majors",
-  ylab = "Hour",
-  type = "nonparametric",  # Kruskal-Wallis is a nonparametric test
-  results.subtitle = TRUE,
-  messages = FALSE
-)
-
-
-```
-
-```{r, fig.height=25}
-ggplot(heatmap_data, aes(x = major, y = hour, fill = attempt_count)) +
-  geom_tile() +
-  scale_fill_gradient(low = "white", high = "blue") +
-  scale_y_continuous(breaks = seq(0, 24, by = 1), limits = c(0, 24)) +
-  facet_wrap(~ actual_score) +
-  labs(title = "Distribution of Question Attempt Times by Major and Actual Score",
-       x = "Major",
-       y = "Time of Day (hours)",
-       fill = "Attempt Count") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-```
-
-```{r}
-# Step 1: Group by domain and state, and calculate the count of each state within each domain
-
-state_counts <- sample_df %>%
-  group_by(domain, state) %>%
-  summarise(state_count = n()) %>%
-  ungroup()
-
-# Step 2: Calculate the total count of all states within each domain
-total_counts <- state_counts %>%
-  group_by(domain) %>%
-  summarise(total_count = sum(state_count)) %>%
-  ungroup()
-
-state_percentage <- state_counts %>%
-  left_join(total_counts, by = "domain") %>%
-  mutate(percentage = (state_count / total_count) * 100)
-
-
-ggplot(state_percentage, aes(x = domain, y = percentage, fill = state)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Percentage of Each State for Each Domain",
-       x = "Domain",
-       y = "Percentage",
-       fill = "State") +
-  theme_minimal()
-
-```
-
-```{r}
-sample_df_zero <- sample_df %>%
-  filter (actual_score == "0")
-
-ggstatsplot::ggbarstats(
-  data = sample_df_zero,
-  x = state,
-  y = domain,
-  title = "Distribution of State across Domains",
-  xlab = "Domain",
-  ylab = "State",
-  messages = FALSE
-)
-
-
-```
-
-## Are there any Association between Domain and Errors?
-
-```{r}
-# Step 1: Create a contingency table
-contingency_table <- merged_data %>%
-  count(domain, state) %>%
-  spread(state, n, fill = 0)
-
-# Convert the contingency table to a matrix
-contingency_matrix <- as.matrix(contingency_table[,-1])
-
-# Step 2: Perform the chi-squared test
-chi_squared_test <- chisq.test(contingency_matrix)
-
-# Step 3: Print the results
-print(chi_squared_test)
-
-# Optional: Print expected values to see where the deviations are
-print(chi_squared_test$expected)
-
-
-```
-
-```{r, fig.height=25}
-sample_df_zero <- merged_data %>%
-  filter (actual_score == "0")
-
-# Step 1: Create a contingency table
-contingency_table_error <- sample_df_zero %>%
-  filter (state != "Error9") %>%
-  count(domain, state) %>%
-  spread(state, n, fill = 0)
-
-# Convert the contingency table to a matrix
-contingency_matrix <- as.matrix(contingency_table_error[,-1])
-
-# Step 2: Perform the chi-squared test
-chi_squared_test <- chisq.test(contingency_matrix)
-
-# Step 3: Print the results
-print(chi_squared_test)
-
-# Optional: Print expected values to see where the deviations are
-print(chi_squared_test$expected)
-
-
-
-
-mosaic_data <- table(sample_df_zero$domain, sample_df_zero$state)
-
-mosaicplot(mosaic_data, main = "Mosaic Plot of State by Domain", shade = TRUE, color = TRUE)
-
-
-#mosaic_data <- table(merged_data$domain, merged_data$state)
-
-#mosaicplot(mosaic_data, main = "Mosaic Plot of State by Domain", shade = TRUE, color = TRUE)
-
-```
-
-```{r, fig.height=20}
-# Create an alluvial plot
-ggplot(as.data.frame(table(merged_data$domain, merged_data$state)),
-       aes(axis1 = Var1, axis2 = Var2, y = Freq)) +
-  geom_alluvium(aes(fill = Var2)) +
-  geom_stratum() +
-  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
-  labs(title = "Alluvial Plot of State by Domain",
-       x = "Category",
-       y = "Count",
-       fill = "State") +
-  theme_minimal()
-
-
-```
-
-```{r, fig.height=20}
-
-# Prepare the data for the alluvial plot
-alluvial_data <- merged_data %>%
-  count(class, state, method, sex, domain, actual_score) %>%
-  rename(Freq = n)
-
-# Create the alluvial plot
-ggplot(alluvial_data,
-       aes(axis1 = class, axis2 = state, axis3 = method, axis4 = sex, axis5 = domain, axis6 = actual_score, y = Freq)) +
-  geom_alluvium(aes(fill = state), width = 1/12) +
-  geom_stratum(width = 1/12, fill = "white", color = "black") +
-  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
-  scale_x_discrete(limits = c("class", "state", "method", "sex", "domain", "actual_score"), expand = c(0.15, 0.05)) +
-  scale_fill_brewer(type = "qual", palette = "Set3") +
-  labs(title = "Alluvial Plot of Categorical Variables",
-       x = "Categories",
-       y = "Count",
-       fill = "State") +
-  theme_minimal() +
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-```{r}
-
-# Identify students with multiple classes
-students_multiple_classes <- df_StudentRecord %>%
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(patchwork)
+
+# Ensure actual_score is numeric
+merged_data$actual_score <- as.numeric(as.character(merged_data$actual_score))
+
+# Convert necessary columns to factors if they are not numeric
+merged_data$title_ID <- as.factor(merged_data$title_ID)
+merged_data$state <- as.factor(merged_data$state)
+merged_data$method <- as.factor(merged_data$method)
+merged_data$class <- as.factor(merged_data$class)
+merged_data$sex <- as.factor(merged_data$sex)
+merged_data$major <- as.factor(merged_data$major)
+merged_data$age <- as.numeric(as.character(merged_data$age))
+
+# Aggregate data by student_ID to ensure unique counts for class, age, sex, and major
+unique_students <- merged_data %>%
   group_by(student_ID) %>%
-  summarise(unique_classes = n_distinct(title_ID)) %>%
-  filter(unique_classes > 1)
+  summarise(class = first(class),
+            age = first(age),
+            sex = first(sex),
+            major = first(major),
+            .groups = 'drop')
 
-# Display the results
-print(students_multiple_classes)
+# Plot distributions
+p1 <- ggplot(merged_data, aes(x = title_ID)) +
+  geom_bar(fill = 'steelblue', color = 'black') +
+  labs(x = 'Title ID', y = 'Number') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+
+p2 <- ggplot(merged_data, aes(x = actual_score)) +
+  geom_histogram(binwidth = 1, fill = 'steelblue', color = 'black') +
+  labs(x = 'Actual Score', y = 'Number')
+
+p3 <- ggplot(merged_data, aes(x = state)) +
+  geom_bar(fill = 'steelblue', color = 'black') +
+  labs(x = 'State', y = 'Number') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+
+p4 <- ggplot(unique_students, aes(x = major)) +
+  geom_bar(fill = 'steelblue', color = 'black') +
+  labs(x = 'Major', y = 'Counts') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+
+p5 <- ggplot(unique_students, aes(x = age)) +
+  geom_histogram(binwidth = 1, fill = 'steelblue', color = 'black') +
+  labs(x = 'Age', y = 'Counts')
+
+p6 <- ggplot(unique_students, aes(x = class)) +
+  geom_bar(fill = 'steelblue', color = 'black') +
+  labs(x = 'Class', y = 'Counts') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+
+p7 <- ggplot(unique_students, aes(x = sex)) +
+  geom_bar(fill = 'steelblue', color = 'black') +
+  labs(x = 'Sex', y = 'Counts')
+
+# Combine the plots into one layout
+combined_plot <- (p1 | p2 | p3) / (p4 | p5 | p6 | p7)
+
+# Display the combined plot
+print(combined_plot)
+
 ```
+:::
+
+## 6.2 Pertentage of attempted Knowledge
+
+The plot reveals the distribution of different knowledge areas based on their occurrence percentages. It shows that the knowledge areas are not evenly distributed among the students, with some areas being more prevalent than others.
+
+```{r}
+# Ensure 'knowledge' is a factor
+knowledge_expanded$knowledge <- as.factor(knowledge_expanded$knowledge)
+
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+
+# Check the column names in knowledge_expanded
+print(colnames(knowledge_expanded))
+
+# Calculate the count of questions for each knowledge area
+knowledge_counts <- knowledge_expanded %>%
+  group_by(knowledge) %>%
+  summarise(count = n(), .groups = 'drop')
+
+# Calculate the total number of questions
+total_questions <- nrow(knowledge_expanded)
+
+# Calculate the percentage of questions for each knowledge area
+knowledge_percentages <- knowledge_counts %>%
+  mutate(percentage = count / total_questions * 100)
+
+# Add percentage labels to the data frame
+knowledge_percentages <- knowledge_percentages %>%
+  mutate(label = paste0(round(percentage, 1), "%"))
+
+# Reorder knowledge areas by percentage
+knowledge_percentages <- knowledge_percentages %>%
+  arrange(desc(percentage)) %>%
+  mutate(knowledge = factor(knowledge, levels = knowledge))
+
+# Create a histogram for knowledge percentages with percentage labels
+p_knowledge_histogram <- ggplot(knowledge_percentages, aes(x = knowledge, y = percentage, fill = knowledge)) +
+  geom_bar(stat = "identity", color = 'black') +
+  labs(title = 'Attempted Percentage of Knowledge Area', x = 'Knowledge Area', y = 'Percentage') +
+  scale_fill_brewer(palette = "Set3") +
+  geom_text(aes(label = label), vjust = -0.5, size = 3, color = "black") +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.title.x = element_text(size = 14, margin = margin(t = 20)),
+    axis.title.y = element_text(size = 14, margin = margin(r = 20)),
+    plot.title = element_text(size = 12, face = "bold", margin = margin(b = 20)),
+    legend.position = "none"
+  )
+
+# Print histogram
+print(p_knowledge_histogram)
+
+```
+
+::: callout-note
+-   The least represented knowledge areas are `4W1c` (2.3%) and `5Y2f` (2.2%). These areas show significantly lower representation compared to the major knowledge areas.
+
+-   The higher percentages in certain knowledge areas suggest that students may be more focused or more frequently exposed to these areas.
+:::
+
+## 6.3 Total Sum Points on Each Knowlwege Area
+
+The ridge plot allows for a clear comparison of the distribution of points across multiple knowledge areas. This makes it easy to identify which areas have similar or different performance distributions. The plot can help in identifying outliers or extreme values within each knowledge area. Areas with a longer tail in their distribution might indicate outliers or a larger variance in performance.
+
+```{r}
+
+# Check the column names in knowledge_expanded
+print(colnames(knowledge_expanded))
+
+# Ensure that 'true_points' column is numeric
+knowledge_points <- knowledge_expanded %>%
+  mutate(true_points = as.numeric(true_points))
+
+# Check for missing values
+print(summary(knowledge_points))
+
+# Aggregate the total sum of points by student_ID, title_ID, and knowledge area
+sum_true_points <- knowledge_points %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(total_sum_points = sum(true_points, na.rm = TRUE), .groups = 'drop')
+
+# Aggregate to get the total sum of points for each title_ID and knowledge area
+total_sum_points <- sum_true_points %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(total_sum_points = sum(total_sum_points, na.rm = TRUE), .groups = 'drop')
+
+# Check the aggregated data
+print(head(total_sum_points))
+
+# Create the ridge plot with quantiles and quartiles
+p_ridge_sum_quantiles <- ggplot(total_sum_points, aes(x = total_sum_points, y = knowledge, fill = factor(stat(quantile)))) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE,
+    quantiles = 4,
+    quantile_lines = TRUE
+  ) +
+  scale_fill_viridis_d(name = "Quartiles") +
+  labs(title = "Total Sum Points Distribution per Knowledge Area ", x = "Total Sum Points", y = "Knowledge Area") +
+  theme_ridges() +
+  theme(
+    axis.text.y = element_text(size = 8),
+    axis.title.x = element_text(size = 14, margin = margin(t = 20)),
+    axis.title.y = element_text(size = 14, margin = margin(r = 20)),
+    plot.title = element_text(size = 14, face = "bold", margin = margin(b = 20)),
+    legend.position = "right"
+  )
+
+# Print the ridge plot
+print(p_ridge_sum_quantiles)
+
+```
+
+::: callout-note
+-   knowledge areas `r8Y2f` and `k4W1c` lack representation of quartile colors.This absence indicates that the data for these knowledge areas does not span across all quartiles. It might be due to a limited range of total sum points or an insufficient number of observations to populate all quartile categories.
+
+-   `r8S3g` has a noticeable peak in the first quartile (purple), indicating a concentration of lower scores and fewer observations in higher score ranges.
+
+-   The absence of certain quartiles in some knowledge areas suggests the need for targeted interventions to improve performance and ensure a more even distribution of scores.
+:::
+
+## 6.4 Students' Average Points on Knowledge Area
+
+The box plot provides a comprehensive view of students' performance across different knowledge areas, based on the criteria of -1 for errors, 1 for partially correct, and 2 for absolutely correct responses. It highlights areas of strength and weakness.
+
+```{r}
+
+# Check the column names in knowledge_expanded
+print(colnames(knowledge_expanded))
+
+# Ensure that 'true_points' column is numeric
+knowledge_points <- knowledge_expanded %>%
+  mutate(true_points = as.numeric(true_points))
+
+# Check for missing values
+print(summary(knowledge_points))
+
+# Aggregate the total true points by student_ID, title_ID, and knowledge area
+knowledge_points_agg <- knowledge_points %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(avg_true_points = mean(true_points, na.rm = TRUE), .groups = 'drop')
+
+# Calculate median average points for each knowledge area
+medians <- knowledge_points_agg %>%
+  group_by(knowledge) %>%
+  summarise(median_avg_points = median(avg_true_points), .groups = 'drop')
+
+# Check the aggregated data
+print(head(knowledge_points_agg))
+print(medians)
+
+# Create the box plot for average points distribution by knowledge area
+p4 <- ggplot(knowledge_points_agg, aes(x = knowledge, y = avg_true_points, fill = knowledge)) +
+  geom_boxplot() +
+  geom_point(data = medians, aes(x = knowledge, y = median_avg_points), color = "black", size = 3) +
+  geom_text_repel(data = medians, aes(x = knowledge, y = median_avg_points, label = round(median_avg_points, 2)),
+                  nudge_y = 0.5, size = 3, color = "black") +
+  labs(title = "Students Average Points Distribution by Knowledge Area", x = "Knowledge Area", y = "Average Points") +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 10),
+    axis.title.x = element_text(size = 14, margin = margin(t = 20)),
+    axis.title.y = element_text(size = 14, margin = margin(r = 20)),
+    plot.title = element_text(size = 16, face = "bold", margin = margin(b = 20)),
+    legend.position = "none"
+  ) +
+  scale_fill_brewer(palette = "Set3")
+
+# Print plot
+print(p4)
+
+```
+
+::: callout-note
+-   The median values around 0.5 in knowledge areas such as `b3C9s`, `g7R2j`, `k4W1c`, `m3D1v`, and `t5V9e` suggest that the average performance is close to partially correct responses.
+
+<!-- -->
+
+-   `r8S3g` has a median average point of -0.11, indicating that students, on average, are making errors in this knowledge area.
+
+-   The interquartile range (IQR) shows the spread of the middle 50% of the data. Larger IQRs in areas like `k4W1c`, `m3D1v`, and `t5V9e` suggest that there is significant variability in student performance.
+:::
+
+### 6.5 Heatmap for Total Point Score per Queation for Each Knowledge Area
+
+The heatmap visualizes the total point score sum per question for each knowledge area. It aims to show how well students perform on different questions within various knowledge areas based on the total points accumulated from the point system, -1 point indicates an error, 1 point indicates a partially correct response, 2 points indicates an absolutely correct response. The heatmap also clearly shows the allocation of the questions in each of the knowledge areas.
+
+```{r}
+
+# Check the column names in knowledge_expanded
+print(colnames(knowledge_expanded))
+
+# Ensure 'true_points' is numeric
+knowledge_expanded <- knowledge_expanded %>%
+  mutate(true_points = as.numeric(true_points))
+
+# Calculate total attempts per question per knowledge area for each student
+knowledge_expanded <- knowledge_expanded %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  mutate(attempts = n()) %>%
+  ungroup()
+
+# Aggregate data to calculate the total true points and total attempts per question and knowledge area for each student
+total_points_attempts <- knowledge_expanded %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(total_points_sum = sum(true_points, na.rm = TRUE),
+            total_attempts = sum(attempts, na.rm = TRUE), .groups = 'drop')
+
+# Further aggregate to get the total points sum and total attempts across all students for each title_ID and knowledge
+total_summary <- total_points_attempts %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(total_points_sum = sum(total_points_sum, na.rm = TRUE),
+            total_attempts = sum(total_attempts, na.rm = TRUE), .groups = 'drop')
+
+# Ensure 'knowledge' is treated as a factor for ggplot2 aesthetics
+total_summary <- total_summary %>%
+  mutate(knowledge = as.factor(knowledge))
+
+# Define the color scale limits based on your data range
+color_scale_limits <- range(total_summary$total_points_sum, na.rm = TRUE)
+
+# Create the heatmap using ggplot2 with custom hover text
+p_heatmap <- ggplot(total_summary, aes(x = knowledge, y = title_ID, fill = total_points_sum,
+                                       text = paste("Total Points:", total_points_sum, "<br>Total Attempts:", total_attempts))) +
+  geom_tile(color = "blue") +
+  scale_fill_gradient2(low = "blue", mid = "green", high = "red", midpoint = -5000, 
+                       limits = color_scale_limits, name = "Total Points") +
+  labs(title = "Total Point Score Sum per Knowledge Area per Question",
+       x = "Knowledge Areas",
+       y = "Question IDs",
+       fill = "Total Points") +
+ theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y = element_text(size = 6),
+    axis.title.x = element_text(size = 10, margin = margin(t = 15)),
+    axis.title.y = element_text(size = 10, margin = margin(r = 15)),
+    plot.title = element_text(size = 8, face = "bold", margin = margin(b = 15)),
+    legend.title = element_text(size = 8),  # Adjust legend title size
+    legend.text = element_text(size = 8),  # Adjust legend text size
+    legend.key.size = unit(1, "cm"),        # Adjust size of the legend keys
+    legend.position = "right"
+  )
+# Convert the ggplot object to a plotly object for interactivity
+p_heatmap_interactive <- ggplotly(p_heatmap, tooltip = "text")
+
+# Print the interactive heatmap
+p_heatmap_interactive
+
+
+```
+
+::: callout-note
+-   Some questions in certain knowledge areas have high total points (indicated by red/orange colors), suggesting that students performed well on these questions. Other questions have lower or negative total scores (indicated by green to blue colors), suggesting poor performance or high error rates.
+
+```{=html}
+<!-- -->
+```
+-   In the knowledge area `g7R2j`, several questions have high total points, indicating that students frequently answered these questions correctly.
+
+-   In the knowledge area `r8S3g`, some questions have negative or low total points, indicating students struggled with these questions.
+
+```{=html}
+<!-- -->
+```
+-   The presence of blue and green bars suggests areas where performance is notably poor, requiring further attention.
+:::
+
+### 6.6 Heatmap for the average highest actual score per knowledge area 
+
+The purpose of this heatmap is to visualize the average highest actual score per knowledge area for each question. This plot helps in identifying the performance of students on different questions across various knowledge areas. It provides insights into which questions and knowledge areas students perform well in and which ones they struggle with.
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+# Check the column names in knowledge_expanded
+print(colnames(knowledge_expanded))
+
+# Ensure 'actual_score' and 'question_score' are numeric
+knowledge_expanded <- knowledge_expanded %>%
+  mutate(actual_score = as.numeric(actual_score),
+         question_score = as.numeric(question_score))
+
+# Calculate the highest actual_score for each student for each question and knowledge area
+highest_scores <- knowledge_expanded %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(highest_actual_score = max(actual_score, na.rm = TRUE), .groups = 'drop')
+
+# Calculate the average highest actual_score for each title_ID and knowledge area
+average_highest_scores <- highest_scores %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(average_highest_score = mean(highest_actual_score, na.rm = TRUE), .groups = 'drop')
+
+# Retrieve the question_score for each title_ID and knowledge
+average_highest_scores <- average_highest_scores %>%
+  left_join(knowledge_expanded %>% select(title_ID, question_score) %>% distinct(), by = "title_ID")
+
+# Ensure 'knowledge' is treated as a factor for ggplot2 aesthetics
+average_highest_scores <- average_highest_scores %>%
+  mutate(knowledge = as.factor(knowledge))
+
+# Define the color scale limits based on your data range
+color_scale_limits <- range(average_highest_scores$average_highest_score, na.rm = TRUE)
+
+# Create the heatmap using ggplot2 with custom hover text
+p_heatmap <- ggplot(average_highest_scores, aes(x = knowledge, y = title_ID, fill = average_highest_score,
+                                       text = paste("Avg Highest Score:", round(average_highest_score, 2),
+                                                    "<br>Question Score:", question_score))) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", mid = "green", high = "red", midpoint = 2.5, 
+                       limits = color_scale_limits, name = "Avg Highest Score") +
+  labs(title = "Average Highest Actual Score per Knowledge Area per Question",
+       x = "Knowledge Areas",
+       y = "Question IDs",
+       fill = "Avg Highest Score") +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y = element_text(size = 6),
+    axis.title.x = element_text(size = 10, margin = margin(t = 15)),
+    axis.title.y = element_text(size = 10, margin = margin(r = 15)),
+    plot.title = element_text(size = 8, face = "bold", margin = margin(b = 15)),
+    legend.title = element_text(size = 8),  # Adjust legend title size
+    legend.text = element_text(size = 8),  # Adjust legend text size
+    legend.key.size = unit(1, "cm"),        # Adjust size of the legend keys
+    legend.position = "right"
+  )
+
+# Convert the ggplot object to a plotly object for interactivity
+p_heatmap_interactive <- ggplotly(p_heatmap, tooltip = "text")
+
+# Print the interactive heatmap
+p_heatmap_interactive
+
+```
+
+::: callout-note
+-   Some knowledge areas and questions have higher average highest scores (orange to light green), indicating better performance. Other areas have lower scores (blue to green), indicating lower mastery.
+
+-   There is one question in knowledge area `b3C9s` shows high scores because the questions in this area have higher questions score of 4 points. The knowledge area `r8S3g` shows lower scores because the question has lower question scores of 1 point. The knowledge area `t5V9e` has moderate scores with questions scores of 2 points.
+:::
+
+### Conclusion :
+
+Based on all the plots , we can have a general picture of the students performance on different knowledge areas.
+
+`b3C9s :`
+
+-   The total sum points distribution shows a wide spread with many students achieving high scores.The box plot indicates a median score of 0.5, suggesting moderate to high performance. The heatmap for total point score sum shows consistently high scores across various questions. The average highest actual score per question is generally high.
+
+-   Despite a lower attempts percentage (5.4%), students have a good knowledge mastery of this knowledge area.
+
+`g7R2j:`
+
+-   The total sum points distribution shows moderate performance with a mix of high and low scores. The box plot indicates a median score of 0.49, which is close to the partially correct mark. The heatmap shows varied performance across different questions.The average highest actual scores are relatively high, indicating that some students perform well.
+
+-   With a moderate attempts percentage (12%), students have a decent understanding of this knowledge area, but knowledge mastery performance is variable.
+
+`k4W1c:`
+
+-   The total sum points distribution indicates moderate performance with some variability.The box plot shows a median score of 0.5, indicating moderate performance. The heatmap reveals variability in performance across different questions.The average highest actual scores are moderate, with some students performing well.
+
+```{=html}
+<!-- -->
+```
+-   Despite a low attempts percentage (2.3%), students have a moderate understanding, but there is variability in knowledge mastery performance.
+
+`m3D1v:`
+
+-   The total sum points distribution shows moderate to high performance with some variability. The box plot indicates a median score of 0.5, suggesting moderate to high performance.The heatmap shows high variability in performance across different questions. The average highest actual scores are moderate, indicating mixed performance.
+
+```{=html}
+<!-- -->
+```
+-   With a high attempts percentage (23.9%), students have a good understanding but exhibit variability in knowledge mastery performance.
+
+`r8S3g:`
+
+-   The total sum points distribution shows a skew towards lower scores, indicating significant challenges.The box plot indicates a negative median score (-0.11), suggesting frequent errors and poor performance. The heatmap shows low total points for many questions.The average highest actual scores are generally low.
+
+-   Despite a significant attempts percentage (17.6%), students struggle significantly with this knowledge area, indicating the weak knowledge mastery.
+
+`s8Y2f:`
+
+-   The total sum points distribution indicates moderate performance with some high scores.The box plot shows a median score of 0.2, indicating moderate to low performance. The heatmap shows variability in performance across different questions. The average highest actual scores are moderate.
+
+```{=html}
+<!-- -->
+```
+-   Despite a low attempts percentage (2.2%), students show a moderate understanding but need improvement.
+
+`t5V9e:`
+
+-   The total sum points distribution shows moderate to high performance.The box plot indicates a median score of 0.5, suggesting moderate to high performance. The heatmap shows varied performance across different questions.The average highest actual scores are relatively high.
+
+```{=html}
+<!-- -->
+```
+-   With a moderate attempts percentage (13.8%), students have a good understanding but exhibit some variability in performance.
+
+`y9W5d:`
+
+-   The total sum points distribution shows a wide spread with many students achieving high scores.
+
+-   The box plot indicates a median score of 0.5, suggesting moderate to high performance.The heatmap shows high total points for many questions. The average highest actual scores are high, indicating strong performance.
+
+```{=html}
+<!-- -->
+```
+-   With a high attempts percentage (22.8%), students have a good mastery of this knowledge area.
+
+**Strong Knowledge Areas:** `b3C9s`, `y9W5d`
+
+High knowledge mastery among students, indicating effective teaching methods and potential for introducing advanced challenges.
+
+**Moderate Knowledge Areas:** `g7R2j`, `k4W1c`, `m3D1v`, `t5V9e`
+
+Moderate performance with some variability, indicating potential for improvement with differentiated instruction and targeted support.
+
+**Weak knowledge Areas:** `r8S3g`, `s8Y2f`
+
+Weak knowledge mastery among students, indicating a need for immediate interventions, additional practice, and focused review sessions to address gaps in understanding.
