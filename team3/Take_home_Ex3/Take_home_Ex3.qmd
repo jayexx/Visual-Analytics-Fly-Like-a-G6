@@ -62,9 +62,11 @@ The code chunk below loads the following libraries:
 -   heatmaply
 -   corrplot
 -   ggalluvial
+-   entropy
+-   ineq
 
 ```{r}
-pacman::p_load(tidyverse, knitr, ggridges, ggdist, colorspace, ggrepel, ggthemes, hrbrthemes, patchwork, lubridate, ggstatsplot, plotly, rjson, visNetwork, BiocManager, igraph, cluster, factoextra, stats, hms, caret, ggfortify, gridExtra, GGally, parallelPlot, seriation, dendextend, heatmaply, corrplot, ggalluvial) 
+pacman::p_load(tidyverse, knitr, ggridges, ggdist, colorspace, ggrepel, ggthemes, hrbrthemes, patchwork, lubridate, ggstatsplot, plotly, rjson, visNetwork, BiocManager, igraph, cluster, factoextra, stats, hms, caret, ggfortify, gridExtra, GGally, parallelPlot, seriation, dendextend, heatmaply, corrplot, ggalluvial, entropy, ineq) 
 ```
 
 ### Importing the Data
@@ -471,6 +473,7 @@ Based on the given data, the relevant features that best defines a learner's lea
 -   Variety of question types attempted determined by (a) total number of different questions attempted, (b) total number of different knowledge and sub knowledge areas covered,
 -   Depth of question types and answers determined by (a) mean question scores, (b) mean memory size of file submissions across questions
 -   Level of learning effort determined by (a) total number of answering attempts, (b) average number of different answering methods used across questions, (C) total memory size of file submission
+-   Categorical preferences
 
 ### Feature engineering
 
@@ -525,15 +528,23 @@ StudentLM_data <- merged_data_lm %>%
     pct_answers_weekdays = sum(is_weekday, na.rm = TRUE) / n() * 100,
     pct_answers_working_hours = sum(is_working_hours, na.rm = TRUE) / n() * 100,
     total_diff_questions_attempted = n_distinct(title_ID, na.rm = TRUE),
+
+    # Compute Gini index for title_ID (question_gini)
+    question_gini = Gini(table(title_ID)),
+
     total_diff_knowledge_areas = sum(colSums(across(16:23, as.numeric)) > 0),
     total_diff_sub_knowledge_areas = sum(colSums(across(25:39, as.numeric)) > 0),
     mean_question_scores = mean(question_score, na.rm = TRUE),
 #    mean_memory_size = mean(memory, na.rm = TRUE),
-    mean_memory_size = mean(sapply(split(memory, title_ID), mean, na.rm = TRUE), na.rm = TRUE),
+    mean_memory_size_by_qns = mean(sapply(split(memory, title_ID), mean, na.rm = TRUE), na.rm = TRUE),
     mean_timeconsume = mean(sapply(split(timeconsume, title_ID), mean, na.rm = TRUE), na.rm = TRUE),
     total_answering_attempts = n(),
 #    total_diff_answering_methods = n_distinct(method, na.rm = TRUE),
-    total_diff_answering_methods = mean(sapply(split(method, title_ID), function(x) n_distinct(x, na.rm = TRUE)), na.rm = TRUE),
+    mean_diff_answering_methods_by_qns = mean(sapply(split(method, title_ID), function(x) n_distinct(x, na.rm = TRUE)), na.rm = TRUE),
+
+    # Compute Gini index for method (method_gini)
+    method_gini = Gini(table(method)),
+
     total_memory_size = sum(memory, na.rm = TRUE),
     total_timeconsume = sum(timeconsume, na.rm = TRUE)
   )
@@ -562,7 +573,7 @@ create_combined_plot <- function(data, variable) {
 
 
 # Variables to plot
-variables <- names(StudentLM_data)[2:11]
+variables <- names(StudentLM_data)[2:15]
 
 # Create combined plots for each variable
 plots <- lapply(variables, function(var) create_combined_plot(StudentLM_data, var))
@@ -576,10 +587,10 @@ for (p in plots) {
 #### Check for high colinearity
 
 ```{r}
-#| fig-width: 12
-#| fig-height: 15
+#| fig-width: 15
+#| fig-height: 18
 
-SLM.cor <- cor(StudentLM_data[, 2:11])
+SLM.cor <- cor(StudentLM_data[, 2:15])
 
 corrplot(SLM.cor, 
          method = "ellipse", 
@@ -591,16 +602,23 @@ corrplot(SLM.cor,
 
 ggstatsplot::ggcorrmat(
   data = StudentLM_data, 
-  cor.vars = 2:11)
+  cor.vars = 2:15)
 ```
 
 #### Removing highly skewed and correlated columns
 
-Inspecting the data frame, 2 variables were found to be highly skewed and concentrated within a small range of values, hence they are removed for more meaningful analysis, with the following code chunk. For high correlation with a threshold of >0.8, the removed variables are highly correlated to total different questions attempted, which is preserved in the data frame.
+Based on the output from the univariate and correlation analysis, 2 variables were found to be highly skewed and concentrated within 1 or 2 values, hence they are removed for more meaningful analysis, with the following code chunk. For high correlation with a threshold of >0.8, 3 variables were found to be highly correlated, of which,  2 have been removed as highly skewed, leaving total_different_questions_attempted in the data frame.
 
 ```{r}
 StudentLM_data <- StudentLM_data %>%
-  select(-total_diff_knowledge_areas, -total_diff_sub_knowledge_areas)
+  select(-total_diff_knowledge_areas, 
+#         -total_timeconsume, 
+#         -total_memory_size, 
+#         -total_answering_attempts, 
+#         -mean_diff_answering_methods_by_qns, 
+#         -question_gini, 
+#         -total_diff_questions_attempted, 
+         -total_diff_sub_knowledge_areas)
 
 glimpse(StudentLM_data)
 ```
@@ -635,7 +653,7 @@ silhouette_analysis <- function(data, max_clusters) {
 }
 
 # Determine the maximum number of clusters to test
-max_clusters <- 18
+max_clusters <- 12
 
 # Perform silhouette analysis
 avg_sil_widths <- silhouette_analysis(StudentLM_data_numeric, max_clusters)
@@ -685,7 +703,7 @@ text(elbow_point, sse_values[elbow_point], labels = paste("Elbow Point:", elbow_
 
 ```
 
-### K Means clustering
+### K Means clustering and Visualisation
 
 K Means clustering is then performed on the recompiled learners' learning mode features with the number of clusters set as 2 based on the above results, in the following code chunk
 
@@ -704,8 +722,6 @@ kmeans_result <- kmeans(clustering_data_scaled, centers = 2, nstart = 25)
 # Add the cluster assignments to the original data
 StudentLM_data$cluster <- kmeans_result$cluster
 ```
-
-### Visualisation of K Means clusters
 
 The first plot for visualisation of the K means cluster is the Principal Component Analysis (PCA) Plot, which gives an initial sensing of the separation of the clusters based on first 2 PCA components that rank the highest in distinctness amongst the features used. This is plotted with the following code chunk.
 
@@ -744,8 +760,8 @@ StudentLM_data_factor <- StudentLM_data
 StudentLM_data_factor$cluster <- as.character(StudentLM_data_factor$cluster)
 
 ggparcoord(data = StudentLM_data_factor, 
-           columns = c(2:11), 
-           groupColumn = 12,
+           columns = c(2:13), 
+           groupColumn = 14,
            scale = "uniminmax",
            alphaLines = 0.2,
            boxplot = TRUE, 
@@ -753,40 +769,70 @@ ggparcoord(data = StudentLM_data_factor,
    theme(axis.text.x = element_text(angle = 30))
 ```
 
-Based on the plot, there is varying degree of separation and distinctness between the 2 clusters across different variables. The more distinct separation are in variables such as total-memory size of answers, total answering attempt and mean memory size, where cluster 2 tends to fare better in these metrics suggesting that perhaps cluster 2 is the more hardworking learning mode among the 2.
+Based on the plot, there is varying degree of distinction in separation between the 2 clusters across different variables. The more distinct separation are in variables such as total timeconsume of answers, total memory size of answers, mean different answering methods per question, total answering attempts and question selection gini index, where cluster 2 tends to fare better in these metrics suggesting that perhaps cluster 2 may be the more hardworking learning mode among the 2.
 
-An Alluvial plot is also used in the following code chunk for an alterantive visualisation of the clustering, where variables are binned into 5 bin equally sized bins.
+An Alluvial plot is also used in the following code chunk for an alternative visualisation of the clustering, where variables are binned into 5 equally sized bins based on distribution of student_ID.
 
 ```{r}
-# Define a function to bin numerical variables
-bin_variable <- function(x, bins = 3, labels = NULL) {
-  cut(x, breaks = bins, labels = labels)
+# Define a function to bin numerical variables based on the distribution of student_IDs
+bin_variable_equal_ids <- function(x, bins = 5) {
+  n <- length(x)
+  quantile_ranks <- ceiling(rank(x, ties.method = "first") / (n / bins))
+  as.factor(quantile_ranks)
 }
 
-# Apply binning to numerical columns
+# Apply the binning function to numerical columns, excluding student_ID and cluster
 StudentLM_data_binned <- StudentLM_data %>%
-  mutate(across(-student_ID, ~ bin_variable(., bins = 3)))
+  mutate(across(-c(student_ID, cluster), ~ bin_variable_equal_ids(., bins = 5)))
 
 # Convert data to long format
 StudentLM_data_long <- StudentLM_data_binned %>%
   pivot_longer(cols = -c(student_ID, cluster), names_to = "variable", values_to = "value")
 
-# Create the alluvial plot
-ggplot(StudentLM_data_long,
-       aes(x = variable, stratum = value, alluvium = student_ID, fill = cluster, label = value)) +
-  geom_flow(stat = "alluvium", lode.guidance = "forward", color = "darkgray") +
-  geom_stratum() +
-  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
-  scale_x_discrete(limits = unique(StudentLM_data_long$variable), expand = c(0.15, 0.05)) +
-  theme_minimal() +
-  labs(title = "Alluvial Plot of Clusters Dividing Among Variables",
-       x = "Variables",
-       y = "Count") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+# Check rows with NA values
+StudentLM_data_checkNA <- StudentLM_data_long %>%
+  filter(if_any(everything(), ~ is.na(.)))
+
+glimpse(StudentLM_data_checkNA)
 ```
 
 
-### Hierarchical Clustering and Visualisation with heatmap
+```{r}
+#| fig-width: 15
+#| fig-height: 18
+#| eval: false
+
+# Ensure the 'cluster' variable is in discrete values (1 and 2)
+StudentLM_data_long <- StudentLM_data_long %>%
+  mutate(cluster = as.factor(cluster))
+
+# Ensure there are no NA values in the cluster column
+StudentLM_data_long <- StudentLM_data_long %>%
+  filter(!is.na(cluster))
+
+# Create the alluvial plot
+ggplot(StudentLM_data_long,
+       aes(x = variable, stratum = value, alluvium = student_ID)) +
+#  geom_flow(stat = "alluvium", lode.guidance = "forward", color = "white") +
+  geom_alluvium(aes(fill = cluster)) +
+  geom_stratum() +
+  scale_x_discrete(limits = unique(StudentLM_data_long$variable), expand = c(0.5, 0.1)) +
+  theme_minimal() +
+  labs(title = "Alluvial Plot of Learning Mode Clusters",
+       x = "Variables",
+       y = "Count") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+        axis.text.y = element_text(size = 8),
+        plot.title = element_text(size = 12),
+        legend.title = element_text(size = 10),
+        legend.text = element_text(size = 8),
+        axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10),
+        plot.margin = unit(c(1, 1, 1, 1), "cm"))
+```
+
+
+### Hierarchical Clustering and Visualisation
 
 As an alternative to K means, hierarchical clustering is also considered, and initiates with mapping the data frame into a data matrix, and thereby using the dend_expend function to determine the best clustering method.
 
@@ -801,7 +847,7 @@ dend_expend(StudentLM_data_d)[[3]]
 
 Based on the output above, the average method will be the most optimal.
 
-A silhoutte plot in the same approach as before is also done with the following code chunk to give an initial sensing of the number of clusters to achieve higher cluster separation and distinctness. This is done in the following code chunk.
+A silhoutte plot in the same approach as before is also done with the following code chunk to determine the optimal number of clusters to achieve higher distinction in cluster separation for hierarchical clustering.
 
 ```{r}
 StudentLM_data_clust <- hclust(StudentLM_data_d, method = "average")
@@ -817,6 +863,7 @@ Now using the 2 parameters, the hierarchical clustering using an interactive hea
 
 #| fig-width: 15
 #| fig-height: 12
+#| eval: false
 heatmaply(normalize(StudentLM_data_matrix[, -c(1)]),
           dist_method = "euclidean",
           hclust_method = "average",
@@ -856,6 +903,28 @@ The following variables will be obtained with the code chunk below in preparatio
 
 -   Combined Metric
 
+(a)
+
+```{r}
+adjusted_scores <- merged_data %>%
+  group_by(student_ID, title_ID, knowledge,class) %>%
+  summarise(
+    unique_methods = n_distinct(method),
+    total_points = sum(case_when(
+      state == "Absolutely_Correct" ~ 2,
+      state == "Partially_Correct" ~ actual_score/question_score,
+      TRUE ~ -1
+    )),
+    attempts = n(),
+    .groups = 'drop'
+  ) %>%
+  mutate(
+    method_bonus = (unique_methods - 1) * 0.5,
+    adjusted_total_points = total_points + method_bonus
+  )
+
+glimpse(adjusted_scores)
+```
 
 ```{r}
 StudentKA_data <- merged_data %>%
@@ -913,6 +982,7 @@ StudentKA_data <- merged_data %>%
     
     # Part (d): Total number of questions with answers absolutely correct and partially correct
     total_questions_correct_or_partial = length(unique(title_ID[state %in% c("Partially_Correct", "Absolutely_Correct")]))
+    
   )
 
 
