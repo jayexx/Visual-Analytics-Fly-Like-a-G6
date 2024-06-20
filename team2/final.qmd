@@ -423,26 +423,340 @@ head(method)
 write.csv(method, 'data/method.csv', row.names = FALSE)
 ```
 
-```{r}
-cleaned_data <- read.csv('data/cleaned_data.csv')
-StudentLM_data <- cleaned_data %>%
-  group_by(student_ID) %>%
-  summarize(
-    pct_answers_weekdays = sum(is_weekday, na.rm = TRUE) / n() * 100,
-    pct_answers_working_hours = sum(is_working_hours, na.rm = TRUE) / n() * 100,
-    total_diff_questions_attempted = n_distinct(title_ID, na.rm = TRUE),
-    total_diff_knowledge_areas = sum(colSums(across(16:23, as.numeric)) > 0),
-    total_diff_sub_knowledge_areas = sum(colSums(across(25:39, as.numeric)) > 0),
-    mean_question_scores = mean(question_score, na.rm = TRUE),
-#    mean_memory_size = mean(memory, na.rm = TRUE),
-    mean_memory_size = mean(sapply(split(memory, title_ID), mean, na.rm = TRUE), na.rm = TRUE),
-    mean_timeconsume = mean(sapply(split(timeconsume, title_ID), mean, na.rm = TRUE), na.rm = TRUE),
-    total_answering_attempts = n(),
-#    total_diff_answering_methods = n_distinct(method, na.rm = TRUE),
-    total_diff_answering_methods = mean(sapply(split(method, title_ID), function(x) n_distinct(x, na.rm = TRUE)), na.rm = TRUE),
-    total_memory_size = sum(memory, na.rm = TRUE),
-    total_timeconsume = sum(timeconsume, na.rm = TRUE)
-  )
+## 3.3 knowledge
 
-glimpse(StudentLM_data)
+```{r}
+# 读取第一个数据集
+final_data <- read.csv("data/final_data.csv")
+
+# 指定第7到第14列的列名
+columns_of_interest <- c('b3C9s', 'g7R2j', 'k4W1c', 'm3D1v', 'r8S3g', 's8Y2f', 't5V9e', 'y9W5d')
+
+# 查找每个学生的指定列中数值最高的列名称
+final_data <- final_data %>%
+  rowwise() %>%
+  mutate(knowledge_pre = columns_of_interest[which.max(c_across(all_of(columns_of_interest)))])
+
+# 读取 method 数据集
+method <- read.csv("data/method.csv")
+
+# 合并 final_data 和 method
+final_data_with_knowledge <- final_data %>%
+  select(student_ID, knowledge_pre)
+
+knowledge <- method %>%
+  left_join(final_data_with_knowledge, by = "student_ID")
+
+# 查看结果
+head(knowledge)
+```
+
+```{r}
+# 读取编码表
+# 读取数据集
+knowledge_encode <- read.csv("data/knowledge_encode.csv")
+
+# 重命名编码表的列
+colnames(knowledge_encode) <- c("knowledge_pre", "encoded_knowledge_pre")
+
+colnames(knowledge)
+colnames(knowledge_encode)
+
+# 合并知识偏好和编码表
+knowledge_encoded <- knowledge %>%
+  left_join(knowledge_encode, by = "knowledge_pre") %>%
+  select(-knowledge_pre) %>%
+  rename(knowledge_pre = encoded_knowledge_pre)
+
+
+# 查看结果
+head(knowledge_encoded)
+write.csv(knowledge_encoded, 'data/knowledge.csv', row.names = FALSE)
+```
+
+## 3.4 Correct rate trend score
+
+```{r}
+# 读取数据集
+cleaned_data <- read.csv("data/cleaned_data.csv")
+knowledge <- read.csv("data/knowledge.csv")
+title_info <- read.csv("data/Data_TitleInfo.csv")
+title_encode <- read.csv("data/title_encode.csv")
+
+# 重命名title_encode的列
+colnames(title_encode) <- c("title_ID", "encoded_title")
+
+# 合并knowledge和title_encode，找到每位学生的题目名称
+knowledge <- knowledge %>%
+  left_join(title_encode, by = c("title_pre" = "encoded_title")) %>%
+  rename(title = title_pre, title_ID = title_ID)
+
+# 计算correct_rate并添加到cleaned_data
+cleaned_data <- cleaned_data %>%
+  left_join(title_info %>% select(title_ID, score), by = "title_ID", suffix = c("", "_total")) %>%
+  mutate(correct_rate = score / score_total)
+
+# 定义计算正确率趋势的函数
+calculate_trend <- function(data) {
+  if (nrow(data) < 2) {
+    return(NA)
+  }
+  model <- lm(correct_rate ~ timeconsume, data = data)
+  return(coef(model)[2]) # 返回斜率
+}
+
+# 初始化结果数据框
+trend_scores <- data.frame()
+
+# 遍历每位学生
+for (i in 1:nrow(knowledge)) {
+  student_id <- knowledge$student_ID[i]
+  title_id <- knowledge$title_ID[i]
+  
+  # 找到该学生在该题目的所有答题记录
+  student_data <- cleaned_data %>%
+    filter(student_ID == student_id, title_ID == title_id)
+  
+  # 计算该学生在该题目的正确率趋势
+  trend <- calculate_trend(student_data)
+  
+  # 将结果存储在结果数据框中
+  trend_scores <- rbind(trend_scores, data.frame(student_ID = student_id, title_ID = title_id, trend = trend))
+}
+
+# 将title_info中的分数信息合并到结果数据框中
+trend_scores <- trend_scores %>%
+  left_join(title_info %>% select(title_ID, score), by = "title_ID") %>%
+  mutate(correct_rate_trend_score = trend * score)
+
+# 查看结果
+head(trend_scores)
+```
+
+```{r}
+knowledge <- read.csv("data/knowledge.csv")
+
+# 确保每个 student_ID 只有一个 correct_rate_trend_score，取平均值
+trend_scores_agg <- trend_scores %>%
+  group_by(student_ID) %>%
+  summarise(trend_score = mean(correct_rate_trend_score, na.rm = TRUE))
+
+# 合并到 knowledge 数据框中
+cluster_data <- knowledge %>%
+  left_join(trend_scores_agg, by = 'student_ID')
+
+# 查看结果
+head(cluster_data)
+```
+
+# 4 visualisation
+
+```{r}
+# 检查数据中的NA值
+colSums(is.na(cluster_data))
+
+```
+
+```{r}
+# 检查数据中的NA值
+sum(is.na(cluster_data[, 2:6]))
+
+# 处理NA值，使用中位数填补
+cluster_data_clean <- cluster_data %>%
+  mutate(across(2:6, ~ifelse(is.na(.), median(., na.rm = TRUE), .)))
+
+# 计算相关矩阵
+SLM.cor <- cor(cluster_data_clean[, 2:6], use = "complete.obs")
+
+# 绘制相关图
+corrplot(SLM.cor, 
+         method = "ellipse", 
+         tl.pos = "lt",
+         tl.col = "black",
+         order = "hclust",
+         hclust.method = "ward.D",
+         addrect = 3)
+
+# 使用 ggstatsplot 绘制相关矩阵图
+ggstatsplot::ggcorrmat(
+  data = cluster_data_clean, 
+  cor.vars = 2:6
+)
+```
+
+```{r}
+# Exclude non-numeric columns
+StudentLM_data_numeric <- cluster_data_clean %>%
+  select(-student_ID)
+
+# Function to compute silhouette widths
+silhouette_analysis <- function(data, max_clusters) {
+  avg_sil_widths <- numeric(max_clusters)
+  
+  for (k in 2:max_clusters) {
+    # Perform k-means clustering
+    kmeans_result <- kmeans(data, centers = k, nstart = 25)
+    
+    # Compute silhouette widths
+    sil <- silhouette(kmeans_result$cluster, dist(data))
+    
+    # Calculate average silhouette width
+    avg_sil_widths[k] <- mean(sil[, 3])
+  }
+  
+  return(avg_sil_widths)
+}
+
+# Determine the maximum number of clusters to test
+max_clusters <- 18
+
+# Perform silhouette analysis
+avg_sil_widths <- silhouette_analysis(StudentLM_data_numeric, max_clusters)
+
+# Plot the average silhouette widths
+plot(1:max_clusters, avg_sil_widths, type = "b", pch = 19, frame = FALSE,
+     xlab = "Number of clusters", ylab = "Average silhouette width",
+     main = "Silhouette Analysis for Determining Optimal Number of Clusters")
+
+# Highlight the optimal number of clusters
+optimal_clusters <- which.max(avg_sil_widths)
+points(optimal_clusters, avg_sil_widths[optimal_clusters], col = "red", pch = 19)
+```
+
+```{r}
+# Function to compute SSE for different numbers of clusters
+compute_sse <- function(data, max_clusters) {
+  sse <- numeric(max_clusters)
+  
+  for (k in 1:max_clusters) {
+    # Perform k-means clustering
+    kmeans_result <- kmeans(data, centers = k, nstart = 25)
+    
+    # Compute SSE
+    sse[k] <- kmeans_result$tot.withinss
+  }
+  
+  return(sse)
+}
+
+# Determine the maximum number of clusters to test
+max_clusters <- 18
+
+# Compute SSE for each number of clusters
+sse_values <- compute_sse(StudentLM_data_numeric, max_clusters)
+
+# Plot SSE against number of clusters
+plot(1:max_clusters, sse_values, type = "b", pch = 19, frame = FALSE,
+     xlab = "Number of clusters", ylab = "SSE",
+     main = "Elbow Method for Optimal Number of Clusters")
+
+# Add text for elbow point
+elbow_point <- which.min(diff(sse_values)) + 1
+text(elbow_point, sse_values[elbow_point], labels = paste("Elbow Point:", elbow_point), pos = 4, col = "red")
+```
+
+```{r}
+# Drop the student_ID column
+clustering_data <- cluster_data_clean %>%
+  select(-student_ID)
+
+# Standardize the data
+clustering_data_scaled <- scale(clustering_data)
+
+# Perform k-means clustering
+set.seed(123)  # For reproducibility
+kmeans_result <- kmeans(clustering_data_scaled, centers = 2, nstart = 25)
+
+# Add the cluster assignments to the original data
+cluster_data_clean$cluster <- kmeans_result$cluster
+```
+
+```{r}
+# Perform PCA
+pca_result <- prcomp(cluster_data_clean[-1], scale. = TRUE)
+
+# Get PCA scores
+pca_scores <- as.data.frame(predict(pca_result))
+
+# Add cluster information to PCA scores
+pca_scores$cluster <- factor(cluster_data_clean$cluster)
+
+# Plot PCA results with cluster color coding
+pca_plot <- ggplot(pca_scores, aes(PC1, PC2, color = cluster)) +
+  geom_point(size = 3) +
+  scale_color_discrete(name = "Cluster") +
+  labs(x = "Principal Component 1", y = "Principal Component 2",
+       title = "PCA Plot of Clusters") +
+  theme_minimal()
+
+# Display the plot
+pca_plot
+```
+
+```{r}
+#| fig-width: 15
+#| fig-height: 12
+
+StudentLM_data_factor <- cluster_data_clean
+StudentLM_data_factor$cluster <- as.character(StudentLM_data_factor$cluster)
+
+ggparcoord(data = StudentLM_data_factor, 
+           columns = c(2:6), 
+           groupColumn = 7,
+           scale = "uniminmax",
+           alphaLines = 0.2,
+           boxplot = TRUE, 
+           title = "Parallel Coordinates Plot of Students' learning modes")+
+   theme(axis.text.x = element_text(angle = 30))
+```
+
+```{r}
+#| fig-width: 15
+#| fig-height: 30
+# 确保cluster列为因子类型
+cluster_data_clean$cluster <- as.factor(cluster_data_clean$cluster)
+
+# 创建alluvial plot
+ggplot(cluster_data_clean,
+       aes(axis1 = time_pre, axis2 = title_pre, axis3 = method_pre, axis4 = knowledge_pre, y = trend_score, fill = cluster)) +
+  geom_alluvium(aes(fill = cluster)) +
+  geom_stratum() +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  scale_x_discrete(limits = c("Time Preference", "Title Preference", "Method Preference", "Knowledge Preference"), expand = c(0.15, 0.05)) +
+  labs(title = "Alluvial Plot of Students' Learning Modes",
+       y = "Trend Score",
+       x = "Preferences") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+```{r}
+row.names(StudentLM_data) <- StudentLM_data$student_ID
+StudentLM_data1 <- select(StudentLM_data, c(1, 2:6))
+StudentLM_data_matrix <- data.matrix(StudentLM_data1)
+
+StudentLM_data_d <- dist(normalize(StudentLM_data_matrix[, -c(1)]), method = "euclidean")
+dend_expend(StudentLM_data_d)[[3]]
+```
+
+```{r}
+StudentLM_data_clust <- hclust(StudentLM_data_d, method = "average")
+num_k <- find_k(StudentLM_data_clust)
+plot(num_k)
+```
+
+```{r}
+#| fig-width: 15
+#| fig-height: 12
+heatmaply(normalize(StudentLM_data_matrix[, -c(1)]),
+          dist_method = "euclidean",
+          hclust_method = "average",
+          k_row = 10,
+          margins = c(NA,200,60,NA),
+          fontsize_row = 4,
+          fontsize_col = 5,          
+          main="Students' Learning Mode Clustering \nDataTransformation using Normalise Method",
+          xlab = "Student_IDs",
+          ylab = "Learning Behaior Pattern"
+)
 ```
