@@ -420,4 +420,29 @@ method <- question %>%
 
 # 查看结果
 head(method)
+write.csv(method, 'data/method.csv', row.names = FALSE)
+```
+
+```{r}
+cleaned_data <- read.csv('data/cleaned_data.csv')
+StudentLM_data <- cleaned_data %>%
+  group_by(student_ID) %>%
+  summarize(
+    pct_answers_weekdays = sum(is_weekday, na.rm = TRUE) / n() * 100,
+    pct_answers_working_hours = sum(is_working_hours, na.rm = TRUE) / n() * 100,
+    total_diff_questions_attempted = n_distinct(title_ID, na.rm = TRUE),
+    total_diff_knowledge_areas = sum(colSums(across(16:23, as.numeric)) > 0),
+    total_diff_sub_knowledge_areas = sum(colSums(across(25:39, as.numeric)) > 0),
+    mean_question_scores = mean(question_score, na.rm = TRUE),
+#    mean_memory_size = mean(memory, na.rm = TRUE),
+    mean_memory_size = mean(sapply(split(memory, title_ID), mean, na.rm = TRUE), na.rm = TRUE),
+    mean_timeconsume = mean(sapply(split(timeconsume, title_ID), mean, na.rm = TRUE), na.rm = TRUE),
+    total_answering_attempts = n(),
+#    total_diff_answering_methods = n_distinct(method, na.rm = TRUE),
+    total_diff_answering_methods = mean(sapply(split(method, title_ID), function(x) n_distinct(x, na.rm = TRUE)), na.rm = TRUE),
+    total_memory_size = sum(memory, na.rm = TRUE),
+    total_timeconsume = sum(timeconsume, na.rm = TRUE)
+  )
+
+glimpse(StudentLM_data)
 ```
