@@ -549,6 +549,45 @@ cluster_data <- knowledge %>%
 head(cluster_data)
 ```
 
+```{r}
+# 读取数据集
+student_info <- read.csv("data/Data_StudentInfo.csv")
+
+# 合并 student_info 中的 sex, age, major 列到 cluster_data 中
+cluster_data <- cluster_data %>%
+  left_join(student_info %>% select(student_ID, sex, age, major), by = "student_ID")
+
+# 查看结果
+head(cluster_data)
+```
+
+female = 1
+
+male = 0
+
+```{r}
+# 读取编码表
+major_encode <- read.csv("data/major_encode.csv")
+
+# 对 sex 进行编码
+cluster_data <- cluster_data %>%
+  mutate(sex = ifelse(sex == "female", 1, 0))
+
+# 合并 major 编码
+major_encode <- major_encode %>%
+  rename(major_name = title, major_code = title_encode)
+
+cluster_data <- cluster_data %>%
+  left_join(major_encode, by = c("major" = "major_name")) %>%
+  select(-major) %>%
+  rename(major = major_code) 
+
+cluster_data <- cluster_data %>%
+  select(-ncol(cluster_data), -(ncol(cluster_data)-1), -(ncol(cluster_data)-2))
+# 查看结果
+head(cluster_data)
+```
+
 # 4 visualisation
 
 ```{r}
@@ -563,7 +602,7 @@ sum(is.na(cluster_data[, 2:6]))
 
 # 处理NA值，使用中位数填补
 cluster_data_clean <- cluster_data %>%
-  mutate(across(2:6, ~ifelse(is.na(.), median(., na.rm = TRUE), .)))
+  mutate(across(2:9, ~ifelse(is.na(.), median(., na.rm = TRUE), .)))
 
 # 计算相关矩阵
 SLM.cor <- cor(cluster_data_clean[, 2:6], use = "complete.obs")
@@ -580,7 +619,7 @@ corrplot(SLM.cor,
 # 使用 ggstatsplot 绘制相关矩阵图
 ggstatsplot::ggcorrmat(
   data = cluster_data_clean, 
-  cor.vars = 2:6
+  cor.vars = 2:9
 )
 ```
 
@@ -701,8 +740,8 @@ StudentLM_data_factor <- cluster_data_clean
 StudentLM_data_factor$cluster <- as.character(StudentLM_data_factor$cluster)
 
 ggparcoord(data = StudentLM_data_factor, 
-           columns = c(2:6), 
-           groupColumn = 7,
+           columns = c(2:9), 
+           groupColumn = 10,
            scale = "uniminmax",
            alphaLines = 0.2,
            boxplot = TRUE, 
@@ -718,7 +757,7 @@ cluster_data_clean$cluster <- as.factor(cluster_data_clean$cluster)
 
 # 创建alluvial plot
 ggplot(cluster_data_clean,
-       aes(axis1 = time_pre, axis2 = title_pre, axis3 = method_pre, axis4 = knowledge_pre, y = trend_score, fill = cluster)) +
+       aes(axis1 = time_pre, axis2 = title_pre, axis3 = method_pre, axis4 = knowledge_pre, y = trend_score)) +
   geom_alluvium(aes(fill = cluster)) +
   geom_stratum() +
   geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
