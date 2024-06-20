@@ -147,11 +147,34 @@ server <- function(input, output, session) {
     
     diff <- comparison_data %>% 
       filter(type_of_student == "low_mastery") %>%
-      mutate(x_pos = percentage + (-diff/2)) 
+      mutate(x_pos = percentage + (-diff/2))
+    
+    comparison_spread <- comparison_data %>%
+      spread(type_of_student, percentage)
+    
+    # Join the stats to get the mean values
+    comparison_spread <- comparison_spread %>%
+      left_join(stats %>% filter(type_of_student == "high_mastery") %>% select(-type_of_student), by = character()) %>%
+      rename(high_mastery_mean = mean, high_mastery_SE = SE, high_mastery_meanpos = meanpos, high_mastery_meanneg = meanneg) %>%
+      left_join(stats %>% filter(type_of_student == "low_mastery") %>% select(-type_of_student), by = character()) %>%
+      rename(low_mastery_mean = mean, low_mastery_SE = SE, low_mastery_meanpos = meanpos, low_mastery_meanneg = meanneg)
+    
+    # Create the color condition
+    comparison_spread <- comparison_spread %>%
+      mutate(color_condition = case_when(
+        high_mastery > high_mastery_meanpos & low_mastery > low_mastery_meanpos ~ "red",
+        TRUE ~ "default"
+      ))
+    
+    # Gather the data back to long format
+    comparison_long <- comparison_spread %>%
+      gather(type_of_student, percentage, high_mastery, low_mastery) %>%
+      mutate(type_of_student = factor(type_of_student, levels = c("high_mastery", "low_mastery"))) %>%
+      mutate (color_condition = ifelse(color_condition == "default", type_of_student, color_condition))
     
     
     output$dumbbellPlot <- renderPlot({
-      ggplot(comparison_data) +
+      ggplot(comparison_long) +
         geom_rect(xmin = stats_low_mastery$meanneg, xmax = stats_low_mastery$meanpos,
                   ymin = 0, ymax = 38, fill = "#762a83", alpha = .05) +
         geom_vline(xintercept = stats_low_mastery$mean, linetype = "solid", size = .5, alpha = .8, color = "#762a83")+
@@ -167,9 +190,9 @@ server <- function(input, output, session) {
                      color = "#aeb6bf",
                      size = 4.5,
                      alpha = 0.5) +
-        geom_point(aes(x = percentage, y = title_ID, color = type_of_student), size = 4, show.legend = TRUE) +
+        geom_point(aes(x = percentage, y = title_ID, color = color_condition), size = 4, show.legend = TRUE) +
         #color points
-        scale_color_manual(values = c("#009688","#762a83"))+
+        scale_color_manual(values = c("1" = "#009688", "2" = "#762a83", "red" = "red"))+
         #add annotations for mean and standard deviations
         geom_text(x = stats_low_mastery$mean + 5, y = 38, label = "MEAN", angle = 90, size = 2.5, color = "#009688")+
         geom_text(x = stats_low_mastery$meanpos + 5, y = 38, label = "STDEV", angle = 90, size = 2.5, color = "#009688")+
@@ -197,7 +220,7 @@ server <- function(input, output, session) {
               plot.background = element_rect(fill = "white", color = "white"),
               panel.spacing = unit(0, "lines"),
               plot.margin = margin(1,1,.5,1, "cm"))
-        
+      
     })
     
     # Calculate average wrong percentage for each title ID and knowledge group
@@ -227,7 +250,7 @@ calculate_threshold_scores <- function(knowledge_mastery, threshold) {
   percentile <- as.numeric(sub("%", "", threshold)) / 100
   threshold_scores <- knowledge_mastery %>%
     group_by(knowledge) %>%
-    summarise(threshold_score = quantile(average_score, percentile, na.rm = TRUE))
+    summarise(threshold_score = quantile(total_score, percentile, na.rm = TRUE))
   
   return(threshold_scores)
 }
@@ -235,7 +258,7 @@ calculate_threshold_scores <- function(knowledge_mastery, threshold) {
 get_high_mastery_students <- function(knowledge_mastery, threshold_scores) {
   high_mastery_students <- knowledge_mastery %>%
     inner_join(threshold_scores, by = "knowledge") %>%
-    filter(average_score > threshold_score) %>%
+    filter(total_score > threshold_score) %>%
     ungroup()
   return(high_mastery_students)
 }
@@ -243,7 +266,7 @@ get_high_mastery_students <- function(knowledge_mastery, threshold_scores) {
 get_low_mastery_students <- function(knowledge_mastery, threshold_scores) {
   low_mastery_students <- knowledge_mastery %>%
     inner_join(threshold_scores, by = "knowledge") %>%
-    filter(average_score < threshold_score) %>%
+    filter(total_score < threshold_score) %>%
     ungroup()
   return(low_mastery_students)
 }
