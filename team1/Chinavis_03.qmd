@@ -1,0 +1,562 @@
+---
+title: "Take-home_Ex03(vr2)"
+---
+
+---
+title: "ChinaVis"
+author: "SMU Student"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      include = TRUE,
+                      warning = FALSE,
+                      message = FALSE)
+
+```
+
+## Introduction
+
+NorthClass is a well-known higher education training institution that offers over 100 courses covering various academic disciplines such as literature, science, engineering, medicine, economics, and management, attracting approximately 300,000 registered learners. The institution establishes a flexible and convenient learning environment by providing excellent instructional services. In order to adapt to the development trend of the digital age and enhance its market competitiveness in the field of technology, the institution has planned and launched a programming course. Learners are required to complete specified programming tasks during the learning period, with multiple attempts and submissions allowed to ensure full mastery and application of the knowledge learned. After the completion of the course, the organization gathers learners' temporal learning data to assess whether the quality of instruction meets the predetermined standards and requirements. To optimize teaching resources and improve teaching quality, the institution aims to establish a dedicated Smart Education Development and Innovation Group that will explore how to empower education with next-generation artificial intelligence technology, in order to better cultivate innovative talents who are suited to the development needs of the new era. Visualization and Visual Analytics harness the power of high-bandwidth visual perception channels to transform complex temporal learning behavior data into comprehensible graphical representations. These techniques not only diagnose and analyze learners' knowledge mastery levels but also dynamically monitor the evolving trends in their learning behaviors. Additionally, they effectively identify and dissect potential factors that contribute to learning difficulties. If you were a member of the Smart Education Development and Innovation Group, please design and implement a Visual Analytics solution to help the institution intuitively perceive the learning status of learners and provide feasible suggestions for adjusting teaching strategies and course designs.
+
+## Tasks and Questions:
+
+FishEye analysts need your help to perform geographic and temporal analysis of the CatchNet data so they can prevent illegal fishing from happening again. Your task is to develop new visual analytics tools and workflows that can be used to discover and understand signatures of different types of behavior. Can you use your tool to visualize a signature of SouthSeafood Express Corp’s illegal behavior? FishEye needs your help to develop a workflow to find other instances of illegal behavior.
+
+-   Analyze the log records of learners' question-answering behaviors, quantitatively assess the degree of knowledge mastery based on multi-dimensional attributes such as answer scores and answer status, and identify weak links in their knowledge system. (It is recommended that participants answer this question with no more than 800 words and no more than 5 pictures)
+
+-   Mine personalized learning behavior patterns based on learners' characteristics, and design and present learners' profiles from various perspectives, including peak answering hours, preferred question types, correct answering rates, etc. (It is recommended that participants answer this question with no more than 800 words and 5 pictures)
+
+-   Different learning modes directly impact learners' ability to absorb, integrate, and apply knowledge. Efficient learning modes can enhance deep understanding and long-term memory retention of knowledge. Please model the potential relationship between learning modes and knowledge acquisition, present the results in the form of a graph, and provide a brief analysis. (It is recommended that participants answer this question with no more than 800 words and 5 pictures)
+
+-   The difficulty level of questions should align with the learner's level of knowledge. When a learner possesses a high level of knowledge but achieves a low percentage of correct answers, it indicates that the question's difficulty exceeds their ability. Please utilize Visual Analytics to identify these inappropriate questions. (It is recommended that participants answer this question with no more than 800 words and no more than 5 pictures)
+
+-   Based on the outcomes of the aforementioned analysis, it is crucial to offer valuable recommendations for topic designers and course managers to optimize question bank content settings and enhance the quality of teaching and learning. Please briefly explain the rationale behind these suggestions. (It is recommended that participants answer this question with no more than 800 words and 3 pictures)
+
+## Libraries
+
+For this analysis, we will use the following packages from CRAN.
+
+[`rjson`](https://cran.r-project.org/web/packages/cluster/index.html) - Methods for Cluster analysis. Much extended the original from Peter Rousseeuw, Anja Struyf and Mia Hubert, based on Kaufman and Rousseeuw (1990) "Finding Groups in Data".\
+[`tidyverse`](https://www.tidyverse.org/packages/) - Loading the core tidyverse packages which will be used for data wrangling and visualisation.\
+[`visNetwork`](https://cran.r-project.org/web/packages/factoextra/readme/README.html#:~:text=The%20R%20package%20factoextra%20has,data%20visualization%20with%20less%20typing.) - Extract and Visualize the Results of Multivariate Data Analyses. [`ggasym`](https://ggobi.github.io/ggally/) Extension of `ggplot2` by adding several functions to reduce the complexity of combining geometric objects with transformed data. [`igraph`](https://ggobi.github.io/ggally/) Extension of `ggplot2` by adding several functions to reduce the complexity of combining geometric objects with transformed data.
+
+```{r}
+pacman::p_load(geojsonR,rjson,sf, dplyr,tidyr,stringr,readr,fs,purrr,ggplot2, plotly, ggstatsplot,igraph,lubridate,hms, vcd, ggalluvial, ggforce)
+```
+
+```{r}
+df_StudentInfo <- read_csv("data/Data_StudentInfo.csv")
+df_TitleInfo <- read_csv("data/Data_TitleInfo.csv")
+
+```
+
+```{r}
+csv_file_list <- dir('data/Data_SubmitRecord')
+csv_file_list <- paste0("./data/Data_SubmitRecord/",csv_file_list)
+
+
+df_StudentRecord <- NULL
+for (file in csv_file_list) { # for every file...
+  file <- read_csv(file)
+    df_StudentRecord <- rbind(df_StudentRecord, file) # then stick together by rows
+}
+df_StudentRecord %>% glimpse()
+```
+
+```{r}
+# Step 1: Identify students with multiple classes
+students_multiple_classes <- df_StudentRecord %>%
+  group_by(student_ID) %>%
+  summarise(unique_classes = n_distinct(class)) %>%
+  filter(unique_classes > 1)
+
+# Step 2: Identify the correct class for each student (the class with the highest frequency)
+correct_classes <- df_StudentRecord %>%
+  filter(student_ID %in% students_multiple_classes$student_ID) %>%
+  group_by(student_ID, class) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  slice(1) %>%
+  select(student_ID, correct_class = class)
+
+# Step 3: Replace wrong class values
+df_StudentRecord <- df_StudentRecord %>%
+  left_join(correct_classes, by = "student_ID") %>%
+  mutate(class = ifelse(!is.na(correct_class), correct_class, class)) %>%
+  select(-correct_class)
+
+# Display the updated dataframe
+print(df_StudentRecord)
+
+```
+
+```{r}
+
+# Identify students with multiple classes
+students_multiple_classes <- df_StudentRecord %>%
+  group_by(student_ID) %>%
+  summarise(unique_classes = n_distinct(title_ID)) %>%
+  filter(unique_classes > 1)
+
+# Display the results
+print(students_multiple_classes)
+```
+
+```{r}
+#remove index column
+df_StudentRecord <- df_StudentRecord %>% select(-1)
+df_TitleInfo <- df_TitleInfo %>% select(-1)
+df_StudentInfo <- df_StudentInfo %>% select(-1)
+
+```
+
+```{r}
+summary(df_StudentRecord)
+summary (df_TitleInfo)
+summary (df_StudentInfo)
+```
+
+```{r}
+# Convert time from timestamp to POSIXct
+df_StudentRecord$time_change <- as.POSIXct(df_StudentRecord$time, origin="1970-01-01", tz="UTC")
+
+df_StudentRecord <- df_StudentRecord %>%
+  mutate(
+    time_change = ymd_hms(time_change),
+    date = as.Date(time_change),
+    time = as_hms(format(time_change, "%H:%M:%S")),
+    score = as.factor(score),
+    timeconsume = as.numeric(timeconsume)
+  ) 
+
+df_TitleInfo <- df_TitleInfo %>%
+  mutate (
+    score = as.factor(score)
+  )
+```
+
+```{r}
+missing_students <- anti_join(df_StudentRecord, df_StudentInfo, by = "student_ID")
+
+# Display the missing student IDs
+missing_student_ids <- missing_students %>% select(student_ID) %>% distinct()
+print(missing_student_ids)
+
+
+unique(df_StudentRecord$state)
+
+df_StudentRecord <- df_StudentRecord %>%
+  filter (state != '�������')%>%
+  filter (class != "class")
+```
+
+```{r}
+# Self join on knowledge to find pairs of title_IDs that share knowledge
+edges <- df_TitleInfo %>%
+  inner_join(df_TitleInfo, by = "knowledge") %>%
+  filter(title_ID.x != title_ID.y) %>%
+  select(title_ID.x, title_ID.y) %>%
+  distinct()
+```
+
+```{r}
+# Create a graph from the edges
+g <- graph_from_data_frame(edges, directed = FALSE)
+
+# Find connected components
+components <- clusters(g)
+
+# Map the component membership back to the title_info dataframe
+df_TitleInfo$domain <- components$membership[match(df_TitleInfo$title_ID, names(components$membership))]
+
+
+```
+
+```{r}
+# Aggregate knowledge and sub_knowledge into lists
+title_info_aggregated <- df_TitleInfo %>%
+  mutate (domain = as.factor(domain)) %>%
+  group_by(title_ID,score,domain) %>%
+  summarise(knowledge_list = list(unique(knowledge)),
+            sub_knowledge_list = list(unique(sub_knowledge)),
+            .groups = 'drop')
+
+# Add counts of knowledge and sub_knowledge elements
+title_info_aggregated <- title_info_aggregated %>%
+  mutate(knowledge_count = sapply(knowledge_list, length),
+         sub_knowledge_count = sapply(sub_knowledge_list, length))
+```
+
+```{r}
+# Merge StudentInfo with SubmitRecord based on student_ID
+merged_data <- merge(df_StudentRecord, df_StudentInfo, by = "student_ID")
+
+# Merge TitleInfo with the already merged data based on title_ID
+merged_data <- merge(merged_data, title_info_aggregated, by = "title_ID")
+
+merged_data <- merged_data %>%
+  rename(
+    actual_score = score.x,
+    question_score = score.y
+  )
+```
+
+```{r}
+saveRDS(merged_data, "merged_data_df.rds")
+```
+
+```{r}
+summary (merged_data)
+```
+
+```{r}
+create_summary_plots <- function(data) {
+  plots <- list()
+  
+  for (col in names(data)) {
+    if (is.numeric(data[[col]])) {
+      p <- ggplot(data, aes_string(x = col)) +
+        geom_histogram(binwidth = 1, fill = "blue", color = "black") +
+        ggtitle(paste("Histogram of", col)) +
+        theme_minimal()
+      plots[[col]] <- p
+    } else if (is.factor(data[[col]]) || is.character(data[[col]])) {
+      p <- ggplot(data, aes_string(x = col)) +
+        geom_bar(fill = "blue", color = "black") +
+        ggtitle(paste("Bar Plot of", col)) +
+        theme_minimal() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1))
+      plots[[col]] <- p
+    } else if (inherits(data[[col]], "Date")) {
+      p <- ggplot(data, aes_string(x = col)) +
+        geom_histogram(binwidth = 1, fill = "blue", color = "black") +
+        ggtitle(paste("Histogram of", col)) +
+        theme_minimal()
+      plots[[col]] <- p
+    } else if (inherits(data[[col]], "hms")) {
+      p <- ggplot(data, aes_string(x = col)) +
+        geom_histogram(binwidth = 60, fill = "blue", color = "black") +
+        ggtitle(paste("Histogram of", col)) +
+        theme_minimal()
+      plots[[col]] <- p
+    }
+  }
+  
+  return(plots)
+}
+
+# Create the summary plots
+summary_plots <- create_summary_plots(merged_data)
+
+# Print the plots
+for (plot_name in names(summary_plots)) {
+  print(summary_plots[[plot_name]])
+}
+
+```
+
+```{r}
+check_state5 <- merged_data %>%
+  filter(state == "Error5")
+```
+
+```{r}
+check_na <- merged_data %>% filter(if_any(everything(), is.na))
+
+unique(check_na$state)
+```
+
+All Error 5 has no timeconsume, this could suggest Student skip the question.
+
+```{r}
+set.seed(123)  # For reproducibility
+sample_df <- merged_data %>%
+  sample_frac(0.10)
+
+```
+
+```{r}
+
+#ks_test <- ks.test(sample_df$timeconsume, "pnorm", mean(sample_df$timeconsume, na.rm = TRUE), sd(sample_df$timeconsume, na.rm = TRUE))
+#print(ks_test)
+
+kruskal_result <- kruskal.test(timeconsume ~ domain, data = sample_df)
+print(kruskal_result)
+
+```
+
+```{r}
+# Pairwise Comparisons using Dunn's Test (post hoc test for Kruskal-Wallis)
+install.packages("FSA")
+library(FSA)
+dunn_test <- dunnTest(timeconsume ~ domain, data = sample_df, method = "bonferroni")
+print(dunn_test)
+```
+
+```{r}
+# Pairwise comparisons using ggbetweenstats
+ggbetweenstats(
+  data = sample_df,
+  x = domain,
+  y = timeconsume,
+  pairwise.comparisons = TRUE,
+  pairwise.display = "significant",
+  p.adjust.method = "bonferroni",
+  title = "Time Consumed Across Various Domains with Pairwise Comparisons",
+  xlab = "Domain",
+  ylab = "Time Consumed (seconds)",
+  type = "nonparametric",  # Kruskal-Wallis is a nonparametric test
+  results.subtitle = TRUE,
+  messages = FALSE
+)
+
+
+```
+
+Are there association with the state of answer and domain?
+
+```{r}
+contingency_table <- table(merged_data$state, merged_data$domain)
+chi_squared_result <- chisq.test(contingency_table)
+print(chi_squared_result)
+if (chi_squared_result$p.value < 0.05) {
+  cat("There is a significant association between state and domain (p-value:", chi_squared_result$p.value, ")\n")
+} else {
+  cat("There is no significant association between state and domain (p-value:", chi_squared_result$p.value, ")\n")
+}
+```
+
+```{r, fig.height=15}
+
+sample_df_error <- sample_df %>%
+  filter (actual_score == "0")
+
+# Create an alluvial plot
+ggplot(as.data.frame(table(sample_df_error$domain, sample_df_error$state)),
+       aes(axis1 = Var1, axis2 = Var2, y = Freq)) +
+  geom_alluvium(aes(fill = Var2)) +
+  geom_stratum() +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  labs(title = "Alluvial Plot of State by Domain",
+       x = "Category",
+       y = "Count",
+       fill = "State") +
+  theme_minimal()
+
+
+```
+
+```{r}
+ggstatsplot::ggbarstats(
+  data = sample_df,
+  x = state,
+  y = domain,
+  title = "Distribution of State across Domains",
+  xlab = "Domain",
+  ylab = "State",
+  messages = FALSE
+)
+
+```
+
+```{r}
+
+sample_df <- sample_df %>%
+  mutate (hour = hour(time) + minute(time)/60)
+
+```
+
+```{r}
+# Pairwise comparisons using ggbetweenstats
+ggbetweenstats(
+  data = sample_df,
+  x = class,
+  y = hour,
+  pairwise.comparisons = TRUE,
+  pairwise.display = "significant",
+  p.adjust.method = "bonferroni",
+  title = "Time Consumed Across Various Majors with Pairwise Comparisons",
+  xlab = "Majors",
+  ylab = "Hour",
+  type = "nonparametric",  # Kruskal-Wallis is a nonparametric test
+  results.subtitle = TRUE,
+  messages = FALSE
+)
+
+
+```
+
+```{r, fig.height=25}
+ggplot(heatmap_data, aes(x = major, y = hour, fill = attempt_count)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "blue") +
+  scale_y_continuous(breaks = seq(0, 24, by = 1), limits = c(0, 24)) +
+  facet_wrap(~ actual_score) +
+  labs(title = "Distribution of Question Attempt Times by Major and Actual Score",
+       x = "Major",
+       y = "Time of Day (hours)",
+       fill = "Attempt Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r}
+# Step 1: Group by domain and state, and calculate the count of each state within each domain
+
+state_counts <- sample_df %>%
+  group_by(domain, state) %>%
+  summarise(state_count = n()) %>%
+  ungroup()
+
+# Step 2: Calculate the total count of all states within each domain
+total_counts <- state_counts %>%
+  group_by(domain) %>%
+  summarise(total_count = sum(state_count)) %>%
+  ungroup()
+
+state_percentage <- state_counts %>%
+  left_join(total_counts, by = "domain") %>%
+  mutate(percentage = (state_count / total_count) * 100)
+
+
+ggplot(state_percentage, aes(x = domain, y = percentage, fill = state)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Percentage of Each State for Each Domain",
+       x = "Domain",
+       y = "Percentage",
+       fill = "State") +
+  theme_minimal()
+
+```
+
+```{r}
+sample_df_zero <- sample_df %>%
+  filter (actual_score == "0")
+
+ggstatsplot::ggbarstats(
+  data = sample_df_zero,
+  x = state,
+  y = domain,
+  title = "Distribution of State across Domains",
+  xlab = "Domain",
+  ylab = "State",
+  messages = FALSE
+)
+
+
+```
+
+## Are there any Association between Domain and Errors?
+
+```{r}
+# Step 1: Create a contingency table
+contingency_table <- merged_data %>%
+  count(domain, state) %>%
+  spread(state, n, fill = 0)
+
+# Convert the contingency table to a matrix
+contingency_matrix <- as.matrix(contingency_table[,-1])
+
+# Step 2: Perform the chi-squared test
+chi_squared_test <- chisq.test(contingency_matrix)
+
+# Step 3: Print the results
+print(chi_squared_test)
+
+# Optional: Print expected values to see where the deviations are
+print(chi_squared_test$expected)
+
+
+```
+
+```{r, fig.height=25}
+sample_df_zero <- merged_data %>%
+  filter (actual_score == "0")
+
+# Step 1: Create a contingency table
+contingency_table_error <- sample_df_zero %>%
+  filter (state != "Error9") %>%
+  count(domain, state) %>%
+  spread(state, n, fill = 0)
+
+# Convert the contingency table to a matrix
+contingency_matrix <- as.matrix(contingency_table_error[,-1])
+
+# Step 2: Perform the chi-squared test
+chi_squared_test <- chisq.test(contingency_matrix)
+
+# Step 3: Print the results
+print(chi_squared_test)
+
+# Optional: Print expected values to see where the deviations are
+print(chi_squared_test$expected)
+
+
+
+
+mosaic_data <- table(sample_df_zero$domain, sample_df_zero$state)
+
+mosaicplot(mosaic_data, main = "Mosaic Plot of State by Domain", shade = TRUE, color = TRUE)
+
+
+#mosaic_data <- table(merged_data$domain, merged_data$state)
+
+#mosaicplot(mosaic_data, main = "Mosaic Plot of State by Domain", shade = TRUE, color = TRUE)
+
+```
+
+```{r, fig.height=20}
+# Create an alluvial plot
+ggplot(as.data.frame(table(merged_data$domain, merged_data$state)),
+       aes(axis1 = Var1, axis2 = Var2, y = Freq)) +
+  geom_alluvium(aes(fill = Var2)) +
+  geom_stratum() +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  labs(title = "Alluvial Plot of State by Domain",
+       x = "Category",
+       y = "Count",
+       fill = "State") +
+  theme_minimal()
+
+
+```
+
+```{r, fig.height=20}
+
+# Prepare the data for the alluvial plot
+alluvial_data <- merged_data %>%
+  count(class, state, method, sex, domain, actual_score) %>%
+  rename(Freq = n)
+
+# Create the alluvial plot
+ggplot(alluvial_data,
+       aes(axis1 = class, axis2 = state, axis3 = method, axis4 = sex, axis5 = domain, axis6 = actual_score, y = Freq)) +
+  geom_alluvium(aes(fill = state), width = 1/12) +
+  geom_stratum(width = 1/12, fill = "white", color = "black") +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  scale_x_discrete(limits = c("class", "state", "method", "sex", "domain", "actual_score"), expand = c(0.15, 0.05)) +
+  scale_fill_brewer(type = "qual", palette = "Set3") +
+  labs(title = "Alluvial Plot of Categorical Variables",
+       x = "Categories",
+       y = "Count",
+       fill = "State") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+
+# Identify students with multiple classes
+students_multiple_classes <- df_StudentRecord %>%
+  group_by(student_ID) %>%
+  summarise(unique_classes = n_distinct(title_ID)) %>%
+  filter(unique_classes > 1)
+
+# Display the results
+print(students_multiple_classes)
+```
