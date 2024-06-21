@@ -106,10 +106,10 @@ print(students_multiple_classes)
 
 ```{r}
 #remove index column
-#df_StudentRecord <- df_StudentRecord %>% select(-1)
+df_StudentRecord <- df_StudentRecord %>% select(-1)
 
-df_TitleInfo <- df_TitleInfo %>% select(-1)
-df_StudentInfo <- df_StudentInfo %>% select(-1)
+#df_TitleInfo <- df_TitleInfo %>% select(-1)
+#df_StudentInfo <- df_StudentInfo %>% select(-1)
 
 ```
 
@@ -296,14 +296,18 @@ saveRDS(overall_mastery, file = "overall_mastery.RDS")
 ```
 
 ```{r}
+# Calculate the error rate with consideration of different methods
 percentage_correct <- merged_data %>%
   group_by(student_ID, title_ID) %>%
   summarise(
     total_attempts = n(),
     wrong_attempts = sum(state != "Absolutely_Correct"),
-    percentage_wrong = wrong_attempts / total_attempts * 100,
+    percentage_wrong = (wrong_attempts / total_attempts) * 100,
     .groups = 'drop'
   )
+
+# View the result
+print(percentage_correct)
 
 # Save processed dataset
 saveRDS(percentage_correct, file = "percentage_correct.RDS")
@@ -532,8 +536,6 @@ comparison_long <- comparison_spread %>%
     
 ```
 
-
-
 ```{r}
 ggplot(comparison_long) +
         geom_rect(xmin = stats_low_mastery$meanneg, xmax = stats_low_mastery$meanpos,
@@ -640,6 +642,19 @@ low_threshold_scores <- calculate_threshold_scores(knowledge_mastery, "1%")
 ```
 
 ```{r}
+student_question <- merged_data %>%
+  group_by(student_ID, title_ID) %>%
+  summarise (count = n()) %>%
+  ungroup()
+
+student_question <- student_question %>%
+  group_by(student_ID) %>%
+  summarise (count = n()) %>%
+  filter (count >1) %>%
+  ungroup()
+```
+
+```{r}
 
 high_mastery_incorrect <- merged_data %>%
   filter(student_ID %in% high_mastery_students$student_ID) %>%
@@ -662,20 +677,11 @@ ggplot(high_mastery_incorrect, aes(x = knowledge, y = title_ID, fill = incorrect
 ```
 
 ```{r}
-# Data Cleaning and Preparation
-distractor_analysis <- adjusted_scores %>%
-  filter(attempts > 0) %>%
-  group_by(title_ID, knowledge) %>%
-  summarise(distractor_count = n(), .groups = 'drop')
-
-# Plot: Distractor Analysis
-plot7 <- ggplot(distractor_analysis, aes(x = knowledge, y = title_ID, fill = distractor_count)) +
-  geom_tile() +
-  scale_fill_gradient(low = "yellow", high = "red") +
-  theme_minimal() +
-  labs(title = "Distractor Analysis", x = "Knowledge Group", y = "Title ID", fill = "Distractor Count")
-
-plotly::ggplotly(plot7)
+percentage_high_mastery <- percentage_correct %>%
+  filter(student_ID %in% high_mastery_students$student_ID) %>%
+  group_by(title_ID) %>%
+  summarise (mean = mean(percentage_wrong), n = n())
+  
 
 
 
@@ -710,16 +716,11 @@ first_attempt_data <- merged_data %>%
   select (student_ID, title_ID, true_points)
 
 first_attempt_long <- pivot_wider(first_attempt_data, 
-                                   names_from = title_ID, values_from = true_points)
+                                   names_from = title_ID, values_from = true_points) %>%
+  filter (student_ID %in% student_question$student_ID)
   
 
-  
-```
 
-```{r}
-mod1 <- (mirt(first_attempt_long_high[2:39], 1, verbose = FALSE, itemtype = '2PL', SE = TRUE))
-
-mod1
 ```
 
 ```{r}
@@ -727,7 +728,8 @@ library (mirt)
 first_attempt_long <- first_attempt_long %>%
   mutate_all(~ replace_na(., 0))
 
-unimodel <- 'F1 = 1-10'
+saveRDS(first_attempt_long, "mirtdata.RDS")  
+
 
 first_attempt_long_high <- first_attempt_long %>%
   filter(student_ID %in% high_mastery_students$student_ID | student_ID %in% low_mastery_students$student_ID)
@@ -748,10 +750,6 @@ summary(fit3PL)
 ```{r}
 M2(fit3PL, type = "C2", calcNULL = FALSE)
 
-```
-
-```{r}
-itemfit(mod1)
 ```
 
 ```{r}
@@ -1001,4 +999,44 @@ itemDist <- function(model,
   p + xlim(theta_range) + theme_minimal() + labs(x = expression(theta), y = "")
 }
 
+```
+
+```{r}
+
+percentage_correct <- percentage_correct %>%
+  filter (student_ID %in% high_mastery_students$student_ID) %>%
+  group_by(title_ID) %>%
+  summarise (avg_percentage_wrong = mean(percentage_wrong))
+
+percentile_75 <- quantile(percentage_correct$avg_percentage_wrong, 0.75)
+
+percentage_correct <- percentage_correct %>%
+    mutate(highlight = ifelse(avg_percentage_wrong > percentile_75, "Above 75 Percentile", "Below 75 Percentile"))
+
+ggplot(percentage_correct, aes(x = reorder(title_ID,avg_percentage_wrong), y = avg_percentage_wrong, color = highlight)) +
+  geom_segment(aes(x = title_ID, xend = title_ID, y = 0, yend = avg_percentage_wrong), color = "grey") +
+  geom_point(size = 4, alpha = 0.8) +
+  scale_color_manual(values = c("Above 75 Percentile" = "red", "Below 75 Percentile" = "blue"), name = "Error Quantile") +
+  labs(
+    title = "Average Error Rate per Question for High Mastery Students",
+    x = "Title ID",
+    y = "Percentage of Error Rate"
+  ) +
+  theme_light() +
+  coord_flip() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank(),    
+    axis.title.y = element_text(size = 14, color = "black"),
+    axis.title.x = element_text(size = 14, color = "black"),
+    plot.title = element_text(size = 14, hjust = 0.5, face = "bold", color = "black"),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 10),
+    legend.position = "bottom",
+    panel.spacing.x = unit(1, "cm")
+  )
+
+
+ggsave("percentage_correct.png" , width = 30, height = 15, units = "cm")
 ```

@@ -1,14 +1,13 @@
 library(shiny)
 library(dplyr)
-library(igraph)
-library(DT)
 library(scales)
-library(ggstatsplot)
 library(ggplot2)
-library(ggalluvial)
-library(ggalt)
 library(tidyverse)
 library(reshape2)
+library (mirt)
+library(lattice)
+
+
 
 
 
@@ -16,14 +15,15 @@ library(reshape2)
 merged_data <- readRDS("merged_data.RDS")
 knowledge_expanded <- readRDS("knowledge_expanded.RDS")
 never_absolutely_correct <- readRDS("never_absolutely_correct.RDS")
-knowledge_mastery <- readRDS("knowledge_mastery.RDS")
 aggregate_title_info <- readRDS("aggregate_title_info.RDS")
 percentage_correct <- readRDS("percentage_correct.RDS")
+overall_mastery <- readRDS ("overall_mastery.RDS")
+df_IRT <- readRDS ("mirtdata.RDS")
 
 
 # Ensure class is a factor with ordered levels
 class_levels <- paste0("Class", 1:15)
-knowledge_mastery <- knowledge_mastery %>%
+overall_mastery <- overall_mastery %>%
   mutate(class = factor(class, levels = class_levels))
 
 # Define UI
@@ -32,20 +32,26 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       selectInput("threshold", "Select Threshold:", 
-                  choices = c("90%", "95%", "99%"), selected = "99%"),
-      selectInput("attribute", "Select Attribute:", 
-                  choices = c("class", "sex", "age", "major"), selected = "class"),
+                  choices = c("90%", "95%"), selected = "95%"),
       actionButton("filter", "Filter High Mastery Students")
     ),
     mainPanel(
       div(style = "overflow-y: scroll; width: 100%;",
-          plotOutput("dumbbellPlot", height = "600px")),
-      plotOutput("heatmapPlot"),
-      plotOutput("associationPlot"),
-      dataTableOutput("questionsTable"),
-      dataTableOutput("bottomPercentageTable")
+          plotOutput("dumbbellPlot", height = "600px"))
     )
+  ),
+  
+  fluidRow(
+    column(12, plotOutput("percentageWrongPlot"))
+  ),
+  
+  fluidRow(
+    column(12, plotOutput("tracePlot"))
+  ),
+  fluidRow(
+    column(12, plotOutput("CCCPlot"))
   )
+  
 )
 
 # Define Server
@@ -54,30 +60,19 @@ server <- function(input, output, session) {
   observeEvent(input$filter, {
     threshold <- input$threshold
     attribute <- input$attribute
+    selected_items <- input$itemSelect
     
-    # Calculate threshold scores for each knowledge group
-    threshold_scores <- calculate_threshold_scores(knowledge_mastery, threshold)
     
-    high_mastery_students <- get_high_mastery_students(knowledge_mastery, threshold_scores)
+    # Calculate threshold scores for 99% and 1%
+    threshold_99 <- calculate_threshold_scores(overall_mastery, as.numeric(sub("%", "", threshold)))
+    threshold_1 <- calculate_threshold_scores(overall_mastery, 100 - as.numeric(sub("%", "", threshold)))
     
-    # Summarize student_ID based on the selected attribute and show the connection of Attribute & Knowledge
-    attribute_knowledge_edges <- high_mastery_students %>%
-      select(!!sym(attribute), knowledge) %>%
-      distinct() %>%
-      group_by(!!sym(attribute), knowledge) %>%
-      summarise(student_count = n(), .groups = 'drop')
+    # Filter high and low mastery students based on the threshold scores
+    high_mastery_students <- overall_mastery %>%
+      filter(overall_mastery > threshold_99)
     
-    # Generate the ggstatsplot for the association between the selected attribute and knowledge
-    association_plot <- ggstatsplot::ggbarstats(
-      data = high_mastery_students,
-      x = knowledge,
-      y = !!sym(attribute),
-      title = paste("Association between", attribute, "and Knowledge")
-    )
-    
-    output$associationPlot <- renderPlot({
-      association_plot
-    })
+    low_mastery_students <- overall_mastery %>%
+      filter(overall_mastery < threshold_1)
     
     
     # Filter never absolutely correct questions based on high mastery students
@@ -88,12 +83,6 @@ server <- function(input, output, session) {
       summarise(number_of_students = n(), .groups = 'drop') %>%
       left_join(aggregate_title_info, by = "title_ID") %>%
       mutate(percentage_of_student_wrong = (number_of_students/length(high_mastery_students$student_ID)*100)) 
-    
-    # Identify bottom percentage students based on dynamic inputs
-    bottom_threshold <- 100 - as.numeric(sub("%", "", threshold))
-    threshold_scores <- calculate_threshold_scores(knowledge_mastery, bottom_threshold)
-    
-    low_mastery_students <- get_low_mastery_students(knowledge_mastery, threshold_scores)
     
     
     # Check if bottom percentage students got the questions that were never correct by high mastery students correct
@@ -172,6 +161,8 @@ server <- function(input, output, session) {
       mutate(type_of_student = factor(type_of_student, levels = c("high_mastery", "low_mastery"))) %>%
       mutate (color_condition = ifelse(color_condition == "default", type_of_student, color_condition))
     
+    comparison_long$color_condition <- as.factor(comparison_long$color_condition)
+    
     
     output$dumbbellPlot <- renderPlot({
       ggplot(comparison_long) +
@@ -196,10 +187,9 @@ server <- function(input, output, session) {
         #add annotations for mean and standard deviations
         geom_text(x = stats_low_mastery$mean + 5, y = 38, label = "MEAN", angle = 90, size = 2.5, color = "#009688")+
         geom_text(x = stats_low_mastery$meanpos + 5, y = 38, label = "STDEV", angle = 90, size = 2.5, color = "#009688")+
-        ggtitle("Comparison of High Mastery Student Incorrectness vs Low Mastery Student Correctness") +
+        ggtitle("Comparison of High Mastery Student Never Correct Percentage vs Low Mastery Student Correct Percentage") +
         geom_text (data = diff,
                    aes(label = paste("D:", diff, "%"), x = x_pos, y = title_ID),
-                   fill = "white",
                    color = "#4a4e4d",
                    size = 2.5) +
         facet_grid(title_ID ~ ., scales = "free", switch = "y") +
@@ -223,53 +213,80 @@ server <- function(input, output, session) {
       
     })
     
-    # Calculate average wrong percentage for each title ID and knowledge group
-    avg_wrong_percentage <- percentage_correct %>%
-      inner_join(high_mastery_students %>% select(student_ID, knowledge), by = "student_ID") %>%
-      group_by(title_ID, knowledge) %>%
-      summarise(avg_wrong_percentage = mean(percentage_wrong), .groups = 'drop')
     
-    # Reshape the data for heatmap
-    heatmap_data <- dcast(avg_wrong_percentage, title_ID ~ knowledge, value.var = "avg_wrong_percentage")
     
-    output$heatmapPlot <- renderPlot({
-      ggplot(melt(heatmap_data, id.vars = "title_ID"), aes(x = variable, y = title_ID, fill = value)) +
-        geom_tile() +
-        scale_fill_gradient(low = "white", high = "red") +
-        labs(title = "Average Wrong Percentage for Each Title ID by Knowledge Group",
-             x = "Knowledge Group",
-             y = "Title ID") +
-        theme_minimal()
+    df_IRT <- df_IRT %>%
+      filter(student_ID %in% high_mastery_students$student_ID | student_ID %in% low_mastery_students$student_ID)
+    
+    fit3PL <- mirt(data = df_IRT[2:39], 
+                   model = 1,  # alternatively, we could also just specify model = 1 in this case
+                   itemtype = "2PL",
+                   SE = TRUE,
+                   verbose = FALSE)
+    
+    output$tracePlot <- renderPlot({
+      plot(fit3PL, type = 'infotrace', which.item = c(1:38), facet_items = TRUE, 
+           as.table = TRUE, auto.key = list(points = FALSE, lines = TRUE, columns = 1, space = 'right', cex = .8), 
+           theta_lim = c(-3, 3), 
+           main = "Item Information Curves Plot of 2PL Model",
+           layout = c(10, ceiling(38 / 10)))
+    })
+    
+    output$CCCPlot <- renderPlot({
+      plot(fit3PL, type = 'trace', which.item = c(1:38), facet_items = TRUE, 
+           as.table = TRUE, auto.key = list(points = FALSE, lines = TRUE, columns = 1, space = 'right', cex = .8), 
+           theta_lim = c(-3, 3), 
+           main = "Category Characteristic Curves Plot of 2PL Model",
+           layout = c(10, ceiling(38 / 10)))
+    })
+    
+    percentage_correct <- percentage_correct %>%
+      filter (student_ID %in% high_mastery_students$student_ID) %>%
+      group_by(title_ID) %>%
+      summarise (avg_percentage_wrong = mean(percentage_wrong))
+    
+    percentile_75 <- quantile(percentage_correct$avg_percentage_wrong, 0.75)
+    
+    percentage_correct <- percentage_correct %>%
+      mutate(highlight = ifelse(avg_percentage_wrong > percentile_75, "Above 75 Percentile", "Below 75 Percentile"))
+    
+    output$percentageWrongPlot <- renderPlot({
+      ggplot(percentage_correct, aes(x = reorder(title_ID,avg_percentage_wrong), y = avg_percentage_wrong, color = highlight)) +
+        geom_segment(aes(x = title_ID, xend = title_ID, y = 0, yend = avg_percentage_wrong), color = "grey") +
+        geom_point(size = 4, alpha = 0.8) +
+        scale_color_manual(values = c("Above 75 Percentile" = "red", "Below 75 Percentile" = "blue"), name = "Error Quantile") +
+        labs(
+          title = "Average Error Rate per Question for High Mastery Students",
+          x = "Title ID",
+          y = "Percentage of Error Rate"
+        ) +
+        theme_light() +
+        coord_flip() +
+        theme(
+          panel.grid.major.y = element_blank(),
+          panel.border = element_blank(),
+          axis.ticks.y = element_blank(),    
+          axis.title.y = element_text(size = 14, color = "black"),
+          axis.title.x = element_text(size = 14, color = "black"),
+          plot.title = element_text(size = 14, hjust = 0.5, face = "bold", color = "black"),
+          legend.title = element_text(size = 10),
+          legend.text = element_text(size = 10),
+          legend.position = "bottom",
+          panel.spacing.x = unit(2, "cm")
+        )
     })
     
     
   })
 }
 
-calculate_threshold_scores <- function(knowledge_mastery, threshold) {
+calculate_threshold_scores <- function(overall_mastery_df, threshold) {
   percentile <- as.numeric(sub("%", "", threshold)) / 100
-  threshold_scores <- knowledge_mastery %>%
-    group_by(knowledge) %>%
-    summarise(threshold_score = quantile(total_score, percentile, na.rm = TRUE))
+  threshold_score <- quantile(overall_mastery_df$overall_mastery, percentile, na.rm = TRUE)
   
-  return(threshold_scores)
+  return(threshold_score)
 }
 
-get_high_mastery_students <- function(knowledge_mastery, threshold_scores) {
-  high_mastery_students <- knowledge_mastery %>%
-    inner_join(threshold_scores, by = "knowledge") %>%
-    filter(total_score > threshold_score) %>%
-    ungroup()
-  return(high_mastery_students)
-}
-
-get_low_mastery_students <- function(knowledge_mastery, threshold_scores) {
-  low_mastery_students <- knowledge_mastery %>%
-    inner_join(threshold_scores, by = "knowledge") %>%
-    filter(total_score < threshold_score) %>%
-    ungroup()
-  return(low_mastery_students)
-}
 
 # Run the application
 shinyApp(ui, server)
