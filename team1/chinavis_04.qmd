@@ -1,0 +1,696 @@
+---
+title: "chinavis_04"
+format: html
+editor: visual
+---
+
+# **5. Getting Started**
+
+## **5.1 Loading R packages**
+
+The code chunk below imports the dataset into R environment by using [*`read_csv()`*](https://readr.tidyverse.org/reference/read_delim.html) function of [`readr`](https://readr.tidyverse.org/) package. **readr** is one of the tidyverse package.
+
+Read the individual CSV files into data frames. Check that the structure of each data frame is the same.
+
+```{r}
+pacman::p_load(dplyr,tidyr,stringr,readr,fs,purrr,ggplot2, plotly, ggstatsplot,igraph,lubridate,hms, vcd)
+```
+
+## **5.2 Importing data**
+
+The code chunk below imports the dataset into R environment by using [*`read_csv()`*](https://readr.tidyverse.org/reference/read_delim.html) function of [`readr`](https://readr.tidyverse.org/) package. **readr** is one of the tidyverse package.
+
+Read the individual CSV files into data frames. Check that the structure of each data frame is the same.
+
+```{r}
+df_StudentInfo <- read_csv("data/Data_StudentInfo.csv")
+df_TitleInfo <- read_csv("data/Data_TitleInfo.csv")
+
+```
+
+<details>
+
+<summary>Click to show code</summary>
+
+```{r}
+csv_file_list <- dir('data/Data_SubmitRecord')
+csv_file_list <- paste0("./data/Data_SubmitRecord/",csv_file_list)
+
+
+df_StudentRecord <- NULL
+for (file in csv_file_list) { # for every file...
+  file <- read_csv(file)
+    df_StudentRecord <- rbind(df_StudentRecord, file) # then stick together by rows
+}
+df_StudentRecord %>% glimpse()
+```
+
+</details>
+
+## 5.3 Data Preparation
+
+### 5.3.1 Check Missing Values
+
+First, we identify students who are enrolled in more than one class. This helps us focus on those who need their class assignments reviewed. For students enrolled in multiple classes, we determine the correct class by identifying which class they attended most frequently. Finally, we update the class assignments in the original dataset. We replace the incorrect class values with the correct class determined in the previous step. This ensures that each student is associated with the class they attended most often. \#### Missing Data
+
+colSums() and is.NA() functions are used to search for missing values as a whole for the 3 data sets in the code chunks as follows.
+
+```{R}
+#| warning: false
+
+#Find the number of missing values for each col
+colSums(is.na(df_StudentInfo))
+```
+
+```{R}
+#| warning: false
+
+#Find the number of missing values for each col
+colSums(is.na(df_TitleInfo))
+```
+
+```{R}
+#| warning: false
+
+#Find the number of missing values for each col
+colSums(is.na(df_StudentRecord))
+
+```
+
+<details>
+
+<summary>Click to show code</summary>
+
+```{r}
+# Step 1: Identify students with multiple classes
+students_multiple_classes <- df_StudentRecord %>%
+  group_by(student_ID) %>%
+  summarise(unique_classes = n_distinct(class)) %>%
+  filter(unique_classes > 1)
+
+# Step 2: Identify the correct class for each student (the class with the highest frequency)
+correct_classes <- df_StudentRecord %>%
+  filter(student_ID %in% students_multiple_classes$student_ID) %>%
+  group_by(student_ID, class) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  slice(1) %>%
+  select(student_ID, correct_class = class)
+
+# Step 3: Replace wrong class values
+df_StudentRecord <- df_StudentRecord %>%
+  left_join(correct_classes, by = "student_ID") %>%
+  mutate(class = ifelse(!is.na(correct_class), correct_class, class)) %>%
+  select(-correct_class)
+
+# Display the updated dataframe
+print(df_StudentRecord)
+
+```
+
+
+</details>
+
+```{r}
+
+# Identify students with multiple classes
+students_multiple_classes <- df_StudentRecord %>%
+  group_by(student_ID) %>%
+  summarise(unique_classes = n_distinct(title_ID)) %>%
+  filter(unique_classes > 1)
+
+# Display the results
+print(students_multiple_classes)
+```
+
+```{r}
+#remove index column
+#df_StudentRecord <- df_StudentRecord %>% select(-1)
+df_TitleInfo <- df_TitleInfo %>% select(-1)
+df_StudentInfo <- df_StudentInfo %>% select(-1)
+
+```
+
+```{r}
+# Convert time from timestamp to POSIXct
+df_StudentRecord$time_change <- as.POSIXct(df_StudentRecord$time, origin="1970-01-01", tz="UTC")
+
+df_StudentRecord <- df_StudentRecord %>%
+  mutate(
+    time_change = ymd_hms(time_change),
+    date = as.Date(time_change),
+    time = as_hms(format(time_change, "%H:%M:%S")),
+    score = as.factor(score),
+    timeconsume = as.numeric(timeconsume)
+  ) 
+
+df_TitleInfo <- df_TitleInfo %>%
+  rename (
+     question_score = score
+  )
+```
+
+```{r}
+missing_students <- anti_join(df_StudentRecord, df_StudentInfo, by = "student_ID")
+
+# Display the missing student IDs
+missing_student_ids <- missing_students %>% select(student_ID) %>% distinct()
+print(missing_student_ids)
+
+
+unique(df_StudentRecord$state)
+
+df_StudentRecord <- df_StudentRecord %>%
+  filter (state != '�������')%>%
+  filter (class != "class")
+```
+
+```{r}
+
+# Aggregate knowledge and sub_knowledge into lists
+title_info_aggregated <- df_TitleInfo %>%
+  group_by(title_ID, question_score) %>%
+  summarise(knowledge_list = list(unique(knowledge)),
+            sub_knowledge_list = list(unique(sub_knowledge)),
+            .groups = 'drop')
+
+# View the first few rows of the aggregated data to confirm it looks correct
+head(title_info_aggregated)
+
+```
+
+```{r}
+# Merge StudentInfo with SubmitRecord based on student_ID
+merged_data <- merge(df_StudentRecord, df_StudentInfo, by = "student_ID")
+
+# Merge TitleInfo with the already merged data based on title_ID
+merged_data <- merge(merged_data, df_TitleInfo, by = "title_ID")
+
+merged_data <- merged_data %>%
+  rename(
+    actual_score = score
+  ) %>%
+  mutate (actual_score = as.numeric(as.character(actual_score)))
+```
+
+
+```{r}
+
+adjusted_scores <- merged_data %>%
+  mutate(points = case_when(
+    state == "Absolutely_Correct" ~ 1,
+    state == "Partially_Correct" ~ actual_score / question_score,
+    TRUE ~ 0 # default case for any unexpected states
+  ))
+
+mastery_scores <- adjusted_scores %>%
+  group_by(student_ID, title_ID, knowledge, class) %>%
+  summarise(
+    total_points = sum(points),
+    total_attempts = n(),
+    unique_methods = n_distinct(method),
+    absolutely_correct_methods = sum(points == 1)
+  ) %>%
+  mutate(
+    adjusted_points = total_points / total_attempts,
+    adjusted_points = adjusted_points * ifelse(absolutely_correct_methods > 0, unique_methods, 1)
+  )
+
+knowledge_mastery <- mastery_scores %>%
+  group_by(student_ID, class, knowledge) %>%
+  summarise(total_score = sum(adjusted_points)) %>%
+  left_join(df_StudentInfo %>% select(student_ID, sex, age, major), by = "student_ID") %>%
+  mutate(age = as.character(age))
+
+```
+
+
+```{r}
+summary(adjusted_scores)
+saveRDS(adjusted_scores, file = "adjusted_scores.RDS")
+```
+
+```{r}
+# Calculate the total number of knowledge groups
+total_knowledge_groups <- knowledge_mastery %>%
+  pull(knowledge) %>%
+  unique() %>%
+  length()
+
+# Calculate total scores for each student
+total_scores <- knowledge_mastery %>%
+  group_by(student_ID, class) %>%
+  summarize(total_score = sum(total_score, na.rm = TRUE)) %>%
+  ungroup()
+
+# Calculate overall mastery by dividing the total score by the total number of knowledge groups
+overall_mastery <- total_scores %>%
+  mutate(overall_mastery = total_score / total_knowledge_groups) %>%
+  filter (total_score > 1)  %>%
+  left_join(df_StudentInfo %>% select(student_ID, sex, age, major), by = "student_ID") %>%
+  mutate(age = as.character(age))
+
+# View the overall mastery for each student
+print(overall_mastery)
+
+saveRDS(overall_mastery, file = "overall_mastery.RDS")
+
+```
+
+
+
+
+
+Performance by questions 
+
+ 
+1. Static heatmap for average max actual score per question (normalised and non normalised)
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+# Check the column names in knowledge_expanded
+print(colnames(knowledge_expanded))
+
+# Ensure 'actual_score' and 'question_score' are numeric
+knowledge_expanded <- knowledge_expanded %>%
+  mutate(actual_score = as.numeric(actual_score),
+         question_score = as.numeric(question_score))
+
+# Calculate the normalised highest actual_score for each student for each question and knowledge area
+highest_scores <- knowledge_expanded %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(highest_actual_score = max(actual_score, na.rm = TRUE)/question_score, .groups = 'drop')
+
+# Calculate the normalised average highest actual_score for each title_ID and knowledge area
+average_highest_scores <- highest_scores %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(average_highest_score = mean(highest_actual_score, na.rm = TRUE), .groups = 'drop')
+
+# Retrieve the question_score for each title_ID and knowledge
+average_highest_scores <- average_highest_scores %>%
+  left_join(knowledge_expanded %>% select(title_ID, question_score) %>% distinct(), by = "title_ID")
+
+# Ensure 'knowledge' is treated as a factor for ggplot2 aesthetics
+average_highest_scores <- average_highest_scores %>%
+  mutate(knowledge = as.factor(knowledge))
+
+# Define the color scale limits based on your data range
+color_scale_limits <- range(average_highest_scores$average_highest_score, na.rm = TRUE)
+
+# Create the heatmap using ggplot2 with custom hover text
+p_heatmap <- ggplot(average_highest_scores, aes(x = knowledge, y = title_ID, fill = average_highest_score,
+                                       text = paste("Avg Highest Score:", round(average_highest_score, 2),
+                                                    "<br>Question Score:", question_score))) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", mid = "green", high = "red", midpoint = 0.9, 
+                       limits = color_scale_limits, name = "Avg Highest Score") +
+  labs(title = "Normalised Average Highest Actual Score per Knowledge Area per Question",
+       x = "Knowledge Areas",
+       y = "Question IDs",
+       fill = "Avg Highest Score") +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y = element_text(size = 6),
+    axis.title.x = element_text(size = 10, margin = margin(t = 15)),
+    axis.title.y = element_text(size = 10, margin = margin(r = 15)),
+    plot.title = element_text(size = 8, face = "bold", margin = margin(b = 15)),
+    legend.title = element_text(size = 8),  # Adjust legend title size
+    legend.text = element_text(size = 8),  # Adjust legend text size
+    legend.key.size = unit(1, "cm"),        # Adjust size of the legend keys
+    legend.position = "right"
+  )
+
+# Convert the ggplot object to a plotly object for interactivity
+p_heatmap_interactive <- ggplotly(p_heatmap, tooltip = "text")
+
+# Print the interactive heatmap
+p_heatmap_interactive
+
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+# Check the column names in knowledge_expanded
+print(colnames(knowledge_expanded))
+
+# Ensure 'actual_score' and 'question_score' are numeric
+knowledge_expanded <- knowledge_expanded %>%
+  mutate(actual_score = as.numeric(actual_score),
+         question_score = as.numeric(question_score))
+
+# Calculate the highest actual_score for each student for each question and knowledge area
+highest_scores <- knowledge_expanded %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(highest_actual_score = max(actual_score, na.rm = TRUE), .groups = 'drop')
+
+# Calculate the average highest actual_score for each title_ID and knowledge area
+average_highest_scores <- highest_scores %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(average_highest_score = mean(highest_actual_score, na.rm = TRUE), .groups = 'drop')
+
+# Retrieve the question_score for each title_ID and knowledge
+average_highest_scores <- average_highest_scores %>%
+  left_join(knowledge_expanded %>% select(title_ID, question_score) %>% distinct(), by = "title_ID")
+
+# Ensure 'knowledge' is treated as a factor for ggplot2 aesthetics
+average_highest_scores <- average_highest_scores %>%
+  mutate(knowledge = as.factor(knowledge))
+
+# Define the color scale limits based on your data range
+color_scale_limits <- range(average_highest_scores$average_highest_score, na.rm = TRUE)
+
+# Create the heatmap using ggplot2 with custom hover text
+p_heatmap <- ggplot(average_highest_scores, aes(x = knowledge, y = title_ID, fill = average_highest_score,
+                                       text = paste("Avg Highest Score:", round(average_highest_score, 2),
+                                                    "<br>Question Score:", question_score))) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", mid = "green", high = "red", midpoint = 2.5, 
+                       limits = color_scale_limits, name = "Avg Highest Score") +
+  labs(title = "Average Highest Actual Score per Knowledge Area per Question",
+       x = "Knowledge Areas",
+       y = "Question IDs",
+       fill = "Avg Highest Score") +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y = element_text(size = 6),
+    axis.title.x = element_text(size = 10, margin = margin(t = 15)),
+    axis.title.y = element_text(size = 10, margin = margin(r = 15)),
+    plot.title = element_text(size = 8, face = "bold", margin = margin(b = 15)),
+    legend.title = element_text(size = 8),  # Adjust legend title size
+    legend.text = element_text(size = 8),  # Adjust legend text size
+    legend.key.size = unit(1, "cm"),        # Adjust size of the legend keys
+    legend.position = "right"
+  )
+
+# Convert the ggplot object to a plotly object for interactivity
+p_heatmap_interactive <- ggplotly(p_heatmap, tooltip = "text")
+
+# Print the interactive heatmap
+p_heatmap_interactive
+
+```
+
+2. Static heatmap for avg number of methods used per question 
+```{r}
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+# Check the column names in mastery_scores
+print(colnames(mastery_scores))
+
+# Ensure 'unique_methods' column is numeric if needed
+mastery_scores <- mastery_scores %>%
+  mutate(unique_methods = as.numeric(unique_methods))
+
+# Aggregate data to calculate the average number of unique methods per question and knowledge area
+method_counts <- mastery_scores %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(avg_methods = mean(unique_methods, na.rm = TRUE), .groups = 'drop')
+
+# Further aggregate to get the average number of methods across all students for each title_ID and knowledge
+method_counts_summary <- method_counts %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(avg_methods = mean(avg_methods, na.rm = TRUE), .groups = 'drop')
+
+# Ensure 'knowledge' is treated as a factor for ggplot2 aesthetics
+method_counts_summary <- method_counts_summary %>%
+  mutate(knowledge = as.factor(knowledge))
+
+# Create the heatmap using ggplot2
+p_heatmap <- ggplot(method_counts_summary, aes(x = knowledge, y = title_ID, fill = avg_methods,
+                                               text = paste("Knowledge Area:", knowledge,
+                                                            "<br>Title ID:", title_ID,
+                                                            "<br>Avg Methods:", round(avg_methods, 2)))) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "white", high = "blue", mid = "lightblue", midpoint = mean(method_counts_summary$avg_methods, na.rm = TRUE), name = "Avg Methods") +
+  labs(title = "Average Methods used per Knowledge Area per Question",
+       x = "Knowledge Areas",
+       y = "Question IDs",
+       fill = "Avg Methods") +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y = element_text(size = 8),
+    axis.title.x = element_text(size = 14, margin = margin(t = 20)),
+    axis.title.y = element_text(size = 14, margin = margin(r = 20)),
+    plot.title = element_text(size = 10, face = "bold", margin = margin(b = 20)),
+    legend.position = "right"
+  )
+
+# Convert the ggplot object to a plotly object for interactivity
+p_heatmap_interactive <- ggplotly(p_heatmap, tooltip = "text")
+
+# Print the interactive heatmap
+p_heatmap_interactive
+
+
+```
+
+ 
+
+3. Static heatmap for sum(points) per question 
+```{r}
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+
+# Ensure 'points' is numeric
+adjusted_scores <- adjusted_scores %>%
+  mutate(points = as.numeric(points))
+
+# Calculate total attempts per question per knowledge area for each student
+adjusted_scores <- adjusted_scores %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  mutate(attempts = n()) %>%
+  ungroup()
+
+# Aggregate data to calculate the total points and total attempts per question and knowledge area for each student
+total_points_attempts <- adjusted_scores %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(total_points_sum = sum(points, na.rm = TRUE),
+            total_attempts = sum(attempts, na.rm = TRUE), .groups = 'drop')
+
+# Further aggregate to get the total points sum and total attempts across all students for each title_ID and knowledge
+total_summary <- total_points_attempts %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(total_points_sum = sum(total_points_sum, na.rm = TRUE),
+            total_attempts = sum(total_attempts, na.rm = TRUE), .groups = 'drop')
+
+# Ensure 'knowledge' is treated as a factor for ggplot2 aesthetics
+total_summary <- total_summary %>%
+  mutate(knowledge = as.factor(knowledge))
+
+# Define the color scale limits based on your data range
+color_scale_limits <- range(total_summary$total_points_sum, na.rm = TRUE)
+
+# Create the heatmap using ggplot2 with custom hover text
+p_heatmap <- ggplot(total_summary, aes(x = knowledge, y = title_ID, fill = total_points_sum,
+                                       text = paste("Total Points:", total_points_sum, "<br>Total Attempts:", total_attempts))) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", mid = "green", high = "red", midpoint = mean(color_scale_limits, na.rm = TRUE), 
+                       limits = color_scale_limits, name = "Total Points") +
+  labs(title = "Total Points per Question per Knowledge Area",
+       x = "Knowledge Areas",
+       y = "Question IDs",
+       fill = "Total Points") +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y = element_text(size = 6),
+    axis.title.x = element_text(size = 10, margin = margin(t = 15)),
+    axis.title.y = element_text(size = 10, margin = margin(r = 15)),
+    plot.title = element_text(size = 8, face = "bold", margin = margin(b = 15)),
+    legend.title = element_text(size = 8),  # Adjust legend title size
+    legend.text = element_text(size = 8),  # Adjust legend text size
+    legend.key.size = unit(1, "cm"),        # Adjust size of the legend keys
+    legend.position = "right"
+  )
+
+# Convert the ggplot object to a plotly object for interactivity
+p_heatmap_interactive <- ggplotly(p_heatmap, tooltip = "text")
+
+# Print the interactive heatmap
+p_heatmap_interactive
+
+```
+
+
+
+
+
+Performance by knowledge
+
+4. Ridge plot for sum(max actual score per qns) for 8 knowledge normalised 
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggridges)
+library(viridis)
+
+# Check the column names in adjusted_scores
+print(colnames(adjusted_scores))
+
+# Ensure that 'points' column is numeric
+adjusted_scores <- adjusted_scores %>%
+  mutate(points = as.numeric(points))
+
+# Check for missing values
+print(summary(adjusted_scores))
+
+# Aggregate the total sum of points by student_ID, title_ID, and knowledge area
+sum_points <- adjusted_scores %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(total_sum_points = sum(points, na.rm = TRUE), .groups = 'drop')
+
+# Aggregate to get the total sum of points for each title_ID and knowledge area
+total_sum_points <- sum_points %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(total_sum_points = sum(total_sum_points, na.rm = TRUE), .groups = 'drop')
+
+# Check the aggregated data
+print(head(total_sum_points))
+
+# Create the ridge plot with quantiles and quartiles
+p_ridge_sum_quantiles <- ggplot(total_sum_points, aes(x = total_sum_points, y = knowledge, fill = factor(stat(quantile)))) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE,
+    quantiles = 4,
+    quantile_lines = TRUE
+  ) +
+  scale_fill_viridis_d(name = "Quartiles") +
+  labs(title = "Total Sum Points Distribution per Knowledge Area", x = "Total Sum Points", y = "Knowledge Area") +
+  theme_ridges() +
+  theme(
+    axis.text.y = element_text(size = 8),
+    axis.title.x = element_text(size = 14, margin = margin(t = 20)),
+    axis.title.y = element_text(size = 14, margin = margin(r = 20)),
+    plot.title = element_text(size = 14, face = "bold", margin = margin(b = 20)),
+    legend.position = "right"
+  )
+
+# Print the ridge plot
+print(p_ridge_sum_quantiles)
+
+
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggridges)
+library(viridis)
+
+# Check the column names in adjusted_scores
+print(colnames(adjusted_scores))
+
+# Ensure 'points' is numeric and check the conversion
+adjusted_scores <- adjusted_scores %>%
+  mutate(points = as.numeric(points))
+
+# Check for missing values and ensure data types
+print(summary(adjusted_scores))
+print(str(adjusted_scores))
+
+
+```
+
+```{r}
+# Calculate the maximum points for each student for each question and knowledge area
+max_points <- adjusted_scores %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(max_points = max(points, na.rm = TRUE), .groups = 'drop')
+
+# Aggregate to get the sum of maximum points for each knowledge area
+total_sum_points <- max_points %>%
+  group_by(knowledge) %>%
+  summarise(total_sum_points = sum(max_points, na.rm = TRUE), .groups = 'drop')
+
+# Check the aggregated data
+print(total_sum_points)
+print(str(total_sum_points))
+
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggridges)
+library(viridis)
+
+# Check the column names in adjusted_scores
+print(adjusted_scores)
+
+# Ensure 'points' is numeric
+adjusted_scores <- adjusted_scores %>%
+  mutate(points = as.numeric(points))
+
+# Calculate the maximum points for each student for each question and knowledge area
+max_points <- adjusted_scores %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(max_points = max(points, na.rm = TRUE), .groups = 'drop')
+
+# Check the aggregated data
+print(head(max_points))
+
+# Create the ridge plot with quantiles and quartiles
+p_ridge_sum_quantiles <- ggplot(max_points, aes(x = max_points, y = knowledge, fill = factor(stat(quantile)))) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE,
+    quantiles = 4,
+    quantile_lines = TRUE
+  ) +
+  scale_fill_viridis_d(name = "Quartiles") +
+  labs(title = "Maximum Points Distribution per Knowledge Area",
+       x = "Maximum Points",
+       y = "Knowledge Area") +
+  theme_ridges() +
+  theme(
+    axis.text.y = element_text(size = 8),
+    axis.title.x = element_text(size = 14, margin = margin(t = 20)),
+    axis.title.y = element_text(size = 14, margin = margin(r = 20)),
+    plot.title = element_text(size = 14, face = "bold", margin = margin(b = 20)),
+    legend.position = "right"
+  )
+
+# Print the ridge plot
+print(p_ridge_sum_quantiles)
+```
+
+
+
+Distribution of Total Mastery Points by Knowledge
+
+```{r}
+# Create the ggplot2 boxplot
+p <- ggplot(knowledge_mastery, aes(x = knowledge, y = total_score)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.2, alpha = 0.5) +  # Adding jitter for individual points
+  theme_minimal() +
+  labs(
+    title = "Distribution of Total Mastery Points by Knowledge",
+    x = "Knowledge",
+    y = "Total Mastery Points"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+p
+```
+
+
+
+
+
