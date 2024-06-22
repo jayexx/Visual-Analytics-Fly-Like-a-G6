@@ -81,7 +81,7 @@ write.csv(data_combined, )
 
 ```{r}
 # 读取数据
-data <- read.csv('~/Documents/GitHub/ISSS608-WangYuhui/Take-home_Ex/Take-home_Ex03/data/merged_data.csv')
+data <- read.csv("data/merged_data.csv")
 
 # 查看数据结构
 str(data)
@@ -301,7 +301,9 @@ colors_border <- c("blue", "green", "red", "orange", "purple")
 
 # 生成雷达图
 radarchart(radar_data, axistype = 1,
-           pcol = colors_border, pfcol = colors_in, plwd = 2, plty = 1,
+           pcol = colors_border, 
+           #pfcol = colors_in, 
+           plwd = 2, plty = 1,
            cglcol = "grey", cglty = 1, cglwd = 0.8,
            vlcex = 0.8, title = "Cluster Comparison Radar Chart")
 

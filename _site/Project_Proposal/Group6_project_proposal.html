@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.353">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Jayexx, Fudi, Fishgrey">
+<meta name="dcterms.date" content="2024-05-15">
+
+<title>Visual-Analytics-Fly-Like-a-G6 - Group 6 VA Project Proposal</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">Visual-Analytics-Fly-Like-a-G6</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link active" href="../Project_Proposal/Group6_project_proposal.html" rel="" target="" aria-current="page">
+ <span class="menu-text">Project Proposal</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html" rel="" target="">
+ <span class="menu-text">About</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../index.html" rel="" target="">
+ <span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html" rel="" target="">
+ <span class="menu-text">About</span></a>
+  </li>  
+</ul>
+            <div class="quarto-navbar-tools">
+</div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#project-overview" id="toc-project-overview" class="nav-link active" data-scroll-target="#project-overview">Project Overview</a>
+  <ul class="collapse">
+  <li><a href="#topic-selection-introduction" id="toc-topic-selection-introduction" class="nav-link" data-scroll-target="#topic-selection-introduction">Topic Selection &amp; Introduction</a></li>
+  <li><a href="#problem-statement-requirements" id="toc-problem-statement-requirements" class="nav-link" data-scroll-target="#problem-statement-requirements">Problem Statement &amp; Requirements</a></li>
+  </ul></li>
+  <li><a href="#the-dataset" id="toc-the-dataset" class="nav-link" data-scroll-target="#the-dataset">The Dataset</a></li>
+  <li><a href="#approach" id="toc-approach" class="nav-link" data-scroll-target="#approach">Approach</a></li>
+  <li><a href="#methodology" id="toc-methodology" class="nav-link" data-scroll-target="#methodology">Methodology</a>
+  <ul class="collapse">
+  <li><a href="#key-data-preparation" id="toc-key-data-preparation" class="nav-link" data-scroll-target="#key-data-preparation">Key Data Preparation</a></li>
+  <li><a href="#key-dataviz" id="toc-key-dataviz" class="nav-link" data-scroll-target="#key-dataviz">Key DataViz</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Group 6 VA Project Proposal</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Jayexx, Fudi, Fishgrey </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">May 15, 2024</p>
+    </div>
+  </div>
+  
+    <div>
+    <div class="quarto-title-meta-heading">Modified</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date-modified">June 19, 2024</p>
+    </div>
+  </div>
+    
+  </div>
+  
+
+</header>
+
+<section id="project-overview" class="level2">
+<h2 class="anchored" data-anchor-id="project-overview">Project Overview</h2>
+<section id="topic-selection-introduction" class="level3">
+<h3 class="anchored" data-anchor-id="topic-selection-introduction">Topic Selection &amp; Introduction</h3>
+<p>With the given choices based on the VAST Challenge 2024 and CHINAVIS 2024 Data Visualisation Competition, the selected topic for this group project is Challenge I from the latter, titled「Data Analysis Inspires Wisdom」Time-Series Multivariate Education Data Visual Analytics Challenge. This topic was chosen due to the Project Group members’ contextual familiarity with the topic, as well as its alignment to the members’ learning interests in leveraging on key visual analytics tools, to explore and design data-driven solutions for seemingly complex problems.</p>
+<p>The selected project is centred on the learning patterns of learners in a programming course conducted by NorthClass Education Training Institute. Fundamentally, the project’s raison d’etre is to provide actionable insights towards the institution’s endeavor to diagnose and analyze learners’ knowledge mastery levels, monitor the trends in their learning behaviors, identify and dissect potential factors that contribute to learning difficulties, and hence to derive feasible suggestions to adjust teaching strategies and course design.</p>
+<p>To this end, data was collected from a select group of learners over a specified set of programming tasks over a particular learning period to facilitate the design and implementation of a Visual Analytics solution as a key outcome in this project.</p>
+</section>
+<section id="problem-statement-requirements" class="level3">
+<h3 class="anchored" data-anchor-id="problem-statement-requirements">Problem Statement &amp; Requirements</h3>
+<p>From the Challenge, the key problem statement was to perform a comprehensive analysis of multiple datasets that describe various aspects of the learner’s profile, learning patterns and status, to derive key insights to enhance teaching strategies and course design.</p>
+<p>Consequently the key requirements based on the 5 stipulated tasks in the challenge were as follows.</p>
+<ul>
+<li>Task 1: To provide a quantitative assessment of the learners’ knowledge mastery and identify weak links in their knowledge system, based on the multi-dimensional attributes such as answer scores and answer status in the learners’ log records of the learners’ question-answering behaviors.
+<ul>
+<li>This would entail an analysis of the learners’ aggregate performance in their programming tasks (a.k.a. questions in the dataset), including measures of central tendency, or any notable patterns that can glean insights towards knowledge mastery and weaknesses from the given datasets</li>
+</ul></li>
+<li>Task 2: To design and present learners’ profiles, based on learners’ personalized learning behavior patterns (including peak answering hours, preferred question types, correct answering rates, etc.), and various other attributes and characteristics
+<ul>
+<li>This would entail an analysis and profiling of of learners’ behaviours and attributes based on statistically significant patterns that are observed across the variables in the given datasets</li>
+</ul></li>
+<li>Task 3: To analyse and provide a visual representation of the relationship between learning modes and knowledge acquisition (learners’ ability to absorb, integrate, and apply knowledge)
+<ul>
+<li>This would entail an analysis to uncover the various learning modes and the patterns and/or correlations that it may have with the learners’ performance in the questions from the given datasets</li>
+</ul></li>
+<li>Task 4: To analyse the difficulty level of questions and learner’s level of knowledge (which should mostly align) and also to identify ‘inappropriate questions’ that may not align to this relationship.
+<ul>
+<li>This would entail an analysis and comparison between the learners’ performance in each question and the learners’ performance ranking, and hence to identify any potential outliers that violate the alignment of question difficulty and learner’s level of knowledge</li>
+</ul></li>
+<li>Task 5: To offer valuable recommendations to optimize question bank content settings and enhance the quality of teaching and learning, based on the outcomes of the aforementioned analysis of Tasks 1 to 4 above.
+<ul>
+<li>This would entail deriving actionable recommendations based on the insights gleaned in the visual analytics of the datasets from tasks 1 to 4 above</li>
+</ul></li>
+</ul>
+</section>
+</section>
+<section id="the-dataset" class="level2">
+<h2 class="anchored" data-anchor-id="the-dataset">The Dataset</h2>
+<p>The provided materials for the challenge include 3 datasets described below, as well as a separate document providing a more detailed description of the data and variables</p>
+<ul>
+<li>Dataset 1: Student Information - This comprises of 5 Cols, 1364 Rows, providing individualised demographic variables of the learners (a.k.a students) within the scope this project</li>
+<li>Dataset 2: Learning Subject Title Information - This comprises of 5 Cols, 44 Rows, providing variables of the questions from the programming tasks which are collated in the scope of this project</li>
+<li>Dataset 3: Class Submission Records - This comprises of multiple datasets, each with 10 Cols and various number of rows, providing supposedly the participating learners’ answering variables to the questions collated in the scope of this project</li>
+</ul>
+</section>
+<section id="approach" class="level2">
+<h2 class="anchored" data-anchor-id="approach">Approach</h2>
+<p>The broad approach for the project is shown in the figure below.</p>
+<p><img src="image/VA Group Project proposal image.jpg" class="img-fluid"></p>
+</section>
+<section id="methodology" class="level2">
+<h2 class="anchored" data-anchor-id="methodology">Methodology</h2>
+<p>Our methodology systematically integrates data collection, data processing, analysis, pattern mining, modeling, and recommendations to create a comprehensive Visual Analytics solution for improving teaching strategies and course designs at NorthClass Institute, elaborated below.</p>
+<section id="key-data-preparation" class="level3">
+<h3 class="anchored" data-anchor-id="key-data-preparation">Key Data Preparation</h3>
+<p>Data preprocessing and cleaning is required at the initial phase to ensure usability and consistency of the data records for subsequent data analysis. Based on initial assessment of the datasets, the Key Data preparation steps required are as follows.</p>
+<ul>
+<li>Remove duplicates, handle missing values through imputation or deletion, and correct inconsistencies.</li>
+<li>Correcting data type and addressing out-liers.</li>
+<li>Create new relevant attributes if needed.</li>
+<li>Merging of Multiple datasets in Dataset 3 into a single continuous dataframe, and subsequently joining Datasets 1 and 2 with 3.</li>
+</ul>
+</section>
+<section id="key-dataviz" class="level3">
+<h3 class="anchored" data-anchor-id="key-dataviz">Key DataViz</h3>
+<p>To address the aforesaid requirements, the following methodologies will be considered for the data visualisation (DataViz).</p>
+<ul>
+<li>For task 1, the analysis of answering behaviors involves identifying key performance metrics such as average scores, answer correctness, and time correlations to evaluate learners’ understanding and application of knowledge. Descriptive statistics will be used to compute mean, median, and mode of scores for different topics and question types. Histograms, violin and box plots could be used to visualize score distributions. Performance metrics could be calculated such as accuracy rate, average attempts per question, and time efficiency. These statistical analysis and visualisations will be done in tandem with the classification of questions, to finally visualise and quantify mastery and weaknesses in the various knowledge areas.</li>
+<li>For task 2, learning behavior patterns involve analyzing habitual actions. Time-series analysis will be used to identify peak answering times. And by studying the frequency and performance of different question types with bar charts, the preferred question type can also be identified. To profile and segment the learner groups, clustering analysis algorithms like K-means or hierarchical clustering can be used based on features engineered from the aforementioned behavior patterns and preferences.</li>
+<li>For task 3, in modeling the relationship between knowledge acquisition and learning modes, feature selection may build upon analysis from task 1 for knowledge acquisition and task 2 for learning modes. Correlation and Association analysis can then be used to ascertain the statistical significance of the relationships if any.</li>
+<li>For task 4, to identify question difficulty and learner knowledge levels, questions and learners can be ranked and categorized based on the historical performance data, and thresholds can be defined to sort and bin the data into levels. Cross-comparison can thus be done to filter and analyze data to detect inappropriate questions that are too difficult based on learner performance. An alternative group of inappropriate questions can also be suggested through visualising questions that ‘weak’ learners scored better and/or questions that ‘strong’ learners scored worse.</li>
+<li>Last but not least for task 5, based on the insights gleaned, actionable recommendations will be derived, (such as optimizing the question bank, customizing knowledge delivery based on learning patterns and preferences) aiming to enhance the overall quality of teaching and learning.</li>
+</ul>
+<p>Accordingly, a summary of the envisioned DataViz for this project will be as as follows.</p>
+<ul>
+<li>General Analysis (for Task 1):
+<ul>
+<li>Bar plot for mean, median, and mode of scores for different topics and question types.</li>
+<li>Bar plot for classifying answers into correct and incorrect categories.</li>
+<li>Scatter plot for time vs.&nbsp;Correctness</li>
+<li>Facet plots to visualise multiple plots in a single space</li>
+</ul></li>
+<li>Score distribution and performance metrics (for Tasks 1 &amp; 4):&nbsp;
+<ul>
+<li>Histogram for score distribution, bar plot for accuracy rate</li>
+<li>Facet, Ridgeline or Raindrop plots for performance metrics and to compare distribution for various categories</li>
+</ul></li>
+<li>Peaking hours analysis (for Task 2):
+<ul>
+<li>Time line chart: Displays the number of activities at different time points in a day to help identify peak hours.</li>
+<li>Heat map: Displays the distribution of daily or weekly activities to help discover high-frequency activities in a specific time period.</li>
+</ul></li>
+<li>Clustering result display (for Task 2 &amp; 3):
+<ul>
+<li>Radar chart: Displays multiple dimensional features of each cluster.</li>
+<li>Box plot: Displays the distribution of each cluster to understand the differences&nbsp;of&nbsp;clusters.</li>
+</ul></li>
+<li>Association and Correlation Analysis (for Task 3 &amp; 4):
+<ul>
+<li>Scatter plot with best-fit line/curve and shaded area for significance level using ggscaterstats for single numerical independent variable and dependent variable</li>
+<li>Multiple Violin plots using ggbetweenstats for multiple categorical independent variables and numerical independent variable</li>
+</ul></li>
+</ul>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

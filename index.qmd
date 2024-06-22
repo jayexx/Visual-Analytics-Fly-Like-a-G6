@@ -1,11 +1,7 @@
 ---
-title: "Visual-Analytics-Fly-Like-a-G6"
+title: "G6 Project Website"
 ---
 
-This is a Quarto website.
 
-To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
 
-```{r}
-1 + 1
-```
+![](image/VA Group Project proposal image.jpg)

@@ -5,7 +5,7 @@ website:
   title: "Visual-Analytics-Fly-Like-a-G6"
   navbar:
     left:
-      - href: "Proposal/Group6_project_proposal.html"
+      - href: "Project_Proposal/Group6_project_proposal.html"
         text: "Project Proposal"
       - about.qmd
     right:
