@@ -81,7 +81,7 @@ write.csv(data_combined, )
 
 ```{r}
 # 读取数据
-data <- read.csv('~/Documents/GitHub/ISSS608-WangYuhui/Take-home_Ex/Take-home_Ex03/data/merged_data.csv')
+data <- read.csv("data/merged_data.csv")
 
 # 查看数据结构
 str(data)
