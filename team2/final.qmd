@@ -22,6 +22,9 @@ library(reshape2)
 library(networkD3)
 library(ggalluvial)
 library(fastDummies)
+library(parallelPlot)
+
+pacman::p_load(tidyverse, knitr, ggridges, ggdist, colorspace, ggrepel, ggthemes, hrbrthemes, patchwork, lubridate, ggstatsplot, plotly, rjson, visNetwork, BiocManager, igraph, cluster, factoextra, stats, hms, caret, ggfortify, gridExtra, GGally, parallelPlot, seriation, dendextend, heatmaply, corrplot, ggalluvial) 
 ```
 
 # 1 Objective
@@ -329,13 +332,9 @@ weekend = 0
 # 读取数据集
 data <- read.csv("data/final_data.csv")
 
-# 创建时间偏好列
-data <- data %>%
-  mutate(time_pre = ifelse(week > weekend, 1, 0))
-
 # 创建新的dataframe
 time <- data %>%
-  select(student_ID, time_pre)
+  select(student_ID, week, weekend)
 
 # 查看结果
 head(time)
@@ -496,26 +495,31 @@ cleaned_data <- cleaned_data %>%
   left_join(title_info %>% select(title_ID, score), by = "title_ID", suffix = c("", "_total")) %>%
   mutate(correct_rate = score / score_total)
 
+# 初始化结果数据框
+trend_scores <- data.frame()
+
 # 定义计算正确率趋势的函数
 calculate_trend <- function(data) {
   if (nrow(data) < 2) {
     return(NA)
   }
-  model <- lm(correct_rate ~ timeconsume, data = data)
+  model <- lm(correct_rate ~ attempt, data = data)
   return(coef(model)[2]) # 返回斜率
 }
 
-# 初始化结果数据框
-trend_scores <- data.frame()
-
 # 遍历每位学生
-for (i in 1:nrow(knowledge)) {
-  student_id <- knowledge$student_ID[i]
-  title_id <- knowledge$title_ID[i]
+for (I in 1:nrow(knowledge)) {
+  student_id <- knowledge$student_ID[I]
+  title_id <- knowledge$title_ID[I]
   
-  # 找到该学生在该题目的所有答题记录
+  # 找到该学生在该题目的所有答题记录并排序
   student_data <- cleaned_data %>%
-    filter(student_ID == student_id, title_ID == title_id)
+    filter(student_ID == student_id, title_ID == title_id) %>%
+    arrange(time)
+  
+  # 增加attempt列
+  student_data <- student_data %>%
+    mutate(attempt = row_number() - 1)
   
   # 计算该学生在该题目的正确率趋势
   trend <- calculate_trend(student_data)
@@ -548,6 +552,81 @@ cluster_data <- knowledge %>%
 # 查看结果
 head(cluster_data)
 ```
+
+```{r}
+# 读取数据集
+cleaned_data <- read.csv("data/cleaned_data.csv")
+knowledge <- read.csv("data/knowledge.csv")
+title_info <- read.csv("data/Data_TitleInfo.csv")
+title_encode <- read.csv("data/title_encode.csv")
+
+# 重命名title_encode的列
+colnames(title_encode) <- c("title_ID", "encoded_title")
+
+# 合并knowledge和title_encode，找到每位学生的题目名称
+knowledge <- knowledge %>%
+  left_join(title_encode, by = c("title_pre" = "encoded_title")) %>%
+  rename(title = title_pre, title_ID = title_ID)
+
+# 计算correct_rate并添加到cleaned_data
+cleaned_data <- cleaned_data %>%
+  left_join(title_info %>% select(title_ID, score), by = "title_ID", suffix = c("", "_total")) %>%
+  mutate(correct_rate = score / score_total)
+
+# 初始化结果数据框
+trend_scores <- data.frame()
+
+# 定义计算正确率趋势的函数
+calculate_trend <- function(data) {
+  if (nrow(data) < 2) {
+    return(NA)
+  }
+  model <- lm(correct_rate ~ attempt, data = data)
+  return(coef(model)[2]) # 返回斜率
+}
+# 遍历每位学生
+plot_data <- data.frame()
+
+for (I in 1:nrow(knowledge)) {
+  student_id <- knowledge$student_ID[I]
+  title_id <- knowledge$title_ID[I]
+  
+  # 找到该学生在该题目的所有答题记录并排序
+  student_data <- cleaned_data %>%
+    filter(student_ID == student_id, title_ID == title_id) %>%
+    arrange(time)
+  
+  # 增加attempt列
+  student_data <- student_data %>%
+    mutate(attempt = row_number() - 1)
+  
+  # 保留尝试次数大于10的学生数据
+  if (nrow(student_data) > 10) {
+    plot_data <- rbind(plot_data, student_data)
+  }
+}
+
+# 绘制散点图和趋势线
+ggplot(plot_data, aes(x = attempt, y = correct_rate)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE, color = "blue", linetype = "dashed") +
+  labs(title = "Scatter Plot of Correct Rate vs Attempt for Students with more than 10 Attempts",
+       x = "Attempt",
+       y = "Correct Rate") +
+  theme_minimal()
+
+# 如果需要按学生分组进行绘图
+ggplot(plot_data, aes(x = attempt, y = correct_rate, color = student_ID)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed") +
+  labs(title = "Scatter Plot of Correct Rate vs Attempt for Students with more than 10 Attempts",
+       x = "Attempt",
+       y = "Correct Rate") +
+  theme_minimal() +
+  theme(legend.position = "none") # 如果学生太多，可以移除图例
+```
+
+## 3.5 sex, age, major
 
 ```{r}
 # 读取数据集
@@ -588,7 +667,9 @@ cluster_data <- cluster_data %>%
 head(cluster_data)
 ```
 
-# 4 visualisation
+# 4 visualization
+
+## 4.1 clustering
 
 ```{r}
 # 检查数据中的NA值
@@ -598,14 +679,15 @@ colSums(is.na(cluster_data))
 
 ```{r}
 # 检查数据中的NA值
-sum(is.na(cluster_data[, 2:6]))
+sum(is.na(cluster_data[, 2:9]))
 
 # 处理NA值，使用中位数填补
 cluster_data_clean <- cluster_data %>%
   mutate(across(2:9, ~ifelse(is.na(.), median(., na.rm = TRUE), .)))
 
+write.csv(cluster_data_clean, 'data/cluster_data.csv', row.names = FALSE)
 # 计算相关矩阵
-SLM.cor <- cor(cluster_data_clean[, 2:6], use = "complete.obs")
+SLM.cor <- cor(cluster_data_clean[, 2:9], use = "complete.obs")
 
 # 绘制相关图
 corrplot(SLM.cor, 
@@ -621,6 +703,8 @@ ggstatsplot::ggcorrmat(
   data = cluster_data_clean, 
   cor.vars = 2:9
 )
+
+colSums(is.na(cluster_data_clean))
 ```
 
 ```{r}
@@ -740,8 +824,8 @@ StudentLM_data_factor <- cluster_data_clean
 StudentLM_data_factor$cluster <- as.character(StudentLM_data_factor$cluster)
 
 ggparcoord(data = StudentLM_data_factor, 
-           columns = c(2:9), 
-           groupColumn = 10,
+           columns = c(2:10), 
+           groupColumn = 11,
            scale = "uniminmax",
            alphaLines = 0.2,
            boxplot = TRUE, 
@@ -752,26 +836,23 @@ ggparcoord(data = StudentLM_data_factor,
 ```{r}
 #| fig-width: 15
 #| fig-height: 30
-# 确保cluster列为因子类型
-cluster_data_clean$cluster <- as.factor(cluster_data_clean$cluster)
-
 # 创建alluvial plot
 ggplot(cluster_data_clean,
-       aes(axis1 = time_pre, axis2 = title_pre, axis3 = method_pre, axis4 = knowledge_pre, y = trend_score)) +
-  geom_alluvium(aes(fill = cluster)) +
-  geom_stratum() +
+       aes(axis1 = sex, axis2 = major, axis3 = cluster,
+           y = week)) +
+  scale_x_discrete(limits = c("Sex", "Major", "Cluster"), expand = c(.1, .1)) +
+  geom_alluvium(aes(fill = cluster), width = 0.25) +
+  geom_stratum(width = 0.25) +
   geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
-  scale_x_discrete(limits = c("Time Preference", "Title Preference", "Method Preference", "Knowledge Preference"), expand = c(0.15, 0.05)) +
-  labs(title = "Alluvial Plot of Students' Learning Modes",
-       y = "Trend Score",
-       x = "Preferences") +
   theme_minimal() +
-  theme(legend.position = "bottom")
+  labs(title = "Alluvial Plot of Students by Sex, Major, and Cluster",
+       y = "Number of Students",
+       x = "")
 ```
 
 ```{r}
-row.names(StudentLM_data) <- StudentLM_data$student_ID
-StudentLM_data1 <- select(StudentLM_data, c(1, 2:6))
+
+StudentLM_data1 <- select(StudentLM_data_factor, c(1, 2:10))
 StudentLM_data_matrix <- data.matrix(StudentLM_data1)
 
 StudentLM_data_d <- dist(normalize(StudentLM_data_matrix[, -c(1)]), method = "euclidean")
@@ -798,4 +879,168 @@ heatmaply(normalize(StudentLM_data_matrix[, -c(1)]),
           xlab = "Student_IDs",
           ylab = "Learning Behaior Pattern"
 )
+```
+
+## 4.2 hierarchical clustering
+
+```{r}
+# 安装并加载必要的包
+if (!require("clustMixType")) install.packages("clustMixType")
+if (!require("cluster")) install.packages("cluster")
+if (!require("factoextra")) install.packages("factoextra")
+if (!require("dplyr")) install.packages("dplyr")
+
+library(clustMixType)
+library(cluster)
+library(factoextra)
+library(dplyr)
+
+# 读取数据集
+cluster_data <- read.csv("data/cluster_data.csv")
+knowledge_encode <- read.csv("data/knowledge_encode.csv")
+major_encode <- read.csv("data/major_encode.csv")
+method_encode <- read.csv("data/method_encode.csv")
+title_encode <- read.csv("data/title_encode.csv")
+
+# 将编码转换为名称
+cluster_data <- cluster_data %>%
+  left_join(knowledge_encode, by = c("knowledge_pre" = "knowledge_encode")) %>%
+  left_join(major_encode, by = c("major" = "major_encode")) %>%
+  left_join(method_encode, by = c("method_pre" = "method_encode")) %>%
+  left_join(title_encode, by = c("title_pre" = "title_encode")) %>%
+  select(-knowledge_pre, -major, -method_pre, -title_pre)
+
+# 对 sex 进行编码
+cluster_data <- cluster_data %>%
+  mutate(sex = ifelse(sex == 1, "female", "male"))
+
+# 排除字符类型的列
+cluster_data_for_daisy <- cluster_data %>%
+  select(-student_ID)
+
+# 手动定义数值和分类特征的列索引
+numerical_indices <- c(1, 2, 3, 5)  # 手动定义数值列
+categorical_indices <- c( 4, 6, 7, 8, 9)  # 手动定义分类列
+
+# 将分类特征转换为因子类型
+cluster_data_for_daisy[, categorical_indices] <- lapply(cluster_data_for_daisy[, categorical_indices], as.factor)
+
+# 标准化数值特征
+cluster_data_for_daisy[, numerical_indices] <- scale(cluster_data_for_daisy[, numerical_indices])
+
+# 计算Gower's距离
+gower_dist <- daisy(cluster_data_for_daisy, metric = "gower")
+
+# 将Gower's距离矩阵转换为dist对象
+gower_dist <- as.dist(gower_dist)
+
+# 使用K-Prototypes算法进行聚类
+# 设定聚类数k
+k <- 2
+kprototypes_result <- kproto(cluster_data_for_daisy[, c(categorical_indices, numerical_indices)], k, nstart = 10)
+
+# 聚类结果
+cluster_assignments <- kprototypes_result$cluster
+
+# 检查聚类结果的长度
+length(cluster_assignments)
+
+# 将聚类结果添加到原始数据
+if(length(cluster_assignments) == nrow(cluster_data)) {
+  cluster_data$cluster <- factor(cluster_assignments)
+} else {
+  stop("The length of cluster assignments does not match the number of rows in the data.")
+}
+
+```
+
+```{r}
+# 将需要的列转换为因子类型
+categorical_columns <- c("sex", "age", "knowledge", "major1", "method", "title", "cluster")
+cluster_data[categorical_columns] <- lapply(cluster_data[categorical_columns], as.factor)
+
+# 计算每个分类变量中cluster 1和2的占比
+get_cluster_percentage <- function(data, column) {
+  data %>%
+    group_by(!!sym(column), cluster) %>%
+    summarise(count = n()) %>%
+    mutate(percentage = count / sum(count) * 100) %>%
+    filter(cluster %in% c(1, 2))
+}
+
+# 获取每个分类变量的占比数据框
+sex_cluster_percentage <- get_cluster_percentage(cluster_data, "sex")
+age_cluster_percentage <- get_cluster_percentage(cluster_data, "age")
+knowledge_cluster_percentage <- get_cluster_percentage(cluster_data, "knowledge")
+major_cluster_percentage <- get_cluster_percentage(cluster_data, "major1")
+method_cluster_percentage <- get_cluster_percentage(cluster_data, "method")
+title_cluster_percentage <- get_cluster_percentage(cluster_data, "title")
+
+# 打印结果
+print(sex_cluster_percentage)
+print(age_cluster_percentage)
+print(knowledge_cluster_percentage)
+print(major_cluster_percentage)
+print(method_cluster_percentage)
+print(title_cluster_percentage)
+```
+
+```{r}
+# 创建alluvial plot
+ggplot_alluvial <- ggplot(cluster_data,
+       aes(axis1 = sex, axis2 = age, axis3 = knowledge, axis4 = major1, axis5 = method, axis6 = title, axis7 = cluster,
+           y = ..count..)) +
+  scale_x_discrete(limits = c("Sex", "Age", "Knowledge", "Major", "Method", "Title", "Cluster"), expand = c(.1, .1)) +
+  geom_alluvium(aes(fill = cluster, text = cluster), width = 0.25) +
+  geom_stratum(aes(text = after_stat(stratum)), width = 0.25) +
+  theme_minimal() +
+  labs(title = "Alluvial Plot of Students Data Distribution and Flow",
+       y = "Number of Students",
+       x = "") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+# 转换为互动图表并添加悬停信息
+interactive_plot <- ggplotly(ggplot_alluvial, tooltip = "text") %>% layout(showlegend = FALSE)
+
+# 显示互动图表
+interactive_plot
+```
+
+```{r}
+# 层次聚类
+hclust_result <- hclust(gower_dist, method = "ward.D2")
+
+# 绘制树状图
+dend <- as.dendrogram(hclust_result)
+plot(dend, main = "Dendrogram of Students Data", xlab = "Students", sub = "", ylab = "Height")
+```
+
+```{r}
+# 将分类特征转换为因子类型
+categorical_columns <- c("sex", "age", "knowledge", "major1", "method", "title", "cluster")
+cluster_data[, categorical_columns] <- lapply(cluster_data[, categorical_columns], as.factor)
+
+# 创建一个新的表格，显示每个分类变量中每个因子在两个聚类中的占比
+create_proportion_table <- function(data, categorical_columns, cluster_col) {
+  proportion_tables <- lapply(categorical_columns, function(col) {
+    data %>%
+      group_by(!!sym(col), !!sym(cluster_col)) %>%
+      summarise(count = n(), .groups = 'drop') %>%
+      mutate(proportion = count / sum(count)) %>%
+      select(-count) %>%
+      spread(!!sym(cluster_col), proportion, fill = 0) %>%
+      rename_with(~paste0(col, "_", .), -!!sym(col))
+  })
+  
+  # 将所有表格合并到一个数据框中
+  proportion_table <- do.call(cbind, proportion_tables)
+  return(proportion_table)
+}
+
+# 创建显示占比的表格
+proportion_table <- create_proportion_table(cluster_data, categorical_columns[-7], "cluster")
+
+# 查看结果
+print(proportion_table)
+
 ```
