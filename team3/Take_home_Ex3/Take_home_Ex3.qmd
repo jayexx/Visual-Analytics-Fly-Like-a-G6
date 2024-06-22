@@ -1520,6 +1520,214 @@ ggbetweenstats(
 )
 ```
 
+## Bivariate and Multivariate analysis of variables
+
+pct_answers_weekdays
+pct_answers_working_hours
+total_diff_questions_attempted
+question_gini
+mean_question_scores
+mean_memory_size_by_qns
+mean_timeconsume
+total_answering_attempts
+mean_diff_answering_methods_by_qns
+method_gini
+total_memory_size
+total_timeconsume
+cluster
+sum_highest_actual_score
+sum_highest_actual_score_b3C9s
+sum_highest_actual_score_g7R2j
+sum_highest_actual_score_k4W1c
+sum_highest_actual_score_m3D1v
+sum_highest_actual_score_r8S3g
+sum_highest_actual_score_s8Y2f
+sum_highest_actual_score_t5V9e
+sum_highest_actual_score_y9W5d
+pct_answers_absolutely_correct
+total_questions_correct_or_partial
+sum_points_overall
+sum_points_b3C9s
+sum_points_g7R2j
+sum_points_k4W1c
+sum_points_m3D1v
+sum_points_r8S3g
+sum_points_s8Y2f
+sum_points_t5V9e
+sum_points_y9W5d 
+
+```{r}
+# Multi linear regression model for sum_highest_actual_score and sum_points overall
+model1 <- lm(sum_highest_actual_score ~ 
+               pct_answers_weekdays +
+               pct_answers_working_hours+
+               total_diff_questions_attempted+
+               question_gini+
+               mean_question_scores+
+               mean_memory_size_by_qns+
+               mean_timeconsume+
+               total_answering_attempts+
+               mean_diff_answering_methods_by_qns+
+               method_gini+
+               total_memory_size+
+               total_timeconsume, data = StudentLMKA_data)
+model2 <- lm(sum_points_overall ~ 
+               pct_answers_weekdays +
+               pct_answers_working_hours+
+               total_diff_questions_attempted+
+               question_gini+
+               mean_question_scores+
+               mean_memory_size_by_qns+
+               mean_timeconsume+
+               total_answering_attempts+
+               mean_diff_answering_methods_by_qns+
+               method_gini+
+               total_memory_size+
+               total_timeconsume, data = StudentLMKA_data)
+
+#| fig-width: 18
+#| fig-height: 16
+a <- ggcoefstats(model1, 
+            output = "plot")
+b <- ggcoefstats(model2, 
+            output = "plot")
+
+a + b
+```
+```{r}
+model3 <- lm(sum_points_b3C9s ~ 
+               pct_answers_weekdays +
+               pct_answers_working_hours+
+               total_diff_questions_attempted+
+               question_gini+
+               mean_question_scores+
+               mean_memory_size_by_qns+
+               mean_timeconsume+
+               total_answering_attempts+
+               mean_diff_answering_methods_by_qns+
+               method_gini+
+               total_memory_size+
+               total_timeconsume, data = StudentLMKA_data)
+model4 <- lm(sum_points_g7R2j ~ 
+               pct_answers_weekdays +
+               pct_answers_working_hours+
+               total_diff_questions_attempted+
+               question_gini+
+               mean_question_scores+
+               mean_memory_size_by_qns+
+               mean_timeconsume+
+               total_answering_attempts+
+               mean_diff_answering_methods_by_qns+
+               method_gini+
+               total_memory_size+
+               total_timeconsume, data = StudentLMKA_data)
+model5 <- lm(sum_points_k4W1c ~ 
+               pct_answers_weekdays +
+               pct_answers_working_hours+
+               total_diff_questions_attempted+
+               question_gini+
+               mean_question_scores+
+               mean_memory_size_by_qns+
+               mean_timeconsume+
+               total_answering_attempts+
+               mean_diff_answering_methods_by_qns+
+               method_gini+
+               total_memory_size+
+               total_timeconsume, data = StudentLMKA_data)
+model6 <- lm(sum_points_m3D1v ~ 
+               pct_answers_weekdays +
+               pct_answers_working_hours+
+               total_diff_questions_attempted+
+               question_gini+
+               mean_question_scores+
+               mean_memory_size_by_qns+
+               mean_timeconsume+
+               total_answering_attempts+
+               mean_diff_answering_methods_by_qns+
+               method_gini+
+               total_memory_size+
+               total_timeconsume, data = StudentLMKA_data)
+model7 <- lm(sum_points_r8S3g ~ 
+               pct_answers_weekdays +
+               pct_answers_working_hours+
+               total_diff_questions_attempted+
+               question_gini+
+               mean_question_scores+
+               mean_memory_size_by_qns+
+               mean_timeconsume+
+               total_answering_attempts+
+               mean_diff_answering_methods_by_qns+
+               method_gini+
+               total_memory_size+
+               total_timeconsume, data = StudentLMKA_data)
+model8 <- lm(sum_points_s8Y2f ~ 
+               pct_answers_weekdays +
+               pct_answers_working_hours+
+               total_diff_questions_attempted+
+               question_gini+
+               mean_question_scores+
+               mean_memory_size_by_qns+
+               mean_timeconsume+
+               total_answering_attempts+
+               mean_diff_answering_methods_by_qns+
+               method_gini+
+               total_memory_size+
+               total_timeconsume, data = StudentLMKA_data)
+model9 <- lm(sum_points_t5V9e ~ 
+               pct_answers_weekdays +
+               pct_answers_working_hours+
+               total_diff_questions_attempted+
+               question_gini+
+               mean_question_scores+
+               mean_memory_size_by_qns+
+               mean_timeconsume+
+               total_answering_attempts+
+               mean_diff_answering_methods_by_qns+
+               method_gini+
+               total_memory_size+
+               total_timeconsume, data = StudentLMKA_data)
+model10 <- lm(sum_points_y9W5d ~ 
+               pct_answers_weekdays +
+               pct_answers_working_hours+
+               total_diff_questions_attempted+
+               question_gini+
+               mean_question_scores+
+               mean_memory_size_by_qns+
+               mean_timeconsume+
+               total_answering_attempts+
+               mean_diff_answering_methods_by_qns+
+               method_gini+
+               total_memory_size+
+               total_timeconsume, data = StudentLMKA_data)
+
+#| fig-width: 18
+#| fig-height: 40
+a <- ggcoefstats(model3, 
+            output = "plot")
+b <- ggcoefstats(model4, 
+            output = "plot")
+c <- ggcoefstats(model5, 
+            output = "plot")
+d <- ggcoefstats(model6, 
+            output = "plot")
+e <- ggcoefstats(model7, 
+            output = "plot")
+f <- ggcoefstats(model8, 
+            output = "plot")
+g <- ggcoefstats(model9, 
+            output = "plot")
+h <- ggcoefstats(model10, 
+            output = "plot")
+(a + b) / (c + d) / (e + f) / (g + h) 
+```
+
+
+
+
+
+
+
+
 ## Conclusion
 
 In conclusion, the visual analysis of learning modes clustering found that 2 substantially distinct clusters can be formed using the selected students' learning mode features, whereby cluster 2 tends to be the more earnest learning mode cluster.
