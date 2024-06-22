@@ -106,10 +106,10 @@ print(students_multiple_classes)
 
 ```{r}
 #remove index column
-#df_StudentRecord <- df_StudentRecord %>% select(-1)
+df_StudentRecord <- df_StudentRecord %>% select(-1)
 
-df_TitleInfo <- df_TitleInfo %>% select(-1)
-df_StudentInfo <- df_StudentInfo %>% select(-1)
+#df_TitleInfo <- df_TitleInfo %>% select(-1)
+#df_StudentInfo <- df_StudentInfo %>% select(-1)
 
 ```
 
@@ -199,22 +199,52 @@ If student get partially correct, award 1 point, if student get abosultely corre
 ```{r}
 
 adjusted_scores <- merged_data %>%
-  group_by(student_ID, title_ID, knowledge,class) %>%
+  mutate(points = case_when(
+    state == "Absolutely_Correct" ~ 1,
+    state == "Partially_Correct" ~ actual_score / question_score,
+    TRUE ~ 0 # default case for any unexpected states
+  ))
+
+mastery_scores <- adjusted_scores %>%
+  group_by(student_ID, title_ID, knowledge, class) %>%
   summarise(
+    total_points = sum(points),
+    total_attempts = n(),
     unique_methods = n_distinct(method),
-    total_points = sum(case_when(
-      state == "Absolutely_Correct" ~ 2,
-      state == "Partially_Correct" ~ actual_score/question_score,
-      TRUE ~ -1
-    )),
-    attempts = n(),
-    .groups = 'drop'
+    absolutely_correct_methods = sum(points == 1)
   ) %>%
   mutate(
-    method_bonus = (unique_methods - 1) * 0.5,
-    adjusted_total_points = total_points + method_bonus
+    adjusted_points = total_points / total_attempts,
+    adjusted_points = adjusted_points * ifelse(absolutely_correct_methods > 0, unique_methods, 1)
   )
 
+knowledge_mastery <- mastery_scores %>%
+  group_by(student_ID, class, knowledge) %>%
+  summarise(total_score = sum(adjusted_points)) %>%
+  left_join(df_StudentInfo %>% select(student_ID, sex, age, major), by = "student_ID") %>%
+  mutate(age = as.character(age))
+
+```
+
+```{r}
+# Create the ggplot2 boxplot
+p <- ggplot(knowledge_mastery, aes(x = knowledge, y = total_score)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.2, alpha = 0.5) +  # Adding jitter for individual points
+  theme_minimal() +
+  labs(
+    title = "Distribution of Total Mastery Points by Knowledge",
+    x = "Knowledge",
+    y = "Total Mastery Points"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+p
+```
+
+```{r}
 # Expand rows for questions with multiple knowledge groups
 knowledge_expanded <- merged_data %>%
   separate_rows(knowledge, sep = ",") %>%
@@ -229,30 +259,55 @@ never_absolutely_correct <- knowledge_expanded %>%
   ) %>%
   filter(never_absolutely_correct)
 
-# Calculate knowledge mastery scores for each student
-knowledge_mastery <- adjusted_scores %>%
-  group_by(student_ID, class, knowledge) %>%
-  summarise(average_score = mean(adjusted_total_points / attempts, na.rm = TRUE), .groups = 'drop') %>%
-  left_join(df_StudentInfo %>% select(student_ID, sex, age, major), by = "student_ID") %>%
-  mutate(age = as.character(age))
 
 # Save processed datasets
-saveRDS(merged_data, file = "merged_data.RDS")
-saveRDS(knowledge_expanded, file = "knowledge_expanded.RDS")
-saveRDS(never_absolutely_correct, file = "never_absolutely_correct.RDS")
+#saveRDS(merged_data, file = "merged_data.RDS")
+#saveRDS(knowledge_expanded, file = "knowledge_expanded.RDS")
+#saveRDS(never_absolutely_correct, file = "never_absolutely_correct.RDS")
 saveRDS(knowledge_mastery, file = "knowledge_mastery.RDS")
 
 ```
 
 ```{r}
+# Calculate the total number of knowledge groups
+total_knowledge_groups <- knowledge_mastery %>%
+  pull(knowledge) %>%
+  unique() %>%
+  length()
+
+# Calculate total scores for each student
+total_scores <- knowledge_mastery %>%
+  group_by(student_ID, class) %>%
+  summarize(total_score = sum(total_score, na.rm = TRUE)) %>%
+  ungroup()
+
+# Calculate overall mastery by dividing the total score by the total number of knowledge groups
+overall_mastery <- total_scores %>%
+  mutate(overall_mastery = total_score / total_knowledge_groups) %>%
+  filter (total_score > 1)  %>%
+  left_join(df_StudentInfo %>% select(student_ID, sex, age, major), by = "student_ID") %>%
+  mutate(age = as.character(age))
+
+# View the overall mastery for each student
+print(overall_mastery)
+
+saveRDS(overall_mastery, file = "overall_mastery.RDS")
+
+```
+
+```{r}
+# Calculate the error rate with consideration of different methods
 percentage_correct <- merged_data %>%
   group_by(student_ID, title_ID) %>%
   summarise(
     total_attempts = n(),
     wrong_attempts = sum(state != "Absolutely_Correct"),
-    percentage_wrong = wrong_attempts / total_attempts * 100,
+    percentage_wrong = (wrong_attempts / total_attempts) * 100,
     .groups = 'drop'
   )
+
+# View the result
+print(percentage_correct)
 
 # Save processed dataset
 saveRDS(percentage_correct, file = "percentage_correct.RDS")
@@ -329,13 +384,37 @@ filtered_questions <- never_correct_questions %>%
       left_join(title_info, by = c("title_ID" = "title_ID"))
 ```
 
+### Overall Mastery
+
+```{r}
+
+calculate_threshold_scores <- function(overall_mastery_df, threshold) {
+  percentile <- as.numeric(sub("%", "", threshold)) / 100
+  threshold_score <- quantile(overall_mastery_df$overall_mastery, percentile, na.rm = TRUE)
+  
+  return(threshold_score)
+}
+
+# Calculate threshold scores for 99% and 1%
+threshold_99 <- calculate_threshold_scores(overall_mastery, "95%")
+threshold_1 <- calculate_threshold_scores(overall_mastery, "5%")
+
+# Filter high and low mastery students based on the threshold scores
+high_mastery_students <- overall_mastery %>%
+  filter(overall_mastery > threshold_99)
+
+low_mastery_students <- overall_mastery %>%
+  filter(overall_mastery < threshold_1)
+
+```
+
 ```{r}
 
 calculate_threshold_scores <- function(knowledge_mastery, threshold) {
   percentile <- as.numeric(sub("%", "", threshold)) / 100
   threshold_scores <- knowledge_mastery %>%
     group_by(knowledge) %>%
-    summarise(threshold_score = quantile(average_score, percentile, na.rm = TRUE))
+    summarise(threshold_score = quantile(total_score, percentile, na.rm = TRUE))
   
   return(threshold_scores)
 }
@@ -343,7 +422,7 @@ calculate_threshold_scores <- function(knowledge_mastery, threshold) {
 get_high_mastery_students <- function(knowledge_mastery, threshold_scores) {
   high_mastery_students <- knowledge_mastery %>%
     inner_join(threshold_scores, by = "knowledge") %>%
-    filter(average_score > threshold_score) %>%
+    filter(total_score > threshold_score) %>%
     ungroup()
   return(high_mastery_students)
 }
@@ -351,7 +430,7 @@ get_high_mastery_students <- function(knowledge_mastery, threshold_scores) {
 get_low_mastery_students <- function(knowledge_mastery, low_threshold_scores) {
   low_mastery_students <- knowledge_mastery %>%
     inner_join(low_threshold_scores, by = "knowledge") %>%
-    filter(average_score < threshold_score) %>%
+    filter(total_score < threshold_score) %>%
     ungroup()
   return(low_mastery_students)
 }
@@ -366,7 +445,7 @@ low_threshold_scores <- calculate_threshold_scores(knowledge_mastery, "1%")
 
 low_mastery_students <- knowledge_mastery %>%
     inner_join(low_threshold_scores, by = "knowledge")%>%
-    filter(average_score < threshold_score)%>%
+    filter(total_score < threshold_score)%>%
     ungroup()
 
 ```
@@ -413,21 +492,79 @@ bottom_percentage_never_correct <- knowledge_expanded %>%
     high_mastery <-  comparison_data %>%
       filter(type_of_student == "high_mastery")
     
+    stats <- comparison_data %>%
+      group_by(type_of_student) %>%
+      summarise(mean = mean(percentage),
+                SE = sd(percentage)) %>%
+      mutate(meanpos = mean + 1 *SE,
+             meanneg = mean - 1 *SE)
     
-    ggplot(comparison_data) +
+    stats_low_mastery <- stats %>%
+      filter(type_of_student == "low_mastery")
+    stats_high_mastery <- stats %>%
+      filter(type_of_student == "high_mastery")
+    
+    diff <- comparison_data %>% 
+      filter(type_of_student == "low_mastery") %>%
+      mutate(x_pos = percentage + (-diff/2)) 
+    
+    comparison_spread <- comparison_data %>%
+  spread(type_of_student, percentage)
+
+# Join the stats to get the mean values
+comparison_spread <- comparison_spread %>%
+  left_join(stats %>% filter(type_of_student == "high_mastery") %>% select(-type_of_student), by = character()) %>%
+  rename(high_mastery_mean = mean, high_mastery_SE = SE, high_mastery_meanpos = meanpos, high_mastery_meanneg = meanneg) %>%
+  left_join(stats %>% filter(type_of_student == "low_mastery") %>% select(-type_of_student), by = character()) %>%
+  rename(low_mastery_mean = mean, low_mastery_SE = SE, low_mastery_meanpos = meanpos, low_mastery_meanneg = meanneg)
+
+# Create the color condition
+comparison_spread <- comparison_spread %>%
+  mutate(color_condition = case_when(
+    high_mastery > high_mastery_mean & low_mastery > low_mastery_mean ~ "red",
+    TRUE ~ "default"
+  ))
+
+# Gather the data back to long format
+comparison_long <- comparison_spread %>%
+      gather(type_of_student, percentage, high_mastery, low_mastery) %>%
+      mutate(type_of_student = factor(type_of_student, levels = c("high_mastery", "low_mastery"))) %>%
+      mutate (color_condition = ifelse(color_condition == "default", type_of_student, color_condition))
+
+    
+    
+    
+```
+
+```{r}
+ggplot(comparison_long) +
+        geom_rect(xmin = stats_low_mastery$meanneg, xmax = stats_low_mastery$meanpos,
+                  ymin = 0, ymax = 38, fill = "#762a83", alpha = .05) +
+        geom_vline(xintercept = stats_low_mastery$mean, linetype = "solid", size = .5, alpha = .8, color = "#762a83")+
+        
+        geom_rect(xmin = stats_high_mastery$meanneg, xmax = stats_high_mastery$meanpos,
+                  ymin = 0, ymax = 38, fill = "#009688", alpha = .05)+  
+        geom_vline(xintercept = stats_high_mastery$mean, color = "#009688", linetype = "solid",  size = .5, alpha = .8) +
+        
+        
         geom_segment(data = low_mastery,
                      aes(x = percentage, y = title_ID,
                          yend = high_mastery$title_ID, xend = high_mastery$percentage),
                      color = "#aeb6bf",
                      size = 4.5,
                      alpha = 0.5) +
-        geom_point(aes(x = percentage, y = title_ID, color = type_of_student), size = 4, show.legend = TRUE) +
-        ggtitle("Comparison of High Mastery Student vs Low Mastery Student")+
+        geom_point(aes(x = percentage, y = title_ID, color = color_condition), size = 4, show.legend = TRUE) +
+        #color points
+        scale_color_manual(values = c("1" = "#009688", "2" = "#762a83", "red" = "red"))+
+        #add annotations for mean and standard deviations
+        geom_text(x = stats_low_mastery$mean + 5, y = 38, label = "MEAN", angle = 90, size = 2.5, color = "#009688")+
+        geom_text(x = stats_low_mastery$meanpos + 5, y = 38, label = "STDEV", angle = 90, size = 2.5, color = "#009688")+
+        ggtitle("Comparison of High Mastery Student Incorrectness vs Low Mastery Student Correctness") +
         geom_text (data = diff,
                    aes(label = paste("D:", diff, "%"), x = x_pos, y = title_ID),
                    fill = "white",
                    color = "#4a4e4d",
-                   size = 2.5)+
+                   size = 2.5) +
         facet_grid(title_ID ~ ., scales = "free", switch = "y") +
         theme_minimal()+
         theme(panel.grid.major.y = element_blank(),
@@ -477,13 +614,13 @@ calculate_threshold_scores <- function(knowledge_mastery, threshold) {
   percentile <- as.numeric(sub("%", "", threshold)) / 100
   threshold_scores <- knowledge_mastery %>%
     group_by(knowledge) %>%
-    summarise(threshold_score = quantile(average_score, percentile, na.rm = TRUE))
+    summarise(threshold_score = quantile(total_mastery_points, percentile, na.rm = TRUE))
 }
 
 get_high_mastery_students <- function(knowledge_mastery, threshold_scores) {
   high_mastery_students <- knowledge_mastery %>%
     inner_join(threshold_scores, by = "knowledge") %>%
-    filter(average_score > threshold_score) %>%
+    filter(total_mastery_points > threshold_score) %>%
     ungroup()
   return(high_mastery_students)
 }
@@ -491,7 +628,7 @@ get_high_mastery_students <- function(knowledge_mastery, threshold_scores) {
 get_low_mastery_students <- function(knowledge_mastery, low_threshold_scores) {
   low_mastery_students <- knowledge_mastery %>%
     inner_join(low_threshold_scores, by = "knowledge") %>%
-    filter(average_score < threshold_score) %>%
+    filter(total_mastery_points < threshold_score) %>%
     ungroup()
   return(low_mastery_students)
 }
@@ -502,6 +639,19 @@ high_mastery_students <- get_high_mastery_students(knowledge_mastery, threshold_
 
 low_threshold_scores <- calculate_threshold_scores(knowledge_mastery, "1%")
 
+```
+
+```{r}
+student_question <- merged_data %>%
+  group_by(student_ID, title_ID) %>%
+  summarise (count = n()) %>%
+  ungroup()
+
+student_question <- student_question %>%
+  group_by(student_ID) %>%
+  summarise (count = n()) %>%
+  filter (count >1) %>%
+  ungroup()
 ```
 
 ```{r}
@@ -527,69 +677,11 @@ ggplot(high_mastery_incorrect, aes(x = knowledge, y = title_ID, fill = incorrect
 ```
 
 ```{r}
-
-# Data Cleaning and Preparation
-method_impact <- adjusted_scores %>%
-  group_by(unique_methods) %>%
-  summarise(average_score = mean(adjusted_total_points / attempts, na.rm = TRUE), .groups = 'drop')
-
-# Plot: Method Usage Impact
-plot4 <- ggplot(method_impact, aes(x = factor(unique_methods), y = average_score)) +
-  geom_bar(stat = "identity", fill = "lightblue") +
-  theme_minimal() +
-  labs(title = "Impact of Method Usage on Mastery Scores", x = "Unique Methods Used", y = "Average Adjusted Score")
-
-plotly::ggplotly(plot4)
-
-```
-
-```{r}
-
-# Data Cleaning and Preparation
-library(ltm)
-
-irt_data <- adjusted_scores %>%
-  mutate(correct = ifelse(adjusted_total_points > 0, 1, 0))
-
-# Fit IRT model
-irt_model <- ltm(correct ~ z1, data = irt_data)
-
-# Plot: Item Characteristic Curves
-plot5 <- plot(irt_model, type = "ICC", lwd = 2, col = c("blue", "red", "green"))
-
-plotly::ggplotly(plot5)
-
-```
-
-```{r}
-reliability_data <- adjusted_scores %>%
-  select(student_ID, title_ID, adjusted_total_points) %>%
-  spread(title_ID, adjusted_total_points, fill = NA)
-
-# Calculate Cronbach's alpha
-cronbach_alpha <- alpha(reliability_data)
-
-# Display Result
-print(cronbach_alpha)
-
-
-```
-
-```{r}
-# Data Cleaning and Preparation
-distractor_analysis <- adjusted_scores %>%
-  filter(attempts > 0) %>%
-  group_by(title_ID, knowledge) %>%
-  summarise(distractor_count = n(), .groups = 'drop')
-
-# Plot: Distractor Analysis
-plot7 <- ggplot(distractor_analysis, aes(x = knowledge, y = title_ID, fill = distractor_count)) +
-  geom_tile() +
-  scale_fill_gradient(low = "yellow", high = "red") +
-  theme_minimal() +
-  labs(title = "Distractor Analysis", x = "Knowledge Group", y = "Title ID", fill = "Distractor Count")
-
-plotly::ggplotly(plot7)
+percentage_high_mastery <- percentage_correct %>%
+  filter(student_ID %in% high_mastery_students$student_ID) %>%
+  group_by(title_ID) %>%
+  summarise (mean = mean(percentage_wrong), n = n())
+  
 
 
 
@@ -611,4 +703,340 @@ plot8 <- ggplot(biserial_data, aes(x = reorder(title_ID, biserial_correlation), 
 
 plotly::ggplotly(plot8)
 
+```
+
+```{r}
+first_attempt_data <- merged_data %>%
+  group_by(student_ID, title_ID) %>%
+  slice(1) %>%
+  mutate (true_points = case_when(
+      state == "Absolutely_Correct" ~ 1,
+      TRUE ~ 0
+    )) %>%
+  select (student_ID, title_ID, true_points)
+
+first_attempt_long <- pivot_wider(first_attempt_data, 
+                                   names_from = title_ID, values_from = true_points) %>%
+  filter (student_ID %in% student_question$student_ID)
+  
+
+
+```
+
+```{r}
+library (mirt)
+first_attempt_long <- first_attempt_long %>%
+  mutate_all(~ replace_na(., 0))
+
+saveRDS(first_attempt_long, "mirtdata.RDS")  
+
+
+first_attempt_long_high <- first_attempt_long %>%
+  filter(student_ID %in% high_mastery_students$student_ID | student_ID %in% low_mastery_students$student_ID)
+
+fit3PL <- mirt(data = first_attempt_long_high[2:39], 
+               model = 1,  # alternatively, we could also just specify model = 1 in this case
+               itemtype = "2PL",
+               SE = TRUE,
+               verbose = FALSE)
+fit3PL
+
+```
+
+```{r}
+summary(fit3PL)
+```
+
+```{r}
+M2(fit3PL, type = "C2", calcNULL = FALSE)
+
+```
+
+```{r}
+
+params3PL <- coef(fit3PL, IRTpars = TRUE, simplify = TRUE)
+round(params3PL$items, 2) # g = c = guessing parameter
+
+```
+
+```{r, fig.height=12}
+
+itemfit(fit3PL)
+
+itemfitPlot(fit3PL)
+
+```
+
+```{r}
+
+IRT_parms <- coef(mod1, IRTpars = TRUE, simplify = TRUE)
+IRT_parms$items
+```
+
+```{r, fig.height= 15}
+plot(fit3PL, type='trace', which.item = c(1:38), facet_items=T, 
+     as.table = TRUE, auto.key=list(points=F, lines=T, columns=4, space = 'top', cex = .8), 
+              theta_lim = c(-3, 3), 
+     main = "")
+
+```
+
+```{r}
+
+plot(fit3PL, type='infotrace', which.item = c(1:38), facet_items=T, 
+     as.table = TRUE, auto.key=list(points=F, lines=T, columns=1, space = 'right', cex = .8), 
+              theta_lim = c(-3, 3), 
+     main="")
+
+```
+
+```{r}
+itemfitPlot <- function(model,
+                        fit_stats = "infit",
+                        color = "red",
+                        shape = 17,
+                        title = "Item Infit and Outfit Statistics",
+                        ...) {
+    
+  
+    fit <- mirt::itemfit(model, fit_stats = fit_stats, ...)
+    
+    if("infit" %in% names(fit)) {
+      fit %>%
+        select(item, infit, outfit) %>%
+        gather(key, value, -item) %>%
+        ggplot(aes(x = item, y = value)) +
+        geom_point(size = 3, color = color, shape = shape) +
+        geom_line() +
+        geom_hline(yintercept = .5, color = "darkgrey", linetype = "dashed") +
+        geom_hline(yintercept = 1, color = "darkgrey") +
+        geom_hline(yintercept = 1.5, color = "darkgrey", linetype = "dashed") +
+        scale_y_continuous(breaks = c(.5, 1, 1.5), limits = c(0, 2)) +
+        facet_grid(~key) +
+        coord_flip() +
+        theme_minimal() +
+        labs(y = "", x = "", caption = "Note: Items with values within 0.5 and 1.5 are considered to be productive for measurement.",
+             title = title)
+    }
+}
+
+```
+
+```{r, fig.height=15}
+
+tracePlot(fit3PL)
+
+itempersonMap(fit3PL)
+
+
+```
+
+```{r}
+
+tracePlot <- function(model, 
+                      items = NULL,
+                      theta_range = c(-4,4),
+                      title = "Item Characteristics Curves",
+                      n.answers = 5,
+                      facet = TRUE,
+                      legend = FALSE) {
+  
+  data <- model@Data$data %>% as.data.frame
+  
+  # Set theta range as sequence
+  theta_range = seq(theta_range[1], theta_range[2], by = .01)
+  
+  # Check model type
+  type <- model@Model$itemtype
+  
+  # Graded response model
+  if(type[1] == "graded") {
+    
+    trace <- probtrace(model, Theta = theta_range) %>%
+      as_tibble %>%
+      mutate(Theta = theta_range) %>%
+      gather(key, value, -Theta) %>%
+      separate(key, c("var", "response"), sep = ifelse(n.answers > 10, -4, -3))
+    
+    p <- ggplot(trace, aes(x = Theta, y =  value)) +
+      geom_line(aes(color = response)) +
+      facet_wrap(~var) +
+      theme_minimal() +
+      labs(x = expression(theta), 
+           y = expression(P(theta)), 
+           title = title) +
+      scale_color_brewer(palette = 7)
+    
+  } else {
+  
+  trace <- NULL
+  for(i in 1:length(data)){
+  extr <- extract.item(model, i)
+  theta <- matrix(theta_range)
+  trace[[i]] <- probtrace(extr, theta)
+  }
+  
+  if (!is.null(items)) {
+    trace <- trace[items]
+  }
+  
+  names(trace) <- paste('item', 1:length(trace))
+  trace_df <- do.call(rbind, trace)
+  
+  item <- rep(names(trace), each = length(theta))
+  d <- cbind.data.frame(theta, item, trace_df)
+  d$item <- as.factor(d$item)
+  
+  # final plot
+  if(isFALSE(facet)) {
+  p <- ggplot(d, aes(theta, P.1, colour = item)) + 
+    geom_line() + 
+    labs(x = expression(theta), 
+         y = expression(P(theta)), 
+         title = title) +
+    theme_minimal() +
+    scale_color_brewer(palette = 7)
+  
+  if(isFALSE(legend)) {
+   p <- p + guides(color = "none")
+  }
+    
+  } else {
+   p <- ggplot(d, aes(theta, P.1)) + 
+      geom_line() + 
+      facet_wrap(~item) +
+      labs(x = expression(theta), 
+           y = expression(P(theta)), 
+           title = title) +
+      theme_minimal()
+  }
+  
+  }
+  return(p)
+}
+
+
+
+```
+
+```{r}
+itempersonMap <- function(model,
+                          theta_range = c(-4,4),
+                          title = "Item Person Map",
+                          margin = c(1,0,-1.5,0),
+                          density = FALSE,
+                          color = "red",
+                          shape = 17,
+                          size = 3,
+                          theme = theme_minimal(),
+                          ...) {
+  
+  p1 <- personDist(model, theta_range = theta_range, density = density) + 
+    theme + 
+    theme(plot.margin = unit(margin,"cm")) + 
+    labs(title = title)
+  p2 <- itemDist(model, theta_range = theta_range, shape = shape, color = color, size = size, ...) + 
+    theme
+  
+  
+  p <- cowplot::plot_grid(p1, p2,
+                          nrow = 2,
+                          rel_heights = c(1.5,2.5),
+                          align = "hv",
+                          axis = "tlbr")
+  
+  return(p)
+}
+
+personDist <- function(model, 
+                       theta_range = c(-4, 4),
+                       density = FALSE,
+                       bins = 35) {
+  
+  person.params <- fscores(model, QMC = TRUE) %>%
+    as.data.frame() 
+  
+  if(length(person.params) != 1) {
+    p <- person.params %>%
+      tidyr::pivot_longer(names(.), names_to = "dimension") %>%
+      ggplot(aes(x = value, fill = dimension)) 
+      
+  } else {
+  
+  p <- person.params %>%
+    pivot_longer(names(.), names_to = "dimension") %>%
+    ggplot(aes(x = value, fill = dimension)) +
+    guides(fill = "none")
+  }
+  
+  if(isTRUE(density)) {
+    
+    p <- p + geom_density()
+    
+  } else {
+    
+    p <- p + geom_histogram(bins = bins, color = "white")
+  }
+
+  
+  p + xlim(theta_range) + theme_minimal() + labs(x = expression(theta))
+  
+}
+
+itemDist <- function(model,
+                     theta_range = c(-4, 4),
+                     ...) {
+  
+  item.params <- mirt::coef(model, IRTpars = TRUE, simplify = TRUE) %>%
+    as.data.frame %>%
+    tibble::rownames_to_column("items") 
+  
+  p <- item.params %>%
+    mutate(items = forcats::fct_reorder(items, items.b)) %>%
+    ggplot(aes(y = items, x = items.b)) + 
+    geom_point(...)
+  
+  p + xlim(theta_range) + theme_minimal() + labs(x = expression(theta), y = "")
+}
+
+```
+
+```{r}
+
+percentage_correct <- percentage_correct %>%
+  filter (student_ID %in% high_mastery_students$student_ID) %>%
+  group_by(title_ID) %>%
+  summarise (avg_percentage_wrong = mean(percentage_wrong))
+
+percentile_75 <- quantile(percentage_correct$avg_percentage_wrong, 0.75)
+
+percentage_correct <- percentage_correct %>%
+    mutate(highlight = ifelse(avg_percentage_wrong > percentile_75, "Above 75 Percentile", "Below 75 Percentile"))
+
+ggplot(percentage_correct, aes(x = reorder(title_ID,avg_percentage_wrong), y = avg_percentage_wrong, color = highlight)) +
+  geom_segment(aes(x = title_ID, xend = title_ID, y = 0, yend = avg_percentage_wrong), color = "grey") +
+  geom_point(size = 4, alpha = 0.8) +
+  scale_color_manual(values = c("Above 75 Percentile" = "red", "Below 75 Percentile" = "blue"), name = "Error Quantile") +
+  labs(
+    title = "Average Error Rate per Question for High Mastery Students",
+    x = "Title ID",
+    y = "Percentage of Error Rate"
+  ) +
+  theme_light() +
+  coord_flip() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank(),    
+    axis.title.y = element_text(size = 14, color = "black"),
+    axis.title.x = element_text(size = 14, color = "black"),
+    plot.title = element_text(size = 14, hjust = 0.5, face = "bold", color = "black"),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 10),
+    legend.position = "bottom",
+    panel.spacing.x = unit(1, "cm")
+  )
+
+
+ggsave("percentage_correct.png" , width = 30, height = 15, units = "cm")
 ```
