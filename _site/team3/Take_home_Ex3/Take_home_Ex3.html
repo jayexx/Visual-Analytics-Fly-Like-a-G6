@@ -176,8 +176,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#k-means-clustering-and-visualisation" id="toc-k-means-clustering-and-visualisation" class="nav-link" data-scroll-target="#k-means-clustering-and-visualisation">K Means clustering and Visualisation</a></li>
   <li><a href="#hierarchical-clustering-and-visualisation" id="toc-hierarchical-clustering-and-visualisation" class="nav-link" data-scroll-target="#hierarchical-clustering-and-visualisation">Hierarchical Clustering and Visualisation</a></li>
   </ul></li>
-  <li><a href="#create-the-alluvial-plot" id="toc-create-the-alluvial-plot" class="nav-link" data-scroll-target="#create-the-alluvial-plot">Create the alluvial plot</a>
-  <ul class="collapse">
   <li><a href="#knowledge-acquisition" id="toc-knowledge-acquisition" class="nav-link" data-scroll-target="#knowledge-acquisition">Knowledge Acquisition</a>
   <ul class="collapse">
   <li><a href="#feature-engineering-1" id="toc-feature-engineering-1" class="nav-link" data-scroll-target="#feature-engineering-1">Feature engineering</a></li>
@@ -186,7 +184,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </ul></li>
   <li><a href="#bivariate-and-multivariate-analysis-of-variables" id="toc-bivariate-and-multivariate-analysis-of-variables" class="nav-link" data-scroll-target="#bivariate-and-multivariate-analysis-of-variables">Bivariate and Multivariate analysis of variables</a></li>
   <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
-  </ul></li>
   </ul>
 </nav>
     </div>
@@ -1661,12 +1658,6 @@ $ variable   &lt;chr&gt;
 $ value      &lt;fct&gt; </code></pre>
 </div>
 </div>
-</section>
-</section>
-<section id="create-the-alluvial-plot" class="level1">
-<h1>Create the alluvial plot</h1>
-<p>ggplot(StudentLM_data_long, aes(x = variable, stratum = value, alluvium = student_ID)) + # geom_flow(stat = “alluvium”, lode.guidance = “forward”, color = “white”) + geom_alluvium(aes(fill = cluster)) + geom_stratum() + scale_x_discrete(limits = unique(StudentLM_data_long$variable), expand = c(0.5, 0.1)) + theme_minimal() + labs(title = “Alluvial Plot of Learning Mode Clusters”, x = “Variables”, y = “Count”) + theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))<br>
-# axis.text.y = element_text(size = 8), plot.title = element_text(size = 12), legend.title = element_text(size = 10), legend.text = element_text(size = 8), axis.title.x = element_text(size = 10), axis.title.y = element_text(size = 10), plot.margin = unit(c(1, 1, 1, 1), “cm”))</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb120"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb120-1"><a href="#cb120-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Ensure the 'cluster' variable is in discrete values (1 and 2)</span></span>
 <span id="cb120-2"><a href="#cb120-2" aria-hidden="true" tabindex="-1"></a>StudentLM_data_long1 <span class="ot">&lt;-</span> StudentLM_data_long1 <span class="sc">%&gt;%</span></span>
@@ -1699,6 +1690,8 @@ $ value      &lt;fct&gt; </code></pre>
 <p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-57-1.png" class="img-fluid" width="2400"></p>
 </div>
 </div>
+</section>
+</section>
 <section id="knowledge-acquisition" class="level2">
 <h2 class="anchored" data-anchor-id="knowledge-acquisition">Knowledge Acquisition</h2>
 <p>Based on the given data, the relevant features that best defines a learner’s knowledge acquisition is assessed to be as follows:</p>
@@ -2180,7 +2173,7 @@ $ `Sum of points for y9W5d knowledge`                            &lt;dbl&gt; 11.
 <p>A multi faceted plot to compare the distribution of answering performance in respect to the 2 clusters across 6 knowledge areas is plot with the following code chunk.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb139"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb139-1"><a href="#cb139-1" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 12</span></span>
-<span id="cb139-2"><a href="#cb139-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 15</span></span>
+<span id="cb139-2"><a href="#cb139-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 7</span></span>
 <span id="cb139-3"><a href="#cb139-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb139-4"><a href="#cb139-4" aria-hidden="true" tabindex="-1"></a><span class="co">#a &lt;- </span></span>
 <span id="cb139-5"><a href="#cb139-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(StudentLMKA_data, </span>
@@ -2694,7 +2687,6 @@ $ `Sum of points for y9W5d knowledge`                            &lt;dbl&gt; 11.
 <p>And therefore, the consensus in the analysis found that there is a statistically significant relationship between the selected indicators for more hardworking learning modes with better knowledge aquisition.</p>
 
 
-</section>
 </section>
 
 </main> <!-- /main -->

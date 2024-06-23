@@ -733,7 +733,7 @@ Next to visualise the distribution of the 2 clusters across all the features use
 
 ```{r}
 #| fig-width: 25
-#| fig-height: 30
+#| fig-height: 20
 
 StudentLM_data_factor <- StudentLM_data
 StudentLM_data_factor$cluster <- as.character(StudentLM_data_factor$cluster)
@@ -890,7 +890,7 @@ ggplot(pca_df, aes(x = PC1, y = PC2, color = factor(StudentLM_data1_n$cluster_hc
 
 ```{r}
 #| fig-width: 25
-#| fig-height: 30
+#| fig-height: 20
 
 ggparcoord(data = StudentLM_data1_n, 
            columns = c(2:13), 
@@ -923,20 +923,6 @@ StudentLM_data_checkNA <- StudentLM_data_long1 %>%
 
 glimpse(StudentLM_data_checkNA)
 ```
-# Create the alluvial plot
-ggplot(StudentLM_data_long,
-       aes(x = variable, stratum = value, alluvium = student_ID)) +
-#  geom_flow(stat = "alluvium", lode.guidance = "forward", color = "white") +
-  geom_alluvium(aes(fill = cluster)) +
-  geom_stratum() +
-  scale_x_discrete(limits = unique(StudentLM_data_long$variable), expand = c(0.5, 0.1)) +
-  theme_minimal() +
-  labs(title = "Alluvial Plot of Learning Mode Clusters",
-       x = "Variables",
-       y = "Count") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))        
-#        axis.text.y = element_text(size = 8),        plot.title = element_text(size = 12),        legend.title = element_text(size = 10),        legend.text = element_text(size = 8),        axis.title.x = element_text(size = 10),        axis.title.y = element_text(size = 10),        plot.margin = unit(c(1, 1, 1, 1), "cm"))
-
 ```{r}
 #| fig-width: 25
 #| fig-height: 15
@@ -1166,7 +1152,7 @@ glimpse(StudentKA_data_merged)
 
 ```{r}
 #| fig-width: 15
-#| fig-height: 15
+#| fig-height: 7
 
 # Define the function to create combined box plot and histogram
 create_combined_plot <- function(data, variable) {
@@ -1223,7 +1209,7 @@ To visualise differences in the performance in total number of questions that ha
 
 ```{r}
 #| fig-width: 12
-#| fig-height: 10
+#| fig-height: 7
 
 StudentLMKA_data$cluster <- as.factor(StudentLMKA_data$cluster)
 
@@ -1262,7 +1248,7 @@ A multi faceted plot to compare the distribution of answering performance in res
 ```{r}
 
 #| fig-width: 12
-#| fig-height: 10
+#| fig-height: 7
 
 #a <- 
 ggplot(StudentLMKA_data, 
@@ -1566,7 +1552,7 @@ student_ID
 
 ```{r}
 #| fig-width: 18
-#| fig-height: 20
+#| fig-height: 12
 
 # Multi linear regression model for sum_highest_actual_score and sum_points overall
 model1 <- lm(`Sum of overall highest submission scores` ~ 
@@ -1606,7 +1592,7 @@ ggcoefstats(model2,
 ```
 ```{r}
 #| fig-width: 18
-#| fig-height: 20
+#| fig-height: 12
 
 model3 <- lm(`Sum of points for b3C9s knowledge` ~  
                `Percent of submissions on weekdays`+
@@ -1739,12 +1725,6 @@ model10 <- lm(`Sum of points for y9W5d knowledge` ~
             output = "plot")
 #(a + b) / (c + d) / (e + f) / (g + h) 
 ```
-
-
-
-
-
-
 
 
 ## Conclusion
