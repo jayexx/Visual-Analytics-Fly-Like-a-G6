@@ -513,28 +513,20 @@ The following variables will be obtained with the code chunk below in preparatio
 StudentLM_data <- merged_data_lm %>%
   group_by(student_ID) %>%
   summarize(
-    pct_answers_weekdays = sum(is_weekday, na.rm = TRUE) / n() * 100,
-    pct_answers_working_hours = sum(is_working_hours, na.rm = TRUE) / n() * 100,
-    total_diff_questions_attempted = n_distinct(title_ID, na.rm = TRUE),
-
-    # Compute Gini index for title_ID (question_gini)
-    question_gini = Gini(table(title_ID)),
-
-    total_diff_knowledge_areas = sum(colSums(across(29:36, as.numeric)) > 0),
-    total_diff_sub_knowledge_areas = sum(colSums(across(14:28, as.numeric)) > 0),
-    mean_question_scores = mean(question_score, na.rm = TRUE),
-#    mean_memory_size = mean(memory, na.rm = TRUE),
-    mean_memory_size_by_qns = mean(sapply(split(memory, title_ID), mean, na.rm = TRUE), na.rm = TRUE),
-    mean_timeconsume = mean(sapply(split(timeconsume, title_ID), mean, na.rm = TRUE), na.rm = TRUE),
-    total_answering_attempts = n(),
-#    total_diff_answering_methods = n_distinct(method, na.rm = TRUE),
-    mean_diff_answering_methods_by_qns = mean(sapply(split(method, title_ID), function(x) n_distinct(x, na.rm = TRUE)), na.rm = TRUE),
-
-    # Compute Gini index for method (method_gini)
-    method_gini = Gini(table(method)),
-
-    total_memory_size = sum(memory, na.rm = TRUE),
-    total_timeconsume = sum(timeconsume, na.rm = TRUE)
+    `Percent of submissions on weekdays` = sum(is_weekday, na.rm = TRUE) / n() * 100,
+    `Percent of submissions during working hrs` = sum(is_working_hours, na.rm = TRUE) / n() * 100,
+    `Total no. of different qns_attempted` = n_distinct(title_ID, na.rm = TRUE),
+    `Gini Index for qns in submission` = Gini(table(title_ID)),
+    `Span of different knowledge in qns` = sum(colSums(across(29:36, as.numeric)) > 0),
+    `Span of different sub knowledge in qns` = sum(colSums(across(14:28, as.numeric)) > 0),
+    `Mean selected question scores` = mean(question_score, na.rm = TRUE),
+    `Mean submission memory size by qns` = mean(sapply(split(memory, title_ID), mean, na.rm = TRUE), na.rm = TRUE),
+    `Mean timeconsume by qns` = mean(sapply(split(timeconsume, title_ID), mean, na.rm = TRUE), na.rm = TRUE),
+    `Total no. of submissions` = n(),
+    `Mean no. of different answering methods per qns` = mean(sapply(split(method, title_ID), function(x) n_distinct(x, na.rm = TRUE)), na.rm = TRUE),
+    `Gini index for answering methods used per qns` = Gini(table(method)),
+    `Total memory size of submissions` = sum(memory, na.rm = TRUE),
+    `Total timeconsume of submissions` = sum(timeconsume, na.rm = TRUE)
   )
 
 glimpse(StudentLM_data)
@@ -548,7 +540,7 @@ glimpse(StudentLM_data)
 
 # Define the function to create combined box plot and histogram
 create_combined_plot <- function(data, variable) {
-  ggplot(data, aes_string(x = variable)) +
+  ggplot(data, aes_string(x = paste0("`", variable, "`"))) +
     # Histogram
     geom_histogram(aes(y = ..density..), bins = 30, fill = "skyblue", color = "black", alpha = 0.7) +
     geom_density(alpha = 0.3, fill = "orange") +
@@ -599,14 +591,14 @@ Based on the output from the univariate and correlation analysis, 2 variables we
 
 ```{r}
 StudentLM_data <- StudentLM_data %>%
-  select(-total_diff_knowledge_areas, 
-#         -total_timeconsume, 
-#         -total_memory_size, 
-#         -total_answering_attempts, 
-#         -mean_diff_answering_methods_by_qns, 
-#         -question_gini, 
-#         -total_diff_questions_attempted, 
-         -total_diff_sub_knowledge_areas)
+  select(-`Span of different knowledge in qns`, 
+#         -`Total timeconsume of submissions`, 
+#         -`Total memory size of submissions`, 
+#         -`Total no. of submissions`, 
+#         -`Mean no. of different answering methods per qns`, 
+#         -`Gini index for answering methods used per qns`, 
+#         -`Total no. of different qns_attempted`, 
+         -`Span of different sub knowledge in qns`)
 
 glimpse(StudentLM_data)
 ```
@@ -741,8 +733,8 @@ Next to visualise the distribution of the 2 clusters across all the features use
 
 ```{r}
 
-#| fig-width: 15
-#| fig-height: 12
+#| fig-width: 18
+#| fig-height: 25
 
 StudentLM_data_factor <- StudentLM_data
 StudentLM_data_factor$cluster <- as.character(StudentLM_data_factor$cluster)
@@ -755,6 +747,16 @@ ggparcoord(data = StudentLM_data_factor,
            boxplot = TRUE, 
            title = "Parallel Coordinates Plot of Students' learning modes")+
    theme(axis.text.x = element_text(angle = 30))
+
+ggparcoord(data = StudentLM_data_factor, 
+columns = c(2:13), 
+           groupColumn = 14,
+           scale = "uniminmax",
+           alphaLines = 0.2,
+           boxplot = TRUE, 
+           title = "Parallel Coordinates Plot of Students' learning modes")+
+  facet_wrap(~ cluster)+
+  theme(axis.text.x = element_text(angle = 30))
 ```
 
 Based on the plot, there is varying degree of distinction in separation between the 2 clusters across different variables. The more distinct separation are in variables such as total timeconsume of answers, total memory size of answers, mean different answering methods per question, total answering attempts and question selection gini index, where cluster 2 tends to fare better in these metrics suggesting that perhaps cluster 2 may be the more hardworking learning mode among the 2.
@@ -786,9 +788,8 @@ glimpse(StudentLM_data_checkNA)
 
 
 ```{r}
-#| fig-width: 16
+#| fig-width: 18
 #| fig-height: 20
-#| eval: false
 
 # Ensure the 'cluster' variable is in discrete values (1 and 2)
 StudentLM_data_long <- StudentLM_data_long %>%
@@ -809,14 +810,8 @@ ggplot(StudentLM_data_long,
   labs(title = "Alluvial Plot of Learning Mode Clusters",
        x = "Variables",
        y = "Count") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
-        axis.text.y = element_text(size = 8),
-        plot.title = element_text(size = 12),
-        legend.title = element_text(size = 10),
-        legend.text = element_text(size = 8),
-        axis.title.x = element_text(size = 10),
-        axis.title.y = element_text(size = 10),
-        plot.margin = unit(c(1, 1, 1, 1), "cm"))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))        
+#        axis.text.y = element_text(size = 8),        plot.title = element_text(size = 12),        legend.title = element_text(size = 10),        legend.text = element_text(size = 8),        axis.title.x = element_text(size = 10),        axis.title.y = element_text(size = 10),        plot.margin = unit(c(1, 1, 1, 1), "cm"))
 ```
 
 
@@ -896,8 +891,8 @@ ggplot(pca_df, aes(x = PC1, y = PC2, color = factor(StudentLM_data1_n$cluster_hc
 
 ```{r}
 
-#| fig-width: 15
-#| fig-height: 12
+#| fig-width: 18
+#| fig-height: 20
 
 ggparcoord(data = StudentLM_data1_n, 
            columns = c(2:13), 
@@ -932,9 +927,9 @@ glimpse(StudentLM_data_checkNA)
 ```
 
 ```{r}
-#| fig-width: 15
-#| fig-height: 18
-#| eval: false
+#| fig-width: 18
+#| fig-height: 20
+
 
 # Ensure the 'cluster' variable is in discrete values (1 and 2)
 StudentLM_data_long1 <- StudentLM_data_long1 %>%
@@ -1009,57 +1004,41 @@ StudentKA_data <- merged_data %>%
   group_by(student_ID) %>%
   summarize(
     # Part (a): Sum of highest actual score for each question attempted
-    sum_highest_actual_score = sum(sapply(unique(title_ID), function(x) {
+    `Sum of overall highest submission scores` = sum(sapply(unique(title_ID), function(x) {
       max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, "actual_score"])
     })),
     
     # Part (b): Sum of highest actual score for each knowledge area
-    sum_highest_actual_score_b3C9s = sum(sapply(unique(title_ID), function(x) {
-      ifelse(any(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 29] == 1),
-             max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID & merged_data[, 29] == 1, "actual_score"]),
-             0)
+    `Sum of overall highest submission scores for b3C9s knowledge` = sum(sapply(unique(title_ID), function(x) {
+      max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, "actual_score"] * merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 29])
     })),
-    sum_highest_actual_score_g7R2j = sum(sapply(unique(title_ID), function(x) {
-      ifelse(any(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 30] == 1),
-             max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID & merged_data[, 30] == 1, "actual_score"]),
-             0)
+    `Sum of overall highest submission scores for g7R2j knowledge` = sum(sapply(unique(title_ID), function(x) {
+      max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, "actual_score"] * merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 30])
     })),
-    sum_highest_actual_score_k4W1c = sum(sapply(unique(title_ID), function(x) {
-      ifelse(any(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 31] == 1),
-             max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID & merged_data[, 31] == 1, "actual_score"]),
-             0)
+    `Sum of overall highest submission scores for k4W1c knowledge` = sum(sapply(unique(title_ID), function(x) {
+      max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, "actual_score"] * merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 31])
     })),
-    sum_highest_actual_score_m3D1v = sum(sapply(unique(title_ID), function(x) {
-      ifelse(any(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 32] == 1),
-             max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID & merged_data[, 32] == 1, "actual_score"]),
-             0)
+    `Sum of overall highest submission scores for m3D1v knowledge` = sum(sapply(unique(title_ID), function(x) {
+      max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, "actual_score"] * merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 32])
     })),
-    sum_highest_actual_score_r8S3g = sum(sapply(unique(title_ID), function(x) {
-      ifelse(any(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 33] == 1),
-             max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID & merged_data[, 33] == 1, "actual_score"]),
-             0)
+    `Sum of overall highest submission scores for r8S3g knowledge` = sum(sapply(unique(title_ID), function(x) {
+      max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, "actual_score"] * merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 33])
     })),
-    sum_highest_actual_score_s8Y2f = sum(sapply(unique(title_ID), function(x) {
-      ifelse(any(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 34] == 1),
-             max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID & merged_data[, 34] == 1, "actual_score"]),
-             0)
+    `Sum of overall highest submission scores for s8Y2f knowledge` = sum(sapply(unique(title_ID), function(x) {
+      max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, "actual_score"] * merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 34])
     })),
-    sum_highest_actual_score_t5V9e = sum(sapply(unique(title_ID), function(x) {
-      ifelse(any(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 35] == 1),
-             max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID & merged_data[, 35] == 1, "actual_score"]),
-             0)
+    `Sum of overall highest submission scores for t5V9e knowledge` = sum(sapply(unique(title_ID), function(x) {
+      max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, "actual_score"] * merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 35])
     })),
-    sum_highest_actual_score_y9W5d = sum(sapply(unique(title_ID), function(x) {
-      ifelse(any(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 36] == 1),
-             max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID & merged_data[, 36] == 1, "actual_score"]),
-             0)
+    `Sum of overall highest submission scores for y9W5d knowledge` = sum(sapply(unique(title_ID), function(x) {
+      max(merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, "actual_score"] * merged_data[merged_data$title_ID == x & merged_data$student_ID == cur_group()$student_ID, 36])
     })),
     
     # Part (c): Percentage of answers absolutely correct
-    pct_answers_absolutely_correct = (sum(state == "Absolutely_Correct") / n()) * 100,
+    `Percent of submissions absolutely correct` = (sum(state == "Absolutely_Correct") / n()) * 100,
     
     # Part (d): Total number of questions with answers absolutely correct and partially correct
-    total_questions_correct_or_partial = length(unique(title_ID[state %in% c("Partially_Correct", "Absolutely_Correct")]))
+    `No. of questions answered fully or partially correct` = length(unique(title_ID[state %in% c("Partially_Correct", "Absolutely_Correct")]))
     
   )
 
@@ -1118,45 +1097,45 @@ mastery_scores <- mastery_scores2 %>%
   group_by(student_ID) %>%
   summarize(
     # Part (a): Sum of total points across all questions
-    sum_points_overall = sum(adjusted_points),
+    `Sum of points Overall` = sum(adjusted_points),
     
     # Part (b): Sum of highest actual score for each knowledge area
-    sum_points_b3C9s = sum(case_when(
+    `Sum of points for b3C9s knowledge` = sum(case_when(
       b3C9s == 1 ~ adjusted_points,
       TRUE ~ 0
     )),
     
-    sum_points_g7R2j = sum(case_when(
+    `Sum of points for g7R2j knowledge` = sum(case_when(
       g7R2j == 1 ~ adjusted_points,
       TRUE ~ 0
     )),
     
-    sum_points_k4W1c = sum(case_when(
+    `Sum of points for k4W1c knowledge` = sum(case_when(
       k4W1c == 1 ~ adjusted_points,
       TRUE ~ 0
     )),
     
-    sum_points_m3D1v = sum(case_when(
+    `Sum of points for m3D1v knowledge` = sum(case_when(
       m3D1v == 1 ~ adjusted_points,
       TRUE ~ 0
     )),
     
-    sum_points_r8S3g = sum(case_when(
+    `Sum of points for r8S3g knowledge` = sum(case_when(
       r8S3g == 1 ~ adjusted_points,
       TRUE ~ 0
     )),
     
-    sum_points_s8Y2f = sum(case_when(
+    `Sum of points for s8Y2f knowledge` = sum(case_when(
       s8Y2f == 1 ~ adjusted_points,
       TRUE ~ 0
     )),
     
-    sum_points_t5V9e = sum(case_when(
+    `Sum of points for t5V9e knowledge` = sum(case_when(
       t5V9e == 1 ~ adjusted_points,
       TRUE ~ 0
     )),
     
-    sum_points_y9W5d = sum(case_when(
+    `Sum of points for y9W5d knowledge` = sum(case_when(
       y9W5d == 1 ~ adjusted_points,
       TRUE ~ 0
     ))
@@ -1180,7 +1159,7 @@ glimpse(StudentKA_data_merged)
 
 # Define the function to create combined box plot and histogram
 create_combined_plot <- function(data, variable) {
-  ggplot(data, aes_string(x = variable)) +
+  ggplot(data, aes_string(x = paste0("`", variable, "`"))) +
     # Histogram
     geom_histogram(aes(y = ..density..), bins = 30, fill = "skyblue", color = "black", alpha = 0.7) +
     geom_density(alpha = 0.3, fill = "orange") +
@@ -1236,7 +1215,7 @@ StudentLMKA_data$cluster <- as.factor(StudentLMKA_data$cluster)
 
 # Plot
 ggplot(StudentLMKA_data, 
-       aes(x = total_questions_correct_or_partial, 
+       aes(x = `No. of questions answered fully or partially correct`, 
            y = cluster,
            fill = factor(stat(quantile))
            )) +
@@ -1249,7 +1228,7 @@ ggplot(StudentLMKA_data,
   theme_ridges()
 
 ggplot(StudentLMKA_data, 
-       aes(x = sum_points_overall, 
+       aes(x = `Sum of points Overall`, 
            y = cluster,
            fill = factor(stat(quantile))
            )) +
@@ -1271,8 +1250,9 @@ A multi faceted plot to compare the distribution of answering performance in res
 #| fig-width: 16
 #| fig-height: 25
 
-a <- ggplot(StudentLMKA_data, 
-       aes(x = sum_highest_actual_score_b3C9s, 
+#a <- 
+ggplot(StudentLMKA_data, 
+       aes(x = `Sum of points for b3C9s knowledge`,
            y = cluster,
            fill = factor(stat(quantile))
            )) +
@@ -1284,8 +1264,9 @@ a <- ggplot(StudentLMKA_data,
   scale_fill_viridis_d(name = "Quartiles") +
   theme_ridges()
 
-b <- ggplot(StudentLMKA_data, 
-       aes(x = sum_highest_actual_score_g7R2j,
+#b <- 
+ggplot(StudentLMKA_data, 
+       aes(x = `Sum of points for g7R2j knowledge`,
            y = cluster,
            fill = factor(stat(quantile))
            )) +
@@ -1296,8 +1277,9 @@ b <- ggplot(StudentLMKA_data,
     quantile_lines = TRUE) +
   scale_fill_viridis_d(name = "Quartiles") +
   theme_ridges()
-c <- ggplot(StudentLMKA_data, 
-       aes(x = sum_highest_actual_score_m3D1v, 
+#c <- 
+ggplot(StudentLMKA_data, 
+       aes(x = `Sum of points for m3D1v knowledge`, 
            y = cluster,
            fill = factor(stat(quantile))
            )) +
@@ -1308,8 +1290,9 @@ c <- ggplot(StudentLMKA_data,
     quantile_lines = TRUE) +
   scale_fill_viridis_d(name = "Quartiles") +
   theme_ridges()
-d <- ggplot(StudentLMKA_data, 
-       aes(x = sum_highest_actual_score_r8S3g, 
+#d <- 
+  ggplot(StudentLMKA_data, 
+       aes(x = `Sum of points for r8S3g knowledge`, 
            y = cluster,
            fill = factor(stat(quantile))
            )) +
@@ -1320,8 +1303,9 @@ d <- ggplot(StudentLMKA_data,
     quantile_lines = TRUE) +
   scale_fill_viridis_d(name = "Quartiles") +
   theme_ridges()
-e <- ggplot(StudentLMKA_data, 
-       aes(x = sum_highest_actual_score_t5V9e, 
+#e <- 
+  ggplot(StudentLMKA_data, 
+       aes(x = `Sum of points for t5V9e knowledge`, 
            y = cluster,
            fill = factor(stat(quantile))
            )) +
@@ -1332,8 +1316,9 @@ e <- ggplot(StudentLMKA_data,
     quantile_lines = TRUE) +
   scale_fill_viridis_d(name = "Quartiles") +
   theme_ridges()
-f <- ggplot(StudentLMKA_data, 
-       aes(x = sum_highest_actual_score_y9W5d, 
+#f <- 
+  ggplot(StudentLMKA_data, 
+       aes(x = `Sum of points for y9W5d knowledge`, 
            y = cluster,
            fill = factor(stat(quantile))
            )) +
@@ -1344,8 +1329,9 @@ f <- ggplot(StudentLMKA_data,
     quantile_lines = TRUE) +
   scale_fill_viridis_d(name = "Quartiles") +
   theme_ridges()
-g <- ggplot(StudentLMKA_data, 
-       aes(x = sum_highest_actual_score_k4W1c, 
+#g <- 
+ggplot(StudentLMKA_data, 
+       aes(x = `Sum of points for k4W1c knowledge`, 
            y = cluster,
            fill = factor(stat(quantile))
            )) +
@@ -1356,8 +1342,9 @@ g <- ggplot(StudentLMKA_data,
     quantile_lines = TRUE) +
   scale_fill_viridis_d(name = "Quartiles") +
   theme_ridges()
-h <- ggplot(StudentLMKA_data, 
-       aes(x = sum_highest_actual_score_s8Y2f, 
+#h <- 
+  ggplot(StudentLMKA_data, 
+       aes(x = `Sum of points for s8Y2f knowledge`, 
            y = cluster,
            fill = factor(stat(quantile))
            )) +
@@ -1369,7 +1356,7 @@ h <- ggplot(StudentLMKA_data,
   scale_fill_viridis_d(name = "Quartiles") +
   theme_ridges()
 
-(a + b) / (c + d) / (e + f) / (g + h)
+#(a + b) / (c + d) / (e + f) / (g + h)
 
 ```
 
@@ -1380,8 +1367,9 @@ The findings are highly congruent with the earlier ridge plot, which found that 
 #| fig-width: 16
 #| fig-height: 20
 
-a <- ggplot(StudentLMKA_data, 
-       aes(x = sum_points_b3C9s, 
+#a <- 
+  ggplot(StudentLMKA_data, 
+       aes(x = `Sum of overall highest submission scores for b3C9s knowledge`, 
            y = cluster,
            fill = factor(stat(quantile))
            )) +
@@ -1393,8 +1381,9 @@ a <- ggplot(StudentLMKA_data,
   scale_fill_viridis_d(name = "Quartiles") +
   theme_ridges()
 
-b <- ggplot(StudentLMKA_data, 
-       aes(x = sum_points_g7R2j,
+#b <- 
+  ggplot(StudentLMKA_data, 
+       aes(x = `Sum of overall highest submission scores for g7R2j knowledge`,
            y = cluster,
            fill = factor(stat(quantile))
            )) +
@@ -1405,8 +1394,9 @@ b <- ggplot(StudentLMKA_data,
     quantile_lines = TRUE) +
   scale_fill_viridis_d(name = "Quartiles") +
   theme_ridges()
-c <- ggplot(StudentLMKA_data, 
-       aes(x = sum_points_m3D1v, 
+#c <- 
+  ggplot(StudentLMKA_data, 
+       aes(x = `Sum of overall highest submission scores for m3D1v knowledge`,
            y = cluster,
            fill = factor(stat(quantile))
            )) +
@@ -1417,8 +1407,9 @@ c <- ggplot(StudentLMKA_data,
     quantile_lines = TRUE) +
   scale_fill_viridis_d(name = "Quartiles") +
   theme_ridges()
-d <- ggplot(StudentLMKA_data, 
-       aes(x = sum_points_r8S3g, 
+#d <- 
+  ggplot(StudentLMKA_data, 
+       aes(x = `Sum of overall highest submission scores for r8S3g knowledge`, 
            y = cluster,
            fill = factor(stat(quantile))
            )) +
@@ -1429,8 +1420,9 @@ d <- ggplot(StudentLMKA_data,
     quantile_lines = TRUE) +
   scale_fill_viridis_d(name = "Quartiles") +
   theme_ridges()
-e <- ggplot(StudentLMKA_data, 
-       aes(x = sum_points_t5V9e, 
+#e <- 
+  ggplot(StudentLMKA_data, 
+       aes(x = `Sum of overall highest submission scores for t5V9e knowledge`, 
            y = cluster,
            fill = factor(stat(quantile))
            )) +
@@ -1441,8 +1433,9 @@ e <- ggplot(StudentLMKA_data,
     quantile_lines = TRUE) +
   scale_fill_viridis_d(name = "Quartiles") +
   theme_ridges()
-f <- ggplot(StudentLMKA_data, 
-       aes(x = sum_points_y9W5d, 
+#f <- 
+  ggplot(StudentLMKA_data, 
+       aes(x = `Sum of overall highest submission scores for y9W5d knowledge`, 
            y = cluster,
            fill = factor(stat(quantile))
            )) +
@@ -1453,8 +1446,9 @@ f <- ggplot(StudentLMKA_data,
     quantile_lines = TRUE) +
   scale_fill_viridis_d(name = "Quartiles") +
   theme_ridges()
-g <- ggplot(StudentLMKA_data, 
-       aes(x = sum_points_k4W1c, 
+#g <- 
+  ggplot(StudentLMKA_data, 
+       aes(x = `Sum of overall highest submission scores for k4W1c knowledge`, 
            y = cluster,
            fill = factor(stat(quantile))
            )) +
@@ -1465,8 +1459,9 @@ g <- ggplot(StudentLMKA_data,
     quantile_lines = TRUE) +
   scale_fill_viridis_d(name = "Quartiles") +
   theme_ridges()
-h <- ggplot(StudentLMKA_data, 
-       aes(x = sum_points_s8Y2f, 
+#h <- 
+  ggplot(StudentLMKA_data, 
+       aes(x = `Sum of overall highest submission scores for s8Y2f knowledge`, 
            y = cluster,
            fill = factor(stat(quantile))
            )) +
@@ -1478,7 +1473,7 @@ h <- ggplot(StudentLMKA_data,
   scale_fill_viridis_d(name = "Quartiles") +
   theme_ridges()
 
-(a + b) / (c + d) / (e + f) / (g + h)
+#(a + b) / (c + d) / (e + f) / (g + h)
 ```
 
 A statistical violin plot to perform both a mathematical 2 sample mean test in tandem with a visual analysis of the difference in the distribution of the students' total actual score in the answering records in respect of the 2 clusters is plot with the following code chunk.
@@ -1488,7 +1483,7 @@ A statistical violin plot to perform both a mathematical 2 sample mean test in t
 ggbetweenstats(
   data = StudentLMKA_data,
   x = cluster, 
-  y = sum_highest_actual_score,
+  y = `Sum of overall highest submission scores`,
   type = "np",
   messages = FALSE
 )
@@ -1502,7 +1497,7 @@ Lastly a similar statistical violin plot to analyse the differences in percentag
 ggbetweenstats(
   data = StudentLMKA_data,
   x = cluster, 
-  y = pct_answers_absolutely_correct,
+  y = `Percent of submissions absolutely correct`,
   type = "np",
   messages = FALSE
 )
@@ -1514,7 +1509,7 @@ Based on the figures, the p-value is extremely small which suggest that there is
 ggbetweenstats(
   data = StudentLMKA_data,
   x = cluster, 
-  y = sum_points_overall,
+  y = `Sum of points Overall`,
   type = "np",
   messages = FALSE
 )
@@ -1522,71 +1517,73 @@ ggbetweenstats(
 
 ## Bivariate and Multivariate analysis of variables
 
-pct_answers_weekdays
-pct_answers_working_hours
-total_diff_questions_attempted
-question_gini
-mean_question_scores
-mean_memory_size_by_qns
-mean_timeconsume
-total_answering_attempts
-mean_diff_answering_methods_by_qns
-method_gini
-total_memory_size
-total_timeconsume
-cluster
-sum_highest_actual_score
-sum_highest_actual_score_b3C9s
-sum_highest_actual_score_g7R2j
-sum_highest_actual_score_k4W1c
-sum_highest_actual_score_m3D1v
-sum_highest_actual_score_r8S3g
-sum_highest_actual_score_s8Y2f
-sum_highest_actual_score_t5V9e
-sum_highest_actual_score_y9W5d
-pct_answers_absolutely_correct
-total_questions_correct_or_partial
-sum_points_overall
-sum_points_b3C9s
-sum_points_g7R2j
-sum_points_k4W1c
-sum_points_m3D1v
-sum_points_r8S3g
-sum_points_s8Y2f
-sum_points_t5V9e
-sum_points_y9W5d 
+student_ID
+`Percent of submissions on weekdays`
+`Percent of submissions during working hrs`
+`Total no. of different qns_attempted`
+`Gini Index for qns in submission`
+`Mean selected question scores`
+`Mean submission memory size by qns`
+`Mean timeconsume by qns`
+`Total no. of submissions`
+`Mean no. of different answering methods per qns`
+`Gini index for answering methods used per qns`
+`Total memory size of submissions`
+`Total timeconsume of submissions` 
+`Sum of overall highest submission scores`
+`Sum of overall highest submission scores for b3C9s knowledge`
+`Sum of overall highest submission scores for g7R2j knowledge`
+`Sum of overall highest submission scores for k4W1c knowledge`
+`Sum of overall highest submission scores for m3D1v knowledge`
+`Sum of overall highest submission scores for r8S3g knowledge`
+`Sum of overall highest submission scores for s8Y2f knowledge`
+`Sum of overall highest submission scores for t5V9e knowledge`
+`Sum of overall highest submission scores for y9W5d knowledge`
+`Percent of submissions absolutely correct`
+`No. of questions answered fully or partially correct`
+`Sum of points Overall`
+`Sum of points for b3C9s knowledge`
+`Sum of points for g7R2j knowledge`
+`Sum of points for k4W1c knowledge`
+`Sum of points for m3D1v knowledge`
+`Sum of points for r8S3g knowledge`
+`Sum of points for s8Y2f knowledge`
+`Sum of points for t5V9e knowledge`
+`Sum of points for y9W5d knowledge` 
 
 ```{r}
-# Multi linear regression model for sum_highest_actual_score and sum_points overall
-model1 <- lm(sum_highest_actual_score ~ 
-               pct_answers_weekdays +
-               pct_answers_working_hours+
-               total_diff_questions_attempted+
-               question_gini+
-               mean_question_scores+
-               mean_memory_size_by_qns+
-               mean_timeconsume+
-               total_answering_attempts+
-               mean_diff_answering_methods_by_qns+
-               method_gini+
-               total_memory_size+
-               total_timeconsume, data = StudentLMKA_data)
-model2 <- lm(sum_points_overall ~ 
-               pct_answers_weekdays +
-               pct_answers_working_hours+
-               total_diff_questions_attempted+
-               question_gini+
-               mean_question_scores+
-               mean_memory_size_by_qns+
-               mean_timeconsume+
-               total_answering_attempts+
-               mean_diff_answering_methods_by_qns+
-               method_gini+
-               total_memory_size+
-               total_timeconsume, data = StudentLMKA_data)
-
 #| fig-width: 18
-#| fig-height: 16
+#| fig-height: 25
+
+# Multi linear regression model for sum_highest_actual_score and sum_points overall
+model1 <- lm(`Sum of overall highest submission scores` ~ 
+               `Percent of submissions on weekdays`+
+               `Percent of submissions during working hrs`+
+               `Total no. of different qns_attempted`+
+               `Gini Index for qns in submission`+
+               `Mean selected question scores`+
+               `Mean submission memory size by qns`+
+               `Mean timeconsume by qns`+
+               `Total no. of submissions`+
+               `Mean no. of different answering methods per qns`+
+               `Gini index for answering methods used per qns`+
+               `Total memory size of submissions`+
+               `Total timeconsume of submissions`, data = StudentLMKA_data)
+model2 <- lm(`Sum of points Overall` ~  
+               `Percent of submissions on weekdays`+
+               `Percent of submissions during working hrs`+
+               `Total no. of different qns_attempted`+
+               `Gini Index for qns in submission`+
+               `Mean selected question scores`+
+               `Mean submission memory size by qns`+
+               `Mean timeconsume by qns`+
+               `Total no. of submissions`+
+               `Mean no. of different answering methods per qns`+
+               `Gini index for answering methods used per qns`+
+               `Total memory size of submissions`+
+               `Total timeconsume of submissions`, data = StudentLMKA_data)
+
+
 ggcoefstats(model1, 
             output = "plot")
 ggcoefstats(model2, 
@@ -1595,130 +1592,139 @@ ggcoefstats(model2,
 
 ```
 ```{r}
-model3 <- lm(sum_points_b3C9s ~ 
-               pct_answers_weekdays +
-               pct_answers_working_hours+
-               total_diff_questions_attempted+
-               question_gini+
-               mean_question_scores+
-               mean_memory_size_by_qns+
-               mean_timeconsume+
-               total_answering_attempts+
-               mean_diff_answering_methods_by_qns+
-               method_gini+
-               total_memory_size+
-               total_timeconsume, data = StudentLMKA_data)
-model4 <- lm(sum_points_g7R2j ~ 
-               pct_answers_weekdays +
-               pct_answers_working_hours+
-               total_diff_questions_attempted+
-               question_gini+
-               mean_question_scores+
-               mean_memory_size_by_qns+
-               mean_timeconsume+
-               total_answering_attempts+
-               mean_diff_answering_methods_by_qns+
-               method_gini+
-               total_memory_size+
-               total_timeconsume, data = StudentLMKA_data)
-model5 <- lm(sum_points_k4W1c ~ 
-               pct_answers_weekdays +
-               pct_answers_working_hours+
-               total_diff_questions_attempted+
-               question_gini+
-               mean_question_scores+
-               mean_memory_size_by_qns+
-               mean_timeconsume+
-               total_answering_attempts+
-               mean_diff_answering_methods_by_qns+
-               method_gini+
-               total_memory_size+
-               total_timeconsume, data = StudentLMKA_data)
-model6 <- lm(sum_points_m3D1v ~ 
-               pct_answers_weekdays +
-               pct_answers_working_hours+
-               total_diff_questions_attempted+
-               question_gini+
-               mean_question_scores+
-               mean_memory_size_by_qns+
-               mean_timeconsume+
-               total_answering_attempts+
-               mean_diff_answering_methods_by_qns+
-               method_gini+
-               total_memory_size+
-               total_timeconsume, data = StudentLMKA_data)
-model7 <- lm(sum_points_r8S3g ~ 
-               pct_answers_weekdays +
-               pct_answers_working_hours+
-               total_diff_questions_attempted+
-               question_gini+
-               mean_question_scores+
-               mean_memory_size_by_qns+
-               mean_timeconsume+
-               total_answering_attempts+
-               mean_diff_answering_methods_by_qns+
-               method_gini+
-               total_memory_size+
-               total_timeconsume, data = StudentLMKA_data)
-model8 <- lm(sum_points_s8Y2f ~ 
-               pct_answers_weekdays +
-               pct_answers_working_hours+
-               total_diff_questions_attempted+
-               question_gini+
-               mean_question_scores+
-               mean_memory_size_by_qns+
-               mean_timeconsume+
-               total_answering_attempts+
-               mean_diff_answering_methods_by_qns+
-               method_gini+
-               total_memory_size+
-               total_timeconsume, data = StudentLMKA_data)
-model9 <- lm(sum_points_t5V9e ~ 
-               pct_answers_weekdays +
-               pct_answers_working_hours+
-               total_diff_questions_attempted+
-               question_gini+
-               mean_question_scores+
-               mean_memory_size_by_qns+
-               mean_timeconsume+
-               total_answering_attempts+
-               mean_diff_answering_methods_by_qns+
-               method_gini+
-               total_memory_size+
-               total_timeconsume, data = StudentLMKA_data)
-model10 <- lm(sum_points_y9W5d ~ 
-               pct_answers_weekdays +
-               pct_answers_working_hours+
-               total_diff_questions_attempted+
-               question_gini+
-               mean_question_scores+
-               mean_memory_size_by_qns+
-               mean_timeconsume+
-               total_answering_attempts+
-               mean_diff_answering_methods_by_qns+
-               method_gini+
-               total_memory_size+
-               total_timeconsume, data = StudentLMKA_data)
-
 #| fig-width: 18
 #| fig-height: 40
-a <- ggcoefstats(model3, 
+
+model3 <- lm(`Sum of points for b3C9s knowledge` ~  
+               `Percent of submissions on weekdays`+
+               `Percent of submissions during working hrs`+
+               `Total no. of different qns_attempted`+
+               `Gini Index for qns in submission`+
+               `Mean selected question scores`+
+               `Mean submission memory size by qns`+
+               `Mean timeconsume by qns`+
+               `Total no. of submissions`+
+               `Mean no. of different answering methods per qns`+
+               `Gini index for answering methods used per qns`+
+               `Total memory size of submissions`+
+               `Total timeconsume of submissions`, data = StudentLMKA_data)
+model4 <- lm(`Sum of points for g7R2j knowledge` ~ 
+               `Percent of submissions on weekdays`+
+               `Percent of submissions during working hrs`+
+               `Total no. of different qns_attempted`+
+               `Gini Index for qns in submission`+
+               `Mean selected question scores`+
+               `Mean submission memory size by qns`+
+               `Mean timeconsume by qns`+
+               `Total no. of submissions`+
+               `Mean no. of different answering methods per qns`+
+               `Gini index for answering methods used per qns`+
+               `Total memory size of submissions`+
+               `Total timeconsume of submissions`, data = StudentLMKA_data)
+model5 <- lm(`Sum of points for k4W1c knowledge` ~  
+               `Percent of submissions on weekdays`+
+               `Percent of submissions during working hrs`+
+               `Total no. of different qns_attempted`+
+               `Gini Index for qns in submission`+
+               `Mean selected question scores`+
+               `Mean submission memory size by qns`+
+               `Mean timeconsume by qns`+
+               `Total no. of submissions`+
+               `Mean no. of different answering methods per qns`+
+               `Gini index for answering methods used per qns`+
+               `Total memory size of submissions`+
+               `Total timeconsume of submissions`, data = StudentLMKA_data)
+model6 <- lm(`Sum of points for m3D1v knowledge` ~  
+               `Percent of submissions on weekdays`+
+               `Percent of submissions during working hrs`+
+               `Total no. of different qns_attempted`+
+               `Gini Index for qns in submission`+
+               `Mean selected question scores`+
+               `Mean submission memory size by qns`+
+               `Mean timeconsume by qns`+
+               `Total no. of submissions`+
+               `Mean no. of different answering methods per qns`+
+               `Gini index for answering methods used per qns`+
+               `Total memory size of submissions`+
+               `Total timeconsume of submissions`, data = StudentLMKA_data)
+model7 <- lm(`Sum of points for r8S3g knowledge` ~ 
+               `Percent of submissions on weekdays`+
+               `Percent of submissions during working hrs`+
+               `Total no. of different qns_attempted`+
+               `Gini Index for qns in submission`+
+               `Mean selected question scores`+
+               `Mean submission memory size by qns`+
+               `Mean timeconsume by qns`+
+               `Total no. of submissions`+
+               `Mean no. of different answering methods per qns`+
+               `Gini index for answering methods used per qns`+
+               `Total memory size of submissions`+
+               `Total timeconsume of submissions`, data = StudentLMKA_data)
+model8 <- lm(`Sum of points for s8Y2f knowledge` ~  
+               `Percent of submissions on weekdays`+
+               `Percent of submissions during working hrs`+
+               `Total no. of different qns_attempted`+
+               `Gini Index for qns in submission`+
+               `Mean selected question scores`+
+               `Mean submission memory size by qns`+
+               `Mean timeconsume by qns`+
+               `Total no. of submissions`+
+               `Mean no. of different answering methods per qns`+
+               `Gini index for answering methods used per qns`+
+               `Total memory size of submissions`+
+               `Total timeconsume of submissions`, data = StudentLMKA_data)
+model9 <- lm(`Sum of points for t5V9e knowledge` ~  
+               `Percent of submissions on weekdays`+
+               `Percent of submissions during working hrs`+
+               `Total no. of different qns_attempted`+
+               `Gini Index for qns in submission`+
+               `Mean selected question scores`+
+               `Mean submission memory size by qns`+
+               `Mean timeconsume by qns`+
+               `Total no. of submissions`+
+               `Mean no. of different answering methods per qns`+
+               `Gini index for answering methods used per qns`+
+               `Total memory size of submissions`+
+               `Total timeconsume of submissions`, data = StudentLMKA_data)
+model10 <- lm(`Sum of points for y9W5d knowledge` ~ 
+               `Percent of submissions on weekdays`+
+               `Percent of submissions during working hrs`+
+               `Total no. of different qns_attempted`+
+               `Gini Index for qns in submission`+
+               `Mean selected question scores`+
+               `Mean submission memory size by qns`+
+               `Mean timeconsume by qns`+
+               `Total no. of submissions`+
+               `Mean no. of different answering methods per qns`+
+               `Gini index for answering methods used per qns`+
+               `Total memory size of submissions`+
+               `Total timeconsume of submissions`, data = StudentLMKA_data)
+
+#a <- 
+  ggcoefstats(model3, 
             output = "plot")
-b <- ggcoefstats(model4, 
+#b <- 
+  ggcoefstats(model4, 
             output = "plot")
-c <- ggcoefstats(model5, 
+#c <- 
+  ggcoefstats(model5, 
             output = "plot")
-d <- ggcoefstats(model6, 
+#d <- 
+  ggcoefstats(model6, 
             output = "plot")
-e <- ggcoefstats(model7, 
+#e <- 
+  ggcoefstats(model7, 
             output = "plot")
-f <- ggcoefstats(model8, 
+#f <- 
+  ggcoefstats(model8, 
             output = "plot")
-g <- ggcoefstats(model9, 
+#g <- 
+  ggcoefstats(model9, 
             output = "plot")
-h <- ggcoefstats(model10, 
+#h <- 
+  ggcoefstats(model10, 
             output = "plot")
-(a + b) / (c + d) / (e + f) / (g + h) 
+#(a + b) / (c + d) / (e + f) / (g + h) 
 ```
 
 
