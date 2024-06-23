@@ -1587,12 +1587,12 @@ model2 <- lm(sum_points_overall ~
 
 #| fig-width: 18
 #| fig-height: 16
-a <- ggcoefstats(model1, 
+ggcoefstats(model1, 
             output = "plot")
-b <- ggcoefstats(model2, 
+ggcoefstats(model2, 
             output = "plot")
 
-a + b
+
 ```
 ```{r}
 model3 <- lm(sum_points_b3C9s ~ 
