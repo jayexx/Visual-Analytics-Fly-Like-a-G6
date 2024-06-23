@@ -176,6 +176,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#k-means-clustering-and-visualisation" id="toc-k-means-clustering-and-visualisation" class="nav-link" data-scroll-target="#k-means-clustering-and-visualisation">K Means clustering and Visualisation</a></li>
   <li><a href="#hierarchical-clustering-and-visualisation" id="toc-hierarchical-clustering-and-visualisation" class="nav-link" data-scroll-target="#hierarchical-clustering-and-visualisation">Hierarchical Clustering and Visualisation</a></li>
   </ul></li>
+  <li><a href="#create-the-alluvial-plot" id="toc-create-the-alluvial-plot" class="nav-link" data-scroll-target="#create-the-alluvial-plot">Create the alluvial plot</a>
+  <ul class="collapse">
   <li><a href="#knowledge-acquisition" id="toc-knowledge-acquisition" class="nav-link" data-scroll-target="#knowledge-acquisition">Knowledge Acquisition</a>
   <ul class="collapse">
   <li><a href="#feature-engineering-1" id="toc-feature-engineering-1" class="nav-link" data-scroll-target="#feature-engineering-1">Feature engineering</a></li>
@@ -184,6 +186,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </ul></li>
   <li><a href="#bivariate-and-multivariate-analysis-of-variables" id="toc-bivariate-and-multivariate-analysis-of-variables" class="nav-link" data-scroll-target="#bivariate-and-multivariate-analysis-of-variables">Bivariate and Multivariate analysis of variables</a></li>
   <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -1432,22 +1435,19 @@ $ `Total timeconsume of submissions`                &lt;dbl&gt; 802, 2583, 9814,
 <p>Based on the PCA plot, the clusters are visually clearly separated, suggesting that the clusters are distinct, especially in relation to the top 2 PCA components in the x and y-axis.</p>
 <p>Next to visualise the distribution of the 2 clusters across all the features used for the K Means clustering, a parallel coordinate plot is used, with the following code chunk.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb104"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb104-1"><a href="#cb104-1" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 18</span></span>
-<span id="cb104-2"><a href="#cb104-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 25</span></span>
+<div class="sourceCode cell-code" id="cb104"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb104-1"><a href="#cb104-1" aria-hidden="true" tabindex="-1"></a>StudentLM_data_factor <span class="ot">&lt;-</span> StudentLM_data</span>
+<span id="cb104-2"><a href="#cb104-2" aria-hidden="true" tabindex="-1"></a>StudentLM_data_factor<span class="sc">$</span>cluster <span class="ot">&lt;-</span> <span class="fu">as.character</span>(StudentLM_data_factor<span class="sc">$</span>cluster)</span>
 <span id="cb104-3"><a href="#cb104-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb104-4"><a href="#cb104-4" aria-hidden="true" tabindex="-1"></a>StudentLM_data_factor <span class="ot">&lt;-</span> StudentLM_data</span>
-<span id="cb104-5"><a href="#cb104-5" aria-hidden="true" tabindex="-1"></a>StudentLM_data_factor<span class="sc">$</span>cluster <span class="ot">&lt;-</span> <span class="fu">as.character</span>(StudentLM_data_factor<span class="sc">$</span>cluster)</span>
-<span id="cb104-6"><a href="#cb104-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb104-7"><a href="#cb104-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggparcoord</span>(<span class="at">data =</span> StudentLM_data_factor, </span>
-<span id="cb104-8"><a href="#cb104-8" aria-hidden="true" tabindex="-1"></a>           <span class="at">columns =</span> <span class="fu">c</span>(<span class="dv">2</span><span class="sc">:</span><span class="dv">13</span>), </span>
-<span id="cb104-9"><a href="#cb104-9" aria-hidden="true" tabindex="-1"></a>           <span class="at">groupColumn =</span> <span class="dv">14</span>,</span>
-<span id="cb104-10"><a href="#cb104-10" aria-hidden="true" tabindex="-1"></a>           <span class="at">scale =</span> <span class="st">"uniminmax"</span>,</span>
-<span id="cb104-11"><a href="#cb104-11" aria-hidden="true" tabindex="-1"></a>           <span class="at">alphaLines =</span> <span class="fl">0.2</span>,</span>
-<span id="cb104-12"><a href="#cb104-12" aria-hidden="true" tabindex="-1"></a>           <span class="at">boxplot =</span> <span class="cn">TRUE</span>, </span>
-<span id="cb104-13"><a href="#cb104-13" aria-hidden="true" tabindex="-1"></a>           <span class="at">title =</span> <span class="st">"Parallel Coordinates Plot of Students' learning modes"</span>)<span class="sc">+</span></span>
-<span id="cb104-14"><a href="#cb104-14" aria-hidden="true" tabindex="-1"></a>   <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">30</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb104-4"><a href="#cb104-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggparcoord</span>(<span class="at">data =</span> StudentLM_data_factor, </span>
+<span id="cb104-5"><a href="#cb104-5" aria-hidden="true" tabindex="-1"></a>           <span class="at">columns =</span> <span class="fu">c</span>(<span class="dv">2</span><span class="sc">:</span><span class="dv">13</span>), </span>
+<span id="cb104-6"><a href="#cb104-6" aria-hidden="true" tabindex="-1"></a>           <span class="at">groupColumn =</span> <span class="dv">14</span>,</span>
+<span id="cb104-7"><a href="#cb104-7" aria-hidden="true" tabindex="-1"></a>           <span class="at">scale =</span> <span class="st">"uniminmax"</span>,</span>
+<span id="cb104-8"><a href="#cb104-8" aria-hidden="true" tabindex="-1"></a>           <span class="at">alphaLines =</span> <span class="fl">0.2</span>,</span>
+<span id="cb104-9"><a href="#cb104-9" aria-hidden="true" tabindex="-1"></a>           <span class="at">boxplot =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb104-10"><a href="#cb104-10" aria-hidden="true" tabindex="-1"></a>           <span class="at">title =</span> <span class="st">"Parallel Coordinates Plot of Students' learning modes"</span>)<span class="sc">+</span></span>
+<span id="cb104-11"><a href="#cb104-11" aria-hidden="true" tabindex="-1"></a>   <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">30</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-48-1.png" class="img-fluid" width="672"></p>
+<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-48-1.png" class="img-fluid" width="2400"></p>
 </div>
 <div class="sourceCode cell-code" id="cb105"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb105-1"><a href="#cb105-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggparcoord</span>(<span class="at">data =</span> StudentLM_data_factor, </span>
 <span id="cb105-2"><a href="#cb105-2" aria-hidden="true" tabindex="-1"></a><span class="at">columns =</span> <span class="fu">c</span>(<span class="dv">2</span><span class="sc">:</span><span class="dv">13</span>), </span>
@@ -1459,7 +1459,7 @@ $ `Total timeconsume of submissions`                &lt;dbl&gt; 802, 2583, 9814,
 <span id="cb105-8"><a href="#cb105-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> cluster)<span class="sc">+</span></span>
 <span id="cb105-9"><a href="#cb105-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">30</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-48-2.png" class="img-fluid" width="672"></p>
+<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-48-2.png" class="img-fluid" width="2400"></p>
 </div>
 </div>
 <p>Based on the plot, there is varying degree of distinction in separation between the 2 clusters across different variables. The more distinct separation are in variables such as total timeconsume of answers, total memory size of answers, mean different answering methods per question, total answering attempts and question selection gini index, where cluster 2 tends to fare better in these metrics suggesting that perhaps cluster 2 may be the more hardworking learning mode among the 2.</p>
@@ -1516,7 +1516,7 @@ $ value      &lt;fct&gt; </code></pre>
 <span id="cb108-19"><a href="#cb108-19" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Count"</span>) <span class="sc">+</span></span>
 <span id="cb108-20"><a href="#cb108-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>, <span class="at">size =</span> <span class="dv">8</span>))        </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-50-1.png" class="img-fluid" width="1728"></p>
+<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-50-1.png" class="img-fluid" width="2400"></p>
 </div>
 <div class="sourceCode cell-code" id="cb109"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb109-1"><a href="#cb109-1" aria-hidden="true" tabindex="-1"></a><span class="co">#        axis.text.y = element_text(size = 8),        plot.title = element_text(size = 12),        legend.title = element_text(size = 10),        legend.text = element_text(size = 8),        axis.title.x = element_text(size = 10),        axis.title.y = element_text(size = 10),        plot.margin = unit(c(1, 1, 1, 1), "cm"))</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
@@ -1619,19 +1619,16 @@ $ cluster_hc                                        &lt;fct&gt; 1, 1, 1, 1, 1, 1
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb117"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb117-1"><a href="#cb117-1" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 18</span></span>
-<span id="cb117-2"><a href="#cb117-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 20</span></span>
-<span id="cb117-3"><a href="#cb117-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb117-4"><a href="#cb117-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggparcoord</span>(<span class="at">data =</span> StudentLM_data1_n, </span>
-<span id="cb117-5"><a href="#cb117-5" aria-hidden="true" tabindex="-1"></a>           <span class="at">columns =</span> <span class="fu">c</span>(<span class="dv">2</span><span class="sc">:</span><span class="dv">13</span>), </span>
-<span id="cb117-6"><a href="#cb117-6" aria-hidden="true" tabindex="-1"></a>           <span class="at">groupColumn =</span> <span class="dv">14</span>,</span>
-<span id="cb117-7"><a href="#cb117-7" aria-hidden="true" tabindex="-1"></a>           <span class="at">scale =</span> <span class="st">"uniminmax"</span>,</span>
-<span id="cb117-8"><a href="#cb117-8" aria-hidden="true" tabindex="-1"></a>           <span class="at">alphaLines =</span> <span class="fl">0.2</span>,</span>
-<span id="cb117-9"><a href="#cb117-9" aria-hidden="true" tabindex="-1"></a>           <span class="at">boxplot =</span> <span class="cn">TRUE</span>, </span>
-<span id="cb117-10"><a href="#cb117-10" aria-hidden="true" tabindex="-1"></a>           <span class="at">title =</span> <span class="st">"Parallel Coordinates Plot of Students' learning modes"</span>)<span class="sc">+</span></span>
-<span id="cb117-11"><a href="#cb117-11" aria-hidden="true" tabindex="-1"></a>   <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">30</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb117"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb117-1"><a href="#cb117-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggparcoord</span>(<span class="at">data =</span> StudentLM_data1_n, </span>
+<span id="cb117-2"><a href="#cb117-2" aria-hidden="true" tabindex="-1"></a>           <span class="at">columns =</span> <span class="fu">c</span>(<span class="dv">2</span><span class="sc">:</span><span class="dv">13</span>), </span>
+<span id="cb117-3"><a href="#cb117-3" aria-hidden="true" tabindex="-1"></a>           <span class="at">groupColumn =</span> <span class="dv">14</span>,</span>
+<span id="cb117-4"><a href="#cb117-4" aria-hidden="true" tabindex="-1"></a>           <span class="at">scale =</span> <span class="st">"uniminmax"</span>,</span>
+<span id="cb117-5"><a href="#cb117-5" aria-hidden="true" tabindex="-1"></a>           <span class="at">alphaLines =</span> <span class="fl">0.2</span>,</span>
+<span id="cb117-6"><a href="#cb117-6" aria-hidden="true" tabindex="-1"></a>           <span class="at">boxplot =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb117-7"><a href="#cb117-7" aria-hidden="true" tabindex="-1"></a>           <span class="at">title =</span> <span class="st">"Parallel Coordinates Plot of Students' learning modes"</span>)<span class="sc">+</span></span>
+<span id="cb117-8"><a href="#cb117-8" aria-hidden="true" tabindex="-1"></a>   <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">30</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-55-1.png" class="img-fluid" width="672"></p>
+<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-55-1.png" class="img-fluid" width="2400"></p>
 </div>
 </div>
 <div class="cell">
@@ -1664,6 +1661,12 @@ $ variable   &lt;chr&gt;
 $ value      &lt;fct&gt; </code></pre>
 </div>
 </div>
+</section>
+</section>
+<section id="create-the-alluvial-plot" class="level1">
+<h1>Create the alluvial plot</h1>
+<p>ggplot(StudentLM_data_long, aes(x = variable, stratum = value, alluvium = student_ID)) + # geom_flow(stat = “alluvium”, lode.guidance = “forward”, color = “white”) + geom_alluvium(aes(fill = cluster)) + geom_stratum() + scale_x_discrete(limits = unique(StudentLM_data_long$variable), expand = c(0.5, 0.1)) + theme_minimal() + labs(title = “Alluvial Plot of Learning Mode Clusters”, x = “Variables”, y = “Count”) + theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))<br>
+# axis.text.y = element_text(size = 8), plot.title = element_text(size = 12), legend.title = element_text(size = 10), legend.text = element_text(size = 8), axis.title.x = element_text(size = 10), axis.title.y = element_text(size = 10), plot.margin = unit(c(1, 1, 1, 1), “cm”))</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb120"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb120-1"><a href="#cb120-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Ensure the 'cluster' variable is in discrete values (1 and 2)</span></span>
 <span id="cb120-2"><a href="#cb120-2" aria-hidden="true" tabindex="-1"></a>StudentLM_data_long1 <span class="ot">&lt;-</span> StudentLM_data_long1 <span class="sc">%&gt;%</span></span>
@@ -1693,11 +1696,9 @@ $ value      &lt;fct&gt; </code></pre>
 <span id="cb120-26"><a href="#cb120-26" aria-hidden="true" tabindex="-1"></a>        <span class="at">axis.title.y =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">10</span>),</span>
 <span id="cb120-27"><a href="#cb120-27" aria-hidden="true" tabindex="-1"></a>        <span class="at">plot.margin =</span> <span class="fu">unit</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>), <span class="st">"cm"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-57-1.png" class="img-fluid" width="1728"></p>
+<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-57-1.png" class="img-fluid" width="2400"></p>
 </div>
 </div>
-</section>
-</section>
 <section id="knowledge-acquisition" class="level2">
 <h2 class="anchored" data-anchor-id="knowledge-acquisition">Knowledge Acquisition</h2>
 <p>Based on the given data, the relevant features that best defines a learner’s knowledge acquisition is assessed to be as follows:</p>
@@ -2157,7 +2158,7 @@ $ `Sum of points for y9W5d knowledge`                            &lt;dbl&gt; 11.
 <span id="cb137-14"><a href="#cb137-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_d</span>(<span class="at">name =</span> <span class="st">"Quartiles"</span>) <span class="sc">+</span></span>
 <span id="cb137-15"><a href="#cb137-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_ridges</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-66-1.png" class="img-fluid" width="672"></p>
+<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-66-1.png" class="img-fluid" width="1152"></p>
 </div>
 <div class="sourceCode cell-code" id="cb138"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb138-1"><a href="#cb138-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(StudentLMKA_data, </span>
 <span id="cb138-2"><a href="#cb138-2" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> <span class="st">`</span><span class="at">Sum of points Overall</span><span class="st">`</span>, </span>
@@ -2172,14 +2173,14 @@ $ `Sum of points for y9W5d knowledge`                            &lt;dbl&gt; 11.
 <span id="cb138-11"><a href="#cb138-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_d</span>(<span class="at">name =</span> <span class="st">"Quartiles"</span>) <span class="sc">+</span></span>
 <span id="cb138-12"><a href="#cb138-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_ridges</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-66-2.png" class="img-fluid" width="672"></p>
+<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-66-2.png" class="img-fluid" width="1152"></p>
 </div>
 </div>
 <p>Cluster 2 has a sharper peak and more packed to the right which suggests that students in this cluster generally performed better, while for cluster 1 there is a 2nd smaller group of that performs even worse.</p>
 <p>A multi faceted plot to compare the distribution of answering performance in respect to the 2 clusters across 6 knowledge areas is plot with the following code chunk.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb139"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb139-1"><a href="#cb139-1" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 16</span></span>
-<span id="cb139-2"><a href="#cb139-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 25</span></span>
+<div class="sourceCode cell-code" id="cb139"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb139-1"><a href="#cb139-1" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 12</span></span>
+<span id="cb139-2"><a href="#cb139-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 15</span></span>
 <span id="cb139-3"><a href="#cb139-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb139-4"><a href="#cb139-4" aria-hidden="true" tabindex="-1"></a><span class="co">#a &lt;- </span></span>
 <span id="cb139-5"><a href="#cb139-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(StudentLMKA_data, </span>
@@ -2313,24 +2314,21 @@ $ `Sum of points for y9W5d knowledge`                            &lt;dbl&gt; 11.
 </div>
 <p>The findings are highly congruent with the earlier ridge plot, which found that cluster 2 had performed better with a sharper peak and more concentration of learners to the right, where as cluster 1 had small pockets of learners to the left instead.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb148"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb148-1"><a href="#cb148-1" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 16</span></span>
-<span id="cb148-2"><a href="#cb148-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 20</span></span>
-<span id="cb148-3"><a href="#cb148-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb148-4"><a href="#cb148-4" aria-hidden="true" tabindex="-1"></a><span class="co">#a &lt;- </span></span>
-<span id="cb148-5"><a href="#cb148-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(StudentLMKA_data, </span>
-<span id="cb148-6"><a href="#cb148-6" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> <span class="st">`</span><span class="at">Sum of overall highest submission scores for b3C9s knowledge</span><span class="st">`</span>, </span>
-<span id="cb148-7"><a href="#cb148-7" aria-hidden="true" tabindex="-1"></a>           <span class="at">y =</span> cluster,</span>
-<span id="cb148-8"><a href="#cb148-8" aria-hidden="true" tabindex="-1"></a>           <span class="at">fill =</span> <span class="fu">factor</span>(<span class="fu">stat</span>(quantile))</span>
-<span id="cb148-9"><a href="#cb148-9" aria-hidden="true" tabindex="-1"></a>           )) <span class="sc">+</span></span>
-<span id="cb148-10"><a href="#cb148-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_density_ridges</span>(</span>
-<span id="cb148-11"><a href="#cb148-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">geom =</span> <span class="st">"density_ridges_gradient"</span>,</span>
-<span id="cb148-12"><a href="#cb148-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">calc_ecdf =</span> <span class="cn">TRUE</span>, </span>
-<span id="cb148-13"><a href="#cb148-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">quantiles =</span> <span class="dv">4</span>,</span>
-<span id="cb148-14"><a href="#cb148-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">quantile_lines =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
-<span id="cb148-15"><a href="#cb148-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_d</span>(<span class="at">name =</span> <span class="st">"Quartiles"</span>) <span class="sc">+</span></span>
-<span id="cb148-16"><a href="#cb148-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_ridges</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb148"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb148-1"><a href="#cb148-1" aria-hidden="true" tabindex="-1"></a><span class="co">#a &lt;- </span></span>
+<span id="cb148-2"><a href="#cb148-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(StudentLMKA_data, </span>
+<span id="cb148-3"><a href="#cb148-3" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> <span class="st">`</span><span class="at">Sum of overall highest submission scores for b3C9s knowledge</span><span class="st">`</span>, </span>
+<span id="cb148-4"><a href="#cb148-4" aria-hidden="true" tabindex="-1"></a>           <span class="at">y =</span> cluster,</span>
+<span id="cb148-5"><a href="#cb148-5" aria-hidden="true" tabindex="-1"></a>           <span class="at">fill =</span> <span class="fu">factor</span>(<span class="fu">stat</span>(quantile))</span>
+<span id="cb148-6"><a href="#cb148-6" aria-hidden="true" tabindex="-1"></a>           )) <span class="sc">+</span></span>
+<span id="cb148-7"><a href="#cb148-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_density_ridges</span>(</span>
+<span id="cb148-8"><a href="#cb148-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">geom =</span> <span class="st">"density_ridges_gradient"</span>,</span>
+<span id="cb148-9"><a href="#cb148-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">calc_ecdf =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb148-10"><a href="#cb148-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">quantiles =</span> <span class="dv">4</span>,</span>
+<span id="cb148-11"><a href="#cb148-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">quantile_lines =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb148-12"><a href="#cb148-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_d</span>(<span class="at">name =</span> <span class="st">"Quartiles"</span>) <span class="sc">+</span></span>
+<span id="cb148-13"><a href="#cb148-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_ridges</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-68-1.png" class="img-fluid" width="672"></p>
+<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-68-1.png" class="img-fluid" width="1152"></p>
 </div>
 <div class="sourceCode cell-code" id="cb149"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb149-1"><a href="#cb149-1" aria-hidden="true" tabindex="-1"></a><span class="co">#b &lt;- </span></span>
 <span id="cb149-2"><a href="#cb149-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(StudentLMKA_data, </span>
@@ -2346,7 +2344,7 @@ $ `Sum of points for y9W5d knowledge`                            &lt;dbl&gt; 11.
 <span id="cb149-12"><a href="#cb149-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_d</span>(<span class="at">name =</span> <span class="st">"Quartiles"</span>) <span class="sc">+</span></span>
 <span id="cb149-13"><a href="#cb149-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_ridges</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-68-2.png" class="img-fluid" width="672"></p>
+<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-68-2.png" class="img-fluid" width="1152"></p>
 </div>
 <div class="sourceCode cell-code" id="cb150"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb150-1"><a href="#cb150-1" aria-hidden="true" tabindex="-1"></a><span class="co">#c &lt;- </span></span>
 <span id="cb150-2"><a href="#cb150-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(StudentLMKA_data, </span>
@@ -2362,7 +2360,7 @@ $ `Sum of points for y9W5d knowledge`                            &lt;dbl&gt; 11.
 <span id="cb150-12"><a href="#cb150-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_d</span>(<span class="at">name =</span> <span class="st">"Quartiles"</span>) <span class="sc">+</span></span>
 <span id="cb150-13"><a href="#cb150-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_ridges</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-68-3.png" class="img-fluid" width="672"></p>
+<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-68-3.png" class="img-fluid" width="1152"></p>
 </div>
 <div class="sourceCode cell-code" id="cb151"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb151-1"><a href="#cb151-1" aria-hidden="true" tabindex="-1"></a><span class="co">#d &lt;- </span></span>
 <span id="cb151-2"><a href="#cb151-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(StudentLMKA_data, </span>
@@ -2378,7 +2376,7 @@ $ `Sum of points for y9W5d knowledge`                            &lt;dbl&gt; 11.
 <span id="cb151-12"><a href="#cb151-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_d</span>(<span class="at">name =</span> <span class="st">"Quartiles"</span>) <span class="sc">+</span></span>
 <span id="cb151-13"><a href="#cb151-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_ridges</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-68-4.png" class="img-fluid" width="672"></p>
+<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-68-4.png" class="img-fluid" width="1152"></p>
 </div>
 <div class="sourceCode cell-code" id="cb152"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb152-1"><a href="#cb152-1" aria-hidden="true" tabindex="-1"></a><span class="co">#e &lt;- </span></span>
 <span id="cb152-2"><a href="#cb152-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(StudentLMKA_data, </span>
@@ -2394,7 +2392,7 @@ $ `Sum of points for y9W5d knowledge`                            &lt;dbl&gt; 11.
 <span id="cb152-12"><a href="#cb152-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_d</span>(<span class="at">name =</span> <span class="st">"Quartiles"</span>) <span class="sc">+</span></span>
 <span id="cb152-13"><a href="#cb152-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_ridges</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-68-5.png" class="img-fluid" width="672"></p>
+<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-68-5.png" class="img-fluid" width="1152"></p>
 </div>
 <div class="sourceCode cell-code" id="cb153"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb153-1"><a href="#cb153-1" aria-hidden="true" tabindex="-1"></a><span class="co">#f &lt;- </span></span>
 <span id="cb153-2"><a href="#cb153-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(StudentLMKA_data, </span>
@@ -2410,7 +2408,7 @@ $ `Sum of points for y9W5d knowledge`                            &lt;dbl&gt; 11.
 <span id="cb153-12"><a href="#cb153-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_d</span>(<span class="at">name =</span> <span class="st">"Quartiles"</span>) <span class="sc">+</span></span>
 <span id="cb153-13"><a href="#cb153-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_ridges</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-68-6.png" class="img-fluid" width="672"></p>
+<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-68-6.png" class="img-fluid" width="1152"></p>
 </div>
 <div class="sourceCode cell-code" id="cb154"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb154-1"><a href="#cb154-1" aria-hidden="true" tabindex="-1"></a><span class="co">#g &lt;- </span></span>
 <span id="cb154-2"><a href="#cb154-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(StudentLMKA_data, </span>
@@ -2426,7 +2424,7 @@ $ `Sum of points for y9W5d knowledge`                            &lt;dbl&gt; 11.
 <span id="cb154-12"><a href="#cb154-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_d</span>(<span class="at">name =</span> <span class="st">"Quartiles"</span>) <span class="sc">+</span></span>
 <span id="cb154-13"><a href="#cb154-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_ridges</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-68-7.png" class="img-fluid" width="672"></p>
+<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-68-7.png" class="img-fluid" width="1152"></p>
 </div>
 <div class="sourceCode cell-code" id="cb155"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb155-1"><a href="#cb155-1" aria-hidden="true" tabindex="-1"></a><span class="co">#h &lt;- </span></span>
 <span id="cb155-2"><a href="#cb155-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(StudentLMKA_data, </span>
@@ -2442,7 +2440,7 @@ $ `Sum of points for y9W5d knowledge`                            &lt;dbl&gt; 11.
 <span id="cb155-12"><a href="#cb155-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_d</span>(<span class="at">name =</span> <span class="st">"Quartiles"</span>) <span class="sc">+</span></span>
 <span id="cb155-13"><a href="#cb155-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_ridges</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-68-8.png" class="img-fluid" width="672"></p>
+<p><img src="Take_home_Ex3_files/figure-html/unnamed-chunk-68-8.png" class="img-fluid" width="1152"></p>
 </div>
 <div class="sourceCode cell-code" id="cb156"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb156-1"><a href="#cb156-1" aria-hidden="true" tabindex="-1"></a><span class="co">#(a + b) / (c + d) / (e + f) / (g + h)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
@@ -2696,6 +2694,7 @@ $ `Sum of points for y9W5d knowledge`                            &lt;dbl&gt; 11.
 <p>And therefore, the consensus in the analysis found that there is a statistically significant relationship between the selected indicators for more hardworking learning modes with better knowledge aquisition.</p>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
