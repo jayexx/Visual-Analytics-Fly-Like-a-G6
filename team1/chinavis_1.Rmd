@@ -360,3 +360,332 @@ ggplot(merged_data, aes(x=sub_knowledge, y=actual_score, fill=sub_knowledge)) +
   theme(axis.text.x = element_text(angle=45, hjust=1))
 
 ```
+<<<<<<< HEAD
+
+
+
+
+Update 9 June
+### 5.3.5 Data Filtering
+
+The aim is to filter the dataset to retain only the earliest record for each unique combination of `title_ID` and `student_ID` based on the `time_change` variable. If a student has multiple submissions for the same title, only the first submission (based on `time_change`) is kept in the dataset.This ensures that each student-title pairing is represented by the first occurrence in the dataset, eliminating any duplicate entries.
+
+<details>
+
+<summary>Click to show code</summary>
+
+```{r}
+library(dplyr)
+
+# Arrange the dataset by title_ID, student_ID, and time_change
+unique_merged_data <- merged_data %>%
+  arrange(title_ID, student_ID, time_change) %>%
+  distinct(title_ID, student_ID, .keep_all = TRUE)
+
+# Display the filtered dataset
+print(unique_merged_data)
+
+```
+
+</details>
+
+```{r}
+summary(unique_merged_data)
+```
+
+# 6.Visualization on Learners Question-Answering Behavior
+
+To provide a quantitative assessment of the learners’ knowledge mastery and identify weak links in their knowledge system,
+
+## 6.1 Overview on Learner Learing Log 
+
+## 6.1 Overview on Learner Learing Log 
+
+::: {#overview .panel-tabset}
+
+### 6.1.1.Distribution of Knowledge
+
+```{r}
+#| echo: false
+
+# Function to create bar plots grouped by student_ID
+create_bar_plot_by_student <- function(data, variable, title) {
+  # Dynamically specify the variable for grouping
+  data_summary <- data %>%
+    group_by(student_ID, !!sym(variable)) %>%
+    summarise(count = n(), .groups = 'drop')
+  
+  # Using aes() with !!sym() for dynamic variable naming
+  p <- ggplot(data_summary, aes(x = !!sym(variable), y = count, fill = student_ID)) +
+    geom_bar(stat = "identity", position = "dodge", fill = "steelblue") +  # Ensure clarity between student groups
+    labs(title = title, x = variable, y = "Count") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  return(p)  # Return the plot for further use
+}
+
+# Example usage to plot distribution of knowledge
+plot_knowledge <- create_bar_plot_by_student(unique_merged_data, "knowledge", "Distribution of Knowledge by Student ID")
+plot_knowledge
+ 
+```
+
+### 6.1.2.Distribution of Score
+
+```{r}
+#| echo: false
+
+# Function to create bar plots grouped by student_ID
+create_bar_plot_by_student <- function(data, variable, title) {
+  # Dynamically specify the variable for grouping
+  data_summary <- data %>%
+    group_by(student_ID, !!sym(variable)) %>%
+    summarise(count = n(), .groups = 'drop')
+  
+  # Using aes() with !!sym() for dynamic variable naming
+  p <- ggplot(data_summary, aes(x = !!sym(variable), y = count, fill = student_ID)) +
+    geom_bar(stat = "identity", position = "dodge", fill = "steelblue") +  # Using dodge position for clarity
+    labs(title = title, x = variable, y = "Count") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  return(p)  # Return the plot for further use
+}
+
+# Example usage to plot distribution of score
+plot_score <- create_bar_plot_by_student(unique_merged_data, "actual_score", "Distribution of Scores by Student ID")
+plot_score
+ 
+```
+
+### 6.1.3.Distribution of State
+
+```{r}
+#| echo: false
+# Function to create bar plots grouped by student_ID
+create_bar_plot_by_student <- function(data, variable, title) {
+  # Dynamically specify the variable for grouping
+  data_summary <- data %>%
+    group_by(student_ID, !!sym(variable)) %>%
+    summarise(count = n(), .groups = 'drop')
+  
+  # Using aes() with !!sym() for dynamic variable naming
+  p <- ggplot(data_summary, aes(x = !!sym(variable), y = count, fill = student_ID)) +
+    geom_bar(stat = "identity", position = "dodge", fill = "steelblue") +  # Using dodge position for clarity
+    labs(title = title, x = variable, y = "Count") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  return(p)  # Return the plot for further use
+}
+
+# Example usage to plot distribution of state
+plot_state <- create_bar_plot_by_student(unique_merged_data, "state", "Distribution of State by Student ID")
+plot_state
+
+```
+:::
+
+### 6.1.4.Actual Score by Knowledge Type
+
+```{r}
+#| echo: false
+library(ggplot2)
+
+# Convert 'actual_score' to numeric if it's not already
+unique_merged_data$actual_score <- as.numeric(as.character(unique_merged_data$actual_score))
+
+# Plotting histogram of actual scores
+ggplot(unique_merged_data, aes(x = actual_score)) +
+  geom_histogram(bins = 30, fill = "steelblue") +
+  facet_wrap(~knowledge) +  # Faceting the plot by 'knowledge' to separate histograms for each knowledge type
+  labs(title = "Distribution of Actual Scores by Knowledge Type", x = "Actual Score", y = "Count")
+
+```
+
+::: callout-note
+-    **'m3D1v'** shows significant counts at scores 0 and 3. This could suggest that while a large number of students fail to answer these questions, another considerable group finds these questions moderately challenging but achievable.
+
+-    **'y9W5d'** shows a peak at score 0, indicating that the majority of the students failed to answer the questions correctly, marking it as a potential area of difficulty.
+
+-    **'g7R2j' and 'k4W1c'** have a high number of instances with score 0, indicating that questions under these categories are particularly challenging for most students.
+:::
+
+### 6.1.5. Knowledge type and Questions that learner have attempted
+
+The heatmap allows for a quick visual assessment of which questions are more frequently interacted with across different categories. For instance, some questions (e.g., near the top of the heatmap) show interaction across many categories, suggesting these questions are commonly used or are of high relevance
+
+```{r}
+#| echo: false
+library(plotly)
+
+# Creating a dataframe for plotting
+data_for_plotly <- unique_merged_data %>%
+  group_by(knowledge, title_ID) %>%
+  summarise(Count = n(), .groups = 'drop')
+
+# Convert ggplot to plotly for interactive visualization
+p <- ggplot(data_for_plotly, aes(x = knowledge, y = title_ID, fill = Count)) +
+  geom_tile() +
+  scale_fill_gradient(low = "steelblue", high = "green") +
+  labs(title = "Interactive HeatMap of Questions Distribution by Knowledge", x = "Knowledge", y = "Title ID")
+
+ggplotly(p) # Convert to an interactive plotly object
+```
+
+::: callout-note
+The heatmap allows for a quick visual assessment of which questions are more frequently interacted with across different knowledge categories. For instance, some questions (e.g., near the top of the heatmap) show interaction across many categories, suggesting these questions are commonly used or are of high relevance.
+:::
+
+## 6.2 Knowledge Mastery Assessment
+
+### 6.2.1 Density Plot for Time Consumed
+
+```{r}
+#| echo: false
+# Histogram with Density Plot for Time Consumed
+ggplot(unique_merged_data, aes(x = timeconsume)) +
+  geom_histogram(aes(y = ..density..), binwidth = 1, fill = "lightblue", alpha = 0.5) +
+  geom_density(color = "steelblue") +
+  labs(title = "Distribution of Time Consumed", x = "Time Consumed", y = "Density")
+
+```
+
+### 6.2.2 Average Time Consumed on Questions
+
+```{r}
+#| echo: false
+# Summarizing time consumption data for each title_ID
+time_consume_summary <- unique_merged_data %>%
+  group_by(title_ID) %>%
+  summarise(
+    AverageTime = mean(timeconsume, na.rm = TRUE),  # Calculate average time
+    MedianTime = median(timeconsume, na.rm = TRUE),  # Calculate median time
+    TotalTime = sum(timeconsume, na.rm = TRUE)  # Calculate total time
+  )
+
+
+# Plotting average time consumed per title_ID
+ggplot(time_consume_summary, aes(x = title_ID, y = AverageTime)) +
+  geom_bar(stat = "identity", fill = "steelblue") +  # Use bars to represent average time
+  labs(title = "Average Time Consumed by Questions", x = "Title ID", y = "Average Time (ms)") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotate x-axis labels for readability
+
+```
+
+### 6.2.3 The Fequency of Actual Scores Students Got
+
+```{r}
+#| echo: false
+library(reshape2)
+score_state_table <- table(unique_merged_data$state, unique_merged_data$actual_score)
+
+score_state_melted <- melt(score_state_table)
+
+# Plot heatmap
+ggplot(score_state_melted, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "lightblue", high = "red") +
+  labs(title = "Heatmap of Actual Score by State", x = "State", y = "Actual Score", fill = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("heatmap_scores_by_state.png", width = 12, height = 8, dpi = 300)
+
+```
+
+### 6.2.4 Average Scores on Questions
+
+```{r}
+#| echo: false
+library(ggplot2)
+library(dplyr)
+
+# Calculate median scores for each title_ID
+medians <- unique_merged_data %>%
+  group_by(title_ID) %>%
+  summarise(MedianScore = median(actual_score, na.rm = TRUE))  # Calculate the median, removing NAs
+
+# Create the plot with boxplots and median text labels only
+ggplot(unique_merged_data, aes(x = title_ID, y = actual_score, group = title_ID)) +
+  geom_boxplot() +  # Plot boxplots with outliers shown by default
+  geom_text(data = medians, aes(x = title_ID, y = MedianScore, label = MedianScore),
+            vjust = -0.5, color = "red", size = 3) +  # Add median values as text above the boxplots
+  labs(title = "Distribution of Acutal Scores on Questions", x = "Title ID", y = "Score") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotate x-axis labels for readability
+
+
+
+```
+
+### 6.2.5 Peformance on Knowledge
+
+```{r}
+#| echo: false
+options(warn.conflicts = FALSE)
+library(dplyr)
+library(plotly)
+library(scales)  # For percent formatting
+
+# Calculate counts and correctly calculate proportions within each knowledge group
+state_knowledge_counts <- unique_merged_data %>%
+  group_by(knowledge, state) %>%
+  summarise(Count = n(), .groups = 'drop') %>%
+  group_by(knowledge) %>%  # Regroup by knowledge to sum counts for proportion calculation
+  mutate(Proportion = Count / sum(Count))  # Calculate proportion within each knowledge group
+
+# Creating custom tooltip content with correctly formatted proportions
+state_knowledge_counts$Tooltip <- paste(
+  "Knowledge: ", state_knowledge_counts$knowledge,
+  "<br>State: ", state_knowledge_counts$state,
+  "<br>Proportion: ", percent(state_knowledge_counts$Proportion)
+)
+
+# Convert ggplot to plotly with customized tooltips using plotly directly
+interactive_plot <- plot_ly(data = state_knowledge_counts, x = ~knowledge, y = ~Count, type = 'bar', color = ~state,
+                            hoverinfo = 'text',
+                            text = ~Tooltip,
+                            colors = RColorBrewer::brewer.pal(10, "Set3")) %>%
+  layout(
+    yaxis = list(title = 'Count'), 
+    barmode = 'stack',
+    title = "Performance on Knowledge type"
+  )
+
+# Display the plot
+interactive_plot
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=======
+>>>>>>> cc9fea5bb5623bd3aa9c98d3bcdecc26014ca4b1
