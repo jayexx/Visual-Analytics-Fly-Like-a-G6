@@ -226,7 +226,7 @@ Learners will be rewarding 1 point for Absolutely correct
 
 Learners will be rewarding Actual score/ Question score points for partially correct
 
-Learners will be penalized 1 point for Error
+Learners will get 0 point for Error
 
 Points will be normalized across number of attempts, such that the relative proportion of submissions will be considered rather absolute numbers in parts (a) to (c) above
 
