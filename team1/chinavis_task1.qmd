@@ -484,9 +484,12 @@ p_heatmap <- ggplot(method_counts_summary, aes(x = knowledge, y = title_ID, fill
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
     axis.text.y = element_text(size = 8),
-    axis.title.x = element_text(size = 14, margin = margin(t = 20)),
-    axis.title.y = element_text(size = 14, margin = margin(r = 20)),
+    axis.title.x = element_text(size = 10, margin = margin(t = 20)),
+    axis.title.y = element_text(size = 10, margin = margin(r = 20)),
     plot.title = element_text(size = 10, face = "bold", margin = margin(b = 20)),
+    legend.title = element_text(size = 8),  # Adjust legend title size
+    legend.text = element_text(size = 8),  # Adjust legend text size
+    legend.key.size = unit(1, "cm"),        # Adjust size of the legend keys
     legend.position = "right"
   )
 
@@ -631,7 +634,7 @@ p_ridge_max_scores_quantiles <- ggplot(max_scores, aes(x = max_actual_score, y =
     axis.title.y = element_text(size = 10, margin = margin(r = 10), hjust = 0.5),
     plot.title = element_text(size = 10, face = "bold", margin = margin(b = 20)),
     legend.position = "right",
-    legend.title = element_text(size = 8, face = "bold"),  # Customize the legend title font
+    legend.title = element_text(size = 8),  # Customize the legend title font
     legend.text = element_text(size = 8
   ))
 
