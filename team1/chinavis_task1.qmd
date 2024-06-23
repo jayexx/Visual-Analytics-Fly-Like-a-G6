@@ -4,9 +4,33 @@ format: html
 editor: visual
 ---
 
-# **5. Getting Started**
+# **Overview**
 
-## **5.1 Loading R packages**
+NorthClass, a prominent higher education institution with over 300,000 registered learners, offers more than 100 courses across various disciplines. To enhance its digital age competitiveness, NorthClass launched a programming course requiring learners to complete tasks with multiple submissions. Post-course, the institution collects learning data to assess instructional quality. NorthClass plans to form a Smart Education Development and Innovation Group to leverage AI for improving education and nurturing innovative talents. Visualization and Visual Analytics are proposed to transform complex learning data into intuitive graphical representations, aiding in diagnosing knowledge mastery, monitoring learning trends, and identifying factors causing learning difficulties. The task is to design and implement a Visual Analytics solution to help NorthClass perceive learners' progress and provide recommendations for teaching strategy adjustments and course design improvements.
+
+# **Our Task**
+
+From the Challenge, the key problem statement was to perform a comprehensive analysis of multiple datasets that describe various aspects of the learner’s profile, learning patterns and status, to derive key insights to enhance teaching strategies and course design.
+
+Consequently the key requirements based on the 5 stipulated tasks in the challenge were as follows.
+
+-   Task 1: To provide a quantitative assessment of the learners’ knowledge mastery and identify weak links in their knowledge system, based on the multi-dimensional attributes such as answer scores and answer status in the learners’ log records of the learners’ question-answering behaviors.
+
+    This would entail an analysis of the learners’ aggregate performance in their programming tasks (a.k.a. questions in the dataset), including measures of central tendency, or any notable patterns that can glean insights towards knowledge mastery and weaknesses from the given datasets.
+
+# **The Datasets**
+
+The provided materials for the challenge include 3 datasets described below, as well as a separate document providing a more detailed description of the data and variables
+
+Dataset 1: Student Information - This comprises of 5 Cols, 1364 Rows, providing individualised demographic variables of the learners (a.k.a students) within the scope this project
+
+Dataset 2: Learning Subject Title Information - This comprises of 5 Cols, 44 Rows, providing variables of the questions from the programming tasks which are collated in the scope of this project
+
+Dataset 3: Class Submission Records - This comprises of multiple datasets, each with 10 Cols and various number of rows, providing supposedly the participating learners’ answering variables to the questions collated in the scope of this project
+
+# **1. Getting Started**
+
+## **1.1 Loading R packages**
 
 The code chunk below imports the dataset into R environment by using [*`read_csv()`*](https://readr.tidyverse.org/reference/read_delim.html) function of [`readr`](https://readr.tidyverse.org/) package. **readr** is one of the tidyverse package.
 
@@ -16,7 +40,7 @@ Read the individual CSV files into data frames. Check that the structure of each
 pacman::p_load(dplyr,tidyr,stringr,readr,fs,purrr,ggplot2, plotly, ggstatsplot,igraph,lubridate,hms, vcd)
 ```
 
-## **5.2 Importing data**
+## **1.2 Importing data**
 
 The code chunk below imports the dataset into R environment by using [*`read_csv()`*](https://readr.tidyverse.org/reference/read_delim.html) function of [`readr`](https://readr.tidyverse.org/) package. **readr** is one of the tidyverse package.
 
@@ -47,9 +71,9 @@ df_StudentRecord %>% glimpse()
 
 </details>
 
-## 5.3 Data Preparation
+## 1.3 Data Preparation
 
-### 5.3.1 Check Missing Values
+### Check Missing Values
 
 First, we identify students who are enrolled in more than one class. This helps us focus on those who need their class assignments reviewed. For students enrolled in multiple classes, we determine the correct class by identifying which class they attended most frequently. Finally, we update the class assignments in the original dataset. We replace the incorrect class values with the correct class determined in the previous step. This ensures that each student is associated with the class they attended most often. \#### Missing Data
 
@@ -107,7 +131,6 @@ df_StudentRecord <- df_StudentRecord %>%
 print(df_StudentRecord)
 
 ```
-
 
 </details>
 
@@ -179,6 +202,8 @@ head(title_info_aggregated)
 
 ```
 
+### Merge data
+
 ```{r}
 # Merge StudentInfo with SubmitRecord based on student_ID
 merged_data <- merge(df_StudentRecord, df_StudentInfo, by = "student_ID")
@@ -193,6 +218,19 @@ merged_data <- merged_data %>%
   mutate (actual_score = as.numeric(as.character(actual_score)))
 ```
 
+### Assign point system
+
+To better understand the learners' question-answering behaviors, we set the point system:
+
+Learners will be rewarding 1 point for Absolutely correct
+
+Learners will be rewarding Actual score/ Question score points for partially correct
+
+Learners will be penalized 1 point for Error
+
+Points will be normalized across number of attempts, such that the relative proportion of submissions will be considered rather absolute numbers in parts (a) to (c) above
+
+If learners attained absolutely correct scores, their points per question will also be multiplied according to the numbers of methods used
 
 ```{r}
 
@@ -204,7 +242,7 @@ adjusted_scores <- merged_data %>%
   ))
 
 mastery_scores <- adjusted_scores %>%
-  group_by(student_ID, title_ID, knowledge, class) %>%
+  group_by(student_ID, title_ID, knowledge, class,sub_knowledge) %>%
   summarise(
     total_points = sum(points),
     total_attempts = n(),
@@ -217,13 +255,12 @@ mastery_scores <- adjusted_scores %>%
   )
 
 knowledge_mastery <- mastery_scores %>%
-  group_by(student_ID, class, knowledge) %>%
+  group_by(student_ID, class, knowledge, sub_knowledge) %>%
   summarise(total_score = sum(adjusted_points)) %>%
   left_join(df_StudentInfo %>% select(student_ID, sex, age, major), by = "student_ID") %>%
   mutate(age = as.character(age))
 
 ```
-
 
 ```{r}
 summary(adjusted_scores)
@@ -257,14 +294,11 @@ saveRDS(overall_mastery, file = "overall_mastery.RDS")
 
 ```
 
+# 2.Visualization
 
+## 2.1 Performance by questions
 
-
-
-Performance by questions 
-
- 
-1. Static heatmap for average max actual score per question (normalised and non normalised)
+### 2.1.1 Static heatmap for average max actual score per question (normalised and non normalised)
 
 ```{r}
 library(dplyr)
@@ -272,7 +306,7 @@ library(ggplot2)
 library(plotly)
 
 # Check the column names in knowledge_expanded
-print(colnames(knowledge_expanded))
+print(knowledge_expanded)
 
 # Ensure 'actual_score' and 'question_score' are numeric
 knowledge_expanded <- knowledge_expanded %>%
@@ -325,20 +359,25 @@ p_heatmap <- ggplot(average_highest_scores, aes(x = knowledge, y = title_ID, fil
   )
 
 # Convert the ggplot object to a plotly object for interactivity
-p_heatmap_interactive <- ggplotly(p_heatmap, tooltip = "text")
+p_heatmap_interactive1 <- ggplotly(p_heatmap, tooltip = "text")
 
 # Print the interactive heatmap
-p_heatmap_interactive
+p_heatmap_interactive1 
 
 ```
+
+In the Knowledge Area g7R2j, students perform consistently well on Question_5fgqjSBwTPG7KUV3it6O, achieving the highest average score of 0.96. This is the same score as seen in Question_Az73sM0rHfWVKuc4X2kL from the Knowledge Area y9W5d, indicating a strong understanding of the concepts in both g7R2j and y9W5d. Following closely is the Knowledge Area t5V9e, where students score an average highest score of 0.95 on Question_3MwAFlmNO8EKrpY5zjUd.
+
+However, in the Knowledge Area g7R2j, Question_xqlJkmRaP0otZcX4fK3W stands out with the lowest average highest score of 0.85, suggesting that this particular question poses more challenges for students. Meanwhile, all questions in the Knowledge Area r8S3g show a relatively low average highest score, around 0.9, indicating a consistent level of difficulty across this area.
+
+Overall, Knowledge Area g7R2j exhibits the most diverse range of scores, highlighting variability in student performance that could be due to a mix of easier and more challenging questions.
 
 ```{r}
 library(dplyr)
 library(ggplot2)
 library(plotly)
 
-# Check the column names in knowledge_expanded
-print(colnames(knowledge_expanded))
+print(knowledge_expanded)
 
 # Ensure 'actual_score' and 'question_score' are numeric
 knowledge_expanded <- knowledge_expanded %>%
@@ -373,7 +412,7 @@ p_heatmap <- ggplot(average_highest_scores, aes(x = knowledge, y = title_ID, fil
   geom_tile(color = "white") +
   scale_fill_gradient2(low = "blue", mid = "green", high = "red", midpoint = 2.5, 
                        limits = color_scale_limits, name = "Avg Highest Score") +
-  labs(title = "Average Highest Actual Score per Knowledge Area per Question",
+  labs(title = "Nonnormalised Average Highest Actual Score per Knowledge Area per Question",
        x = "Knowledge Areas",
        y = "Question IDs",
        fill = "Avg Highest Score") +
@@ -391,21 +430,26 @@ p_heatmap <- ggplot(average_highest_scores, aes(x = knowledge, y = title_ID, fil
   )
 
 # Convert the ggplot object to a plotly object for interactivity
-p_heatmap_interactive <- ggplotly(p_heatmap, tooltip = "text")
+p_heatmap_interactive2 <- ggplotly(p_heatmap, tooltip = "text")
 
 # Print the interactive heatmap
-p_heatmap_interactive
+p_heatmap_interactive2
 
 ```
 
-2. Static heatmap for avg number of methods used per question 
+The plot illustrates the average highest scores students achieve across different knowledge areas. In Knowledge Area b3C9s, Question_FNg8X9v5zcbB1tQrxHR3 stands out with a question score of 4, resulting in a more intense color on the plot. Conversely, Knowledge Area r8S3g has questions with a question score of 1, and Knowledge Area t5V9e has questions with a question score of 2. The remaining questions across other knowledge areas generally have a question score of 2.
+
+Although many scores are displayed in shades of green, indicating a similar range of scores, the color intensity variations provide insights into the relative difficulty and performance across different questions.
+
+### 2.1.2 Static heatmap for avg number of methods used per question
+
 ```{r}
 library(dplyr)
 library(ggplot2)
 library(plotly)
 
 # Check the column names in mastery_scores
-print(colnames(mastery_scores))
+print(mastery_scores)
 
 # Ensure 'unique_methods' column is numeric if needed
 mastery_scores <- mastery_scores %>%
@@ -431,7 +475,7 @@ p_heatmap <- ggplot(method_counts_summary, aes(x = knowledge, y = title_ID, fill
                                                             "<br>Title ID:", title_ID,
                                                             "<br>Avg Methods:", round(avg_methods, 2)))) +
   geom_tile(color = "white") +
-  scale_fill_gradient2(low = "white", high = "blue", mid = "lightblue", midpoint = mean(method_counts_summary$avg_methods, na.rm = TRUE), name = "Avg Methods") +
+  scale_fill_gradient2(low = "white", high = "blue", mid = "green", midpoint = mean(method_counts_summary$avg_methods, na.rm = TRUE), name = "Avg Methods") +
   labs(title = "Average Methods used per Knowledge Area per Question",
        x = "Knowledge Areas",
        y = "Question IDs",
@@ -455,9 +499,10 @@ p_heatmap_interactive
 
 ```
 
- 
+Students applied more methods in certain knowledge areas, particularly in `g7R2j` with Question_5fgqjSBwTPG7KUV3it6O, in `r8S3g` with Question_q7OpB2zCMmW9wS8uNt3H and Question_fZrP3FJ4ebUogW9V7taS, and in `t5V9e` with Question_3oPyUzDmQtcMfLpGZ0jW and Question_3MwAFlmNO8EKrpY5zjUd. This indicates a higher level of engagement and perhaps complexity in these specific areas and questions.
 
-3. Static heatmap for sum(points) per question 
+### 2.1.3 Static heatmap for Total points per question
+
 ```{r}
 library(dplyr)
 library(ggplot2)
@@ -524,44 +569,53 @@ p_heatmap_interactive
 
 ```
 
+Based on the point system, there are notable concentrations of total points in various knowledge areas. High Total Points Concentration is observed in the `g7R2j` knowledge area, particularly for Question_5fgqjSBwTPG7KUV3it6O, which has the highest total points indicated by the darker blue color. This suggests that a significant number of students attempted this question and scored well. Following closely is the `t5V9e` knowledge area with Question_3MwAFlmNO8EKrpY5zjUd, which has the second highest total points. Middle Points Concentration is seen in several knowledge areas:
 
+-   In `r8S3g` with **Question_q7OpB2zCMmW9wS8uNt3H**.
 
+-   In `m3D1v` with **Questions_QRm48lXxzdP7Tn1WgNOf** and **Question_4nHcauCQ0Y6Pm8DgKlLo**.
 
+-   In `y9W5d` with **Questions_QRm48lXxzdP7Tn1WgNOf**, **Question_Az73sM0rHfWVKuc4X2kL**, and **Question_EhVPdmlB31M8WKGqL0wc**.
 
-Performance by knowledge
+**Low Points Concentration** is observed in the `r8S3g` and `m3D1v` knowledge areas, indicating that these areas may be more challenging for students or less frequently attempted.
 
-4. Ridge plot for sum(max actual score per qns) for 8 knowledge normalised 
+## 2.2 Performance by knowledge
+
+#### 2.2.1 Ridge plot for sum(max actual score per qns) for 8 knowledge normalised
+
 ```{r}
+# Load the necessary library
+library(dplyr)
+
+# Group by 'title_ID', 'student_ID', and 'knowledge' and find the max 'actual_score' for each group
+max_scores <- adjusted_scores %>%
+  group_by(title_ID, student_ID, knowledge) %>%
+  summarize(max_actual_score = max(actual_score, na.rm = TRUE))
+
+# Display the result
+print(max_scores)
+```
+
+```{r}
+# Load the necessary libraries
 library(dplyr)
 library(ggplot2)
 library(ggridges)
-library(viridis)
+library(viridis)  # For the viridis color palette
 
-# Check the column names in adjusted_scores
-print(colnames(adjusted_scores))
+# Assuming your dataframe is named adjusted_score
+# and it has columns 'title_ID', 'student_ID', 'knowledge', and 'actual_score'
 
-# Ensure that 'points' column is numeric
-adjusted_scores <- adjusted_scores %>%
-  mutate(points = as.numeric(points))
-
-# Check for missing values
-print(summary(adjusted_scores))
-
-# Aggregate the total sum of points by student_ID, title_ID, and knowledge area
-sum_points <- adjusted_scores %>%
-  group_by(student_ID, title_ID, knowledge) %>%
-  summarise(total_sum_points = sum(points, na.rm = TRUE), .groups = 'drop')
-
-# Aggregate to get the total sum of points for each title_ID and knowledge area
-total_sum_points <- sum_points %>%
-  group_by(title_ID, knowledge) %>%
-  summarise(total_sum_points = sum(total_sum_points, na.rm = TRUE), .groups = 'drop')
+# Group by 'title_ID', 'student_ID', and 'knowledge' and find the max 'actual_score' for each group
+max_scores <- adjusted_scores %>%
+  group_by(title_ID, student_ID, knowledge) %>%
+  summarize(max_actual_score = max(actual_score, na.rm = TRUE), .groups = 'drop')
 
 # Check the aggregated data
-print(head(total_sum_points))
+print(head(max_scores))
 
 # Create the ridge plot with quantiles and quartiles
-p_ridge_sum_quantiles <- ggplot(total_sum_points, aes(x = total_sum_points, y = knowledge, fill = factor(stat(quantile)))) +
+p_ridge_max_scores_quantiles <- ggplot(max_scores, aes(x = max_actual_score, y = knowledge, fill = factor(stat(quantile)))) +
   stat_density_ridges(
     geom = "density_ridges_gradient",
     calc_ecdf = TRUE,
@@ -569,114 +623,47 @@ p_ridge_sum_quantiles <- ggplot(total_sum_points, aes(x = total_sum_points, y = 
     quantile_lines = TRUE
   ) +
   scale_fill_viridis_d(name = "Quartiles") +
-  labs(title = "Total Sum Points Distribution per Knowledge Area", x = "Total Sum Points", y = "Knowledge Area") +
+  labs(title = "Max Actual Scores Distribution per Knowledge Area", x = "Max Actual Score", y = "Knowledge Area") +
   theme_ridges() +
   theme(
     axis.text.y = element_text(size = 8),
-    axis.title.x = element_text(size = 14, margin = margin(t = 20)),
-    axis.title.y = element_text(size = 14, margin = margin(r = 20)),
-    plot.title = element_text(size = 14, face = "bold", margin = margin(b = 20)),
-    legend.position = "right"
-  )
+    axis.title.x = element_text(size = 10, margin = margin(t = 10), hjust = 0.5),
+    axis.title.y = element_text(size = 10, margin = margin(r = 10), hjust = 0.5),
+    plot.title = element_text(size = 10, face = "bold", margin = margin(b = 20)),
+    legend.position = "right",
+    legend.title = element_text(size = 8, face = "bold"),  # Customize the legend title font
+    legend.text = element_text(size = 8
+  ))
 
 # Print the ridge plot
-print(p_ridge_sum_quantiles)
-
+print(p_ridge_max_scores_quantiles)
 
 ```
+
+From the plot, we can observe distinct patterns in score distribution across different knowledge areas. Knowledge areas with prominent yellow sections indicate that students performed well in these areas.Areas with more purple suggest lower student performance, we can tell the performance of students getting highest score on the knowledge y9W5d, s8Y2f, m3D1v, k4W1c and g7R2j are quite similar. R8S3g has more students get score of 0. Areas with a wider distribution of colors and less sharp peaks, indicate more variability in student performance, such as knowledge b3C9s
+
+### 2.2.2 Distribution of Total Mastery Points by Knowledge
 
 ```{r}
 library(dplyr)
 library(ggplot2)
-library(ggridges)
-library(viridis)
 
-# Check the column names in adjusted_scores
-print(colnames(adjusted_scores))
+# Assuming your dataframe is named knowledge_mastery and it has columns 'knowledge' and 'total_score'
 
-# Ensure 'points' is numeric and check the conversion
-adjusted_scores <- adjusted_scores %>%
-  mutate(points = as.numeric(points))
-
-# Check for missing values and ensure data types
-print(summary(adjusted_scores))
-print(str(adjusted_scores))
-
-
-```
-
-```{r}
-# Calculate the maximum points for each student for each question and knowledge area
-max_points <- adjusted_scores %>%
-  group_by(student_ID, title_ID, knowledge) %>%
-  summarise(max_points = max(points, na.rm = TRUE), .groups = 'drop')
-
-# Aggregate to get the sum of maximum points for each knowledge area
-total_sum_points <- max_points %>%
+# Calculate the mean total score for each knowledge area
+mean_scores <- knowledge_mastery %>%
   group_by(knowledge) %>%
-  summarise(total_sum_points = sum(max_points, na.rm = TRUE), .groups = 'drop')
+  summarize(mean_total_score = mean(total_score, na.rm = TRUE)) %>%
+  arrange(desc(mean_total_score))
 
-# Check the aggregated data
-print(total_sum_points)
-print(str(total_sum_points))
+# Reorder the factor levels of knowledge based on the mean total scores
+knowledge_mastery <- knowledge_mastery %>%
+  mutate(knowledge = factor(knowledge, levels = mean_scores$knowledge))
 
-```
-
-```{r}
-library(dplyr)
-library(ggplot2)
-library(ggridges)
-library(viridis)
-
-# Check the column names in adjusted_scores
-print(adjusted_scores)
-
-# Ensure 'points' is numeric
-adjusted_scores <- adjusted_scores %>%
-  mutate(points = as.numeric(points))
-
-# Calculate the maximum points for each student for each question and knowledge area
-max_points <- adjusted_scores %>%
-  group_by(student_ID, title_ID, knowledge) %>%
-  summarise(max_points = max(points, na.rm = TRUE), .groups = 'drop')
-
-# Check the aggregated data
-print(head(max_points))
-
-# Create the ridge plot with quantiles and quartiles
-p_ridge_sum_quantiles <- ggplot(max_points, aes(x = max_points, y = knowledge, fill = factor(stat(quantile)))) +
-  stat_density_ridges(
-    geom = "density_ridges_gradient",
-    calc_ecdf = TRUE,
-    quantiles = 4,
-    quantile_lines = TRUE
-  ) +
-  scale_fill_viridis_d(name = "Quartiles") +
-  labs(title = "Maximum Points Distribution per Knowledge Area",
-       x = "Maximum Points",
-       y = "Knowledge Area") +
-  theme_ridges() +
-  theme(
-    axis.text.y = element_text(size = 8),
-    axis.title.x = element_text(size = 14, margin = margin(t = 20)),
-    axis.title.y = element_text(size = 14, margin = margin(r = 20)),
-    plot.title = element_text(size = 14, face = "bold", margin = margin(b = 20)),
-    legend.position = "right"
-  )
-
-# Print the ridge plot
-print(p_ridge_sum_quantiles)
-```
-
-
-
-Distribution of Total Mastery Points by Knowledge
-
-```{r}
-# Create the ggplot2 boxplot
+# Create the ggplot2 boxplot with uniform color, ordered by mean total score
 p <- ggplot(knowledge_mastery, aes(x = knowledge, y = total_score)) +
-  geom_boxplot() +
-  geom_jitter(width = 0.2, alpha = 0.5) +  # Adding jitter for individual points
+  geom_boxplot(fill = "gray", color = "darkblue", alpha = 0.7) +
+  geom_jitter(width = 0.2, alpha = 0.5, color = "skyblue") +  # Adding jitter for individual points
   theme_minimal() +
   labs(
     title = "Distribution of Total Mastery Points by Knowledge",
@@ -687,10 +674,52 @@ p <- ggplot(knowledge_mastery, aes(x = knowledge, y = total_score)) +
     axis.text.x = element_text(angle = 45, hjust = 1)
   )
 
-p
+# Print the boxplot
+print(p)
+
+
 ```
 
+The knowledge areas `m3D1v`, `y9W5d`, and `t5V9e` demonstrate the highest median total mastery points, reflecting strong student performance and effective teaching methods. In contrast, `k4W1c`, `b3C9s`, and `s8Y2f` exhibit the lowest median scores, indicating these areas are more challenging for students and may require targeted interventions. Additionally, knowledge areas such as `t5V9e` and `g7R2j` show moderate performance, suggesting a fair understanding but highlighting opportunities for further improvement.
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Assuming your dataframe is named knowledge_mastery and it has columns 'sub_knowledge' and 'total_score'
+
+# Calculate the mean total score for each sub_knowledge area
+mean_scores <- knowledge_mastery %>%
+  group_by(sub_knowledge) %>%
+  summarize(mean_total_score = mean(total_score, na.rm = TRUE)) %>%
+  arrange(desc(mean_total_score))
+
+# Reorder the factor levels of sub_knowledge based on the mean total scores
+knowledge_mastery <- knowledge_mastery %>%
+  mutate(sub_knowledge = factor(sub_knowledge, levels = mean_scores$sub_knowledge))
+
+# Create the ggplot2 boxplot with uniform color, ordered by mean total score
+p <- ggplot(knowledge_mastery, aes(x = sub_knowledge, y = total_score)) +
+  geom_boxplot(fill = "gray", color = "darkblue", alpha = 0.7) +
+  geom_jitter(width = 0.2, alpha = 0.5, color = "skyblue") +  # Adding jitter for individual points
+  theme_minimal() +
+  labs(
+    title = "Distribution of Total Mastery Points by Sub-Knowledge",
+    x = "Sub-Knowledge",
+    y = "Total Mastery Points"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+# Print the boxplot
+print(p)
 
 
+```
 
+The boxplots provide a comprehensive view of the distribution of total mastery points across different knowledge and sub-knowledge areas. In the first plot, which shows the distribution of total mastery points by knowledge, there is significant variation in scores across the different knowledge areas. For instance, knowledge areas like `y9W5d`, `m3D1v`, have higher maximum scores, with some students achieving mastery points close to 20. This indicates that these areas are well-understood by many students. Conversely, areas such as `K4W1c` and `s8Y2f` show lower median scores and fewer high outliers, suggesting these might be less well-mastered or less attempted by students.
 
+The second plot breaks down the performance further by sub-knowledge areas. This detailed view shows how students perform on specific topics within each broader knowledge area. High-performing sub-knowledge areas, such as `m3D1v_r1d7f3j`, `y9W5d_q0w4mj5h`, and `t5V9e_e1k6cixp`, mirror their parent knowledge areas in achieving high maximum scores. In contrast, sub-knowledge areas like `s8Y2f_v4x8b9vj` and `g7R2j_j1g8g3v` have lower overall scores, indicating these topics might need more attention in teaching or resources. The plots also highlight consistency in scores.
+
+In summary, the high mastery knowledge areas identified are y9W5d, m3D1v, t5V9e, and g7R2j. These areas have shown higher maximum scores and mastery points, indicating good student understanding and performance. Within these knowledge areas, specific sub-knowledge topics such as y9W5d_q0w4mj5h, m3D1v_r1d7f3j, and t5V9e_e1k6cixp are particularly well-mastered, reflecting students' strong grasp of these topics. In contrast, sub-knowledge areas like s8Y2f_v4x8by9j and g7R2j_j1g8g3v show lower overall scores, indicating these topics are not well mastered by students and may require additional attention in teaching or resources.
