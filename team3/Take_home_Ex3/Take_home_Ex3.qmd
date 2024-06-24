@@ -738,24 +738,41 @@ Next to visualise the distribution of the 2 clusters across all the features use
 StudentLM_data_factor <- StudentLM_data
 StudentLM_data_factor$cluster <- as.character(StudentLM_data_factor$cluster)
 
-ggparcoord(data = StudentLM_data_factor, 
+ggparcoord(data = StudentLM_data_factor,
            columns = c(2:13), 
            groupColumn = 14,
            scale = "uniminmax",
            alphaLines = 0.2,
            boxplot = TRUE, 
            title = "Parallel Coordinates Plot of Students' learning modes")+
-   theme(axis.text.x = element_text(angle = 30))
+  theme(
+    plot.title = element_text(size = 20),
+    axis.text.x = element_text(angle = 30, hjust = 0.8, size = 18),
+    axis.text.y = element_text(size = 18),
+    axis.title.x = element_text(size = 18),
+    axis.title.y = element_text(size = 18),
+    legend.title = element_text(size = 18),
+    legend.text = element_text(size = 18)
+    )
 
-ggparcoord(data = StudentLM_data_factor, 
-columns = c(2:13), 
+ggparcoord(data = StudentLM_data_factor,
+           columns = c(2:13), 
            groupColumn = 14,
            scale = "uniminmax",
            alphaLines = 0.2,
            boxplot = TRUE, 
-           title = "Parallel Coordinates Plot of Students' learning modes")+
+           title = "Parallel Coordinates Split Plot of Students' learning modes")+
   facet_wrap(~ cluster)+
-  theme(axis.text.x = element_text(angle = 30))
+  theme(
+    plot.title = element_text(size = 20),
+    axis.text.x = element_text(angle = 30, hjust = 0.8, size = 18),
+    axis.text.y = element_text(size = 18),
+    axis.title.x = element_text(size = 18),
+    axis.title.y = element_text(size = 18),
+    legend.title = element_text(size = 18),
+    legend.text = element_text(size = 18)
+    )
+
 ```
 
 Based on the plot, there is varying degree of distinction in separation between the 2 clusters across different variables. The more distinct separation are in variables such as total timeconsume of answers, total memory size of answers, mean different answering methods per question, total answering attempts and question selection gini index, where cluster 2 tends to fare better in these metrics suggesting that perhaps cluster 2 may be the more hardworking learning mode among the 2.
@@ -1585,21 +1602,21 @@ model2 <- lm(`Sum of points Overall` ~
 ggcoefstats(model1, 
             output = "plot") +
   theme(
-    plot.title = element_text(size = 16),
-    axis.title = element_text(size = 14),
-    axis.text = element_text(size = 12),
-    legend.title = element_text(size = 14),
-    legend.text = element_text(size = 12)
+    plot.title = element_text(size = 22),
+    axis.title = element_text(size = 20),
+    axis.text = element_text(size = 20),
+    legend.title = element_text(size = 22),
+    legend.text = element_text(size = 20)
   )
 
 ggcoefstats(model2, 
             output = "plot") +
     theme(
-    plot.title = element_text(size = 16),
-    axis.title = element_text(size = 14),
-    axis.text = element_text(size = 12),
-    legend.title = element_text(size = 14),
-    legend.text = element_text(size = 12)
+    plot.title = element_text(size = 22),
+    axis.title = element_text(size = 20),
+    axis.text = element_text(size = 20),
+    legend.title = element_text(size = 22),
+    legend.text = element_text(size = 20)
   )
 
 
