@@ -7,6 +7,8 @@ website:
     left:
       - href: "Project_Proposal/Group6_project_proposal.html"
         text: "Project Proposal"
+      - href: "team3/Take_home_Ex3/Take_home_Ex3.html"
+        text: "Task3"
       - about.qmd
     right:
       - href: index.qmd
