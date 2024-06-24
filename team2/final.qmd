@@ -654,22 +654,20 @@ cluster_data <- cluster_data %>%
 
 # 合并 major 编码
 major_encode <- major_encode %>%
-  rename(major_name = title, major_code = title_encode)
+  rename(major_name = major1, major_code = major_encode)
 
 cluster_data <- cluster_data %>%
   left_join(major_encode, by = c("major" = "major_name")) %>%
   select(-major) %>%
   rename(major = major_code) 
 
-cluster_data <- cluster_data %>%
-  select(-ncol(cluster_data), -(ncol(cluster_data)-1), -(ncol(cluster_data)-2))
 # 查看结果
 head(cluster_data)
 ```
 
 # 4 visualization
 
-## 4.1 clustering
+## 4.1 k-means clustering
 
 ```{r}
 # 检查数据中的NA值
@@ -679,15 +677,15 @@ colSums(is.na(cluster_data))
 
 ```{r}
 # 检查数据中的NA值
-sum(is.na(cluster_data[, 2:9]))
+sum(is.na(cluster_data[, 2:10]))
 
 # 处理NA值，使用中位数填补
 cluster_data_clean <- cluster_data %>%
-  mutate(across(2:9, ~ifelse(is.na(.), median(., na.rm = TRUE), .)))
+  mutate(across(2:10, ~ifelse(is.na(.), median(., na.rm = TRUE), .)))
 
 write.csv(cluster_data_clean, 'data/cluster_data.csv', row.names = FALSE)
 # 计算相关矩阵
-SLM.cor <- cor(cluster_data_clean[, 2:9], use = "complete.obs")
+SLM.cor <- cor(cluster_data_clean[, 2:10], use = "complete.obs")
 
 # 绘制相关图
 corrplot(SLM.cor, 
@@ -709,7 +707,7 @@ colSums(is.na(cluster_data_clean))
 
 ```{r}
 # Exclude non-numeric columns
-StudentLM_data_numeric <- cluster_data_clean %>%
+cluster_numeric <- cluster_data_clean %>%
   select(-student_ID)
 
 # Function to compute silhouette widths
@@ -734,7 +732,7 @@ silhouette_analysis <- function(data, max_clusters) {
 max_clusters <- 18
 
 # Perform silhouette analysis
-avg_sil_widths <- silhouette_analysis(StudentLM_data_numeric, max_clusters)
+avg_sil_widths <- silhouette_analysis(cluster_numeric, max_clusters)
 
 # Plot the average silhouette widths
 plot(1:max_clusters, avg_sil_widths, type = "b", pch = 19, frame = FALSE,
@@ -766,7 +764,7 @@ compute_sse <- function(data, max_clusters) {
 max_clusters <- 18
 
 # Compute SSE for each number of clusters
-sse_values <- compute_sse(StudentLM_data_numeric, max_clusters)
+sse_values <- compute_sse(cluster_numeric, max_clusters)
 
 # Plot SSE against number of clusters
 plot(1:max_clusters, sse_values, type = "b", pch = 19, frame = FALSE,
@@ -818,60 +816,95 @@ pca_plot
 
 ```{r}
 #| fig-width: 15
-#| fig-height: 12
+#| fig-height: 10
 
-StudentLM_data_factor <- cluster_data_clean
-StudentLM_data_factor$cluster <- as.character(StudentLM_data_factor$cluster)
+cluster_factor <- cluster_data_clean
+cluster_factor$cluster <- as.character(cluster_factor$cluster)
 
-ggparcoord(data = StudentLM_data_factor, 
+ggparcoord(data = cluster_factor, 
            columns = c(2:10), 
            groupColumn = 11,
            scale = "uniminmax",
            alphaLines = 0.2,
            boxplot = TRUE, 
            title = "Parallel Coordinates Plot of Students' learning modes")+
-   theme(axis.text.x = element_text(angle = 30))
+   theme(axis.text.x = element_text(angle = 30, size = 20))
 ```
 
 ```{r}
-#| fig-width: 15
+#| fig-width: 30
+#| fig-height: 10
+
+ggparcoord(data = cluster_factor, 
+           columns = c(2:10), 
+           groupColumn = 11,
+           scale = "uniminmax",
+           alphaLines = 0.2,
+           boxplot = TRUE, 
+           title = "Parallel Coordinates Plot of Students' learning modes")+
+   theme(axis.text.x = element_text(angle = 30, size = 20))
+
+ggparcoord(data = cluster_factor, 
+columns = c(2:10), 
+           groupColumn = 11,
+           scale = "uniminmax",
+           alphaLines = 0.2,
+           boxplot = TRUE, 
+           title = "Parallel Coordinates Plot of Students' learning modes")+
+  facet_wrap(~ cluster)+
+  theme(axis.text.x = element_text(angle = 30, size = 20))
+```
+
+```{r}
+#| fig-width: 30
 #| fig-height: 30
+
+# 将分类特征转换为因子类型
+categorical_columns <- c("sex", "age", "knowledge_pre", "major", "method_pre", "title_pre", "cluster")
+cluster_data_clean[categorical_columns] <- lapply(cluster_data_clean[categorical_columns], as.factor)
+
 # 创建alluvial plot
-ggplot(cluster_data_clean,
-       aes(axis1 = sex, axis2 = major, axis3 = cluster,
-           y = week)) +
-  scale_x_discrete(limits = c("Sex", "Major", "Cluster"), expand = c(.1, .1)) +
-  geom_alluvium(aes(fill = cluster), width = 0.25) +
-  geom_stratum(width = 0.25) +
-  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+ggplot_alluvial <- ggplot(cluster_data_clean,
+       aes(axis1 = sex, axis2 = age, axis3 = knowledge_pre, axis4 = major, axis5 = method_pre, axis6 = title_pre, axis7 = cluster,
+           y = ..count..)) +
+  scale_x_discrete(limits = c("Sex", "Age", "Knowledge_pre", "Major", "Method_pre", "Title_pre", "Cluster"), expand = c(.1, .1)) +
+  geom_alluvium(aes(fill = cluster, text = cluster), width = 0.25) +
+  geom_stratum(aes(text = after_stat(stratum)), width = 0.25) +
   theme_minimal() +
-  labs(title = "Alluvial Plot of Students by Sex, Major, and Cluster",
+  labs(title = "Alluvial Plot of Students Data Distribution and Flow",
        y = "Number of Students",
-       x = "")
+       x = "") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1,size = 10))
+
+# 转换为互动图表并添加悬停信息
+interactive_plot <- ggplotly(ggplot_alluvial, tooltip = "text") %>% layout(showlegend = FALSE)
+
+# 显示互动图表
+interactive_plot
 ```
 
 ```{r}
 
-StudentLM_data1 <- select(StudentLM_data_factor, c(1, 2:10))
-StudentLM_data_matrix <- data.matrix(StudentLM_data1)
+cluster_factor1 <- select(cluster_factor, c(1, 2:10))
+cluster_factor_matrix <- data.matrix(cluster_factor1)
 
-StudentLM_data_d <- dist(normalize(StudentLM_data_matrix[, -c(1)]), method = "euclidean")
-dend_expend(StudentLM_data_d)[[3]]
+cluster_data_d <- dist(normalize(cluster_factor_matrix[, -c(1)]), method = "euclidean")
+dend_expend(cluster_data_d)[[3]]
 ```
 
 ```{r}
-StudentLM_data_clust <- hclust(StudentLM_data_d, method = "average")
-num_k <- find_k(StudentLM_data_clust)
+cluster_data_clust <- hclust(cluster_data_d, method = "average")
+num_k <- find_k(cluster_data_clust)
 plot(num_k)
 ```
 
 ```{r}
 #| fig-width: 15
 #| fig-height: 12
-heatmaply(normalize(StudentLM_data_matrix[, -c(1)]),
+heatmaply(normalize(cluster_factor_matrix[, -c(1)]),
           dist_method = "euclidean",
           hclust_method = "average",
-          k_row = 10,
+          k_row = 2,
           margins = c(NA,200,60,NA),
           fontsize_row = 4,
           fontsize_col = 5,          
@@ -881,7 +914,7 @@ heatmaply(normalize(StudentLM_data_matrix[, -c(1)]),
 )
 ```
 
-## 4.2 hierarchical clustering
+## 4.2 k-prototype clustering
 
 ```{r}
 # 安装并加载必要的包
@@ -928,6 +961,16 @@ cluster_data_for_daisy[, categorical_indices] <- lapply(cluster_data_for_daisy[,
 # 标准化数值特征
 cluster_data_for_daisy[, numerical_indices] <- scale(cluster_data_for_daisy[, numerical_indices])
 
+
+
+# 可视化trend score的分布情况
+ggplot(cluster_data_for_daisy, aes(x = trend_score)) +
+  geom_histogram(binwidth = 0.05, fill = "blue", color = "black", alpha = 0.7) +
+  theme_minimal() +
+  labs(title = "Distribution of Trend Score", x = "Trend Score", y = "Frequency")
+
+
+
 # 计算Gower's距离
 gower_dist <- daisy(cluster_data_for_daisy, metric = "gower")
 
@@ -952,6 +995,45 @@ if(length(cluster_assignments) == nrow(cluster_data)) {
   stop("The length of cluster assignments does not match the number of rows in the data.")
 }
 
+```
+
+```{r}
+
+# 检查数据结构
+str(cluster_data)
+
+# 将分类特征转换为因子类型
+categorical_columns <- c("sex", "age", "knowledge", "major1", "method", "title", "cluster")
+cluster_data[categorical_columns] <- lapply(cluster_data[categorical_columns], as.factor)
+
+# 转换数据以适合随机森林模型
+cluster_data <- cluster_data %>%
+  select(-student_ID)  # 排除不相关的列
+
+# 训练随机森林模型
+set.seed(123)  # 设置随机种子以保证结果可重复
+rf_model <- randomForest(cluster ~ ., data = cluster_data, importance = TRUE)
+
+# 获取变量重要性
+importance <- importance(rf_model)
+importance_df <- as.data.frame(importance)
+importance_df$Variable <- rownames(importance_df)
+rownames(importance_df) <- NULL
+
+# 按重要性排序
+importance_df <- importance_df %>% arrange(desc(MeanDecreaseGini))
+
+# 打印变量重要性
+print(importance_df)
+
+# 可视化变量重要性
+ggplot(importance_df, aes(x = reorder(Variable, MeanDecreaseGini), y = MeanDecreaseGini)) +
+  geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
+  coord_flip() +
+  theme_minimal() +
+  labs(title = "Variable Importance",
+       x = "Variables",
+       y = "Mean Decrease in Gini Index")
 ```
 
 ```{r}
@@ -1000,7 +1082,7 @@ ggplot_alluvial <- ggplot(cluster_data,
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 # 转换为互动图表并添加悬停信息
-interactive_plot <- ggplotly(ggplot_alluvial, tooltip = "text") %>% layout(showlegend = FALSE)
+interactive_plot <- ggplotly(ggplot_alluvial, tooltip = "text") %>% layout(showlegend = TRUE)
 
 # 显示互动图表
 interactive_plot
@@ -1016,31 +1098,29 @@ plot(dend, main = "Dendrogram of Students Data", xlab = "Students", sub = "", yl
 ```
 
 ```{r}
-# 将分类特征转换为因子类型
-categorical_columns <- c("sex", "age", "knowledge", "major1", "method", "title", "cluster")
-cluster_data[, categorical_columns] <- lapply(cluster_data[, categorical_columns], as.factor)
+StudentLM_data1 <- StudentLM_data  %>%
+  select(-cluster) 
+#  mutate(across(everything(), scale))
 
-# 创建一个新的表格，显示每个分类变量中每个因子在两个聚类中的占比
-create_proportion_table <- function(data, categorical_columns, cluster_col) {
-  proportion_tables <- lapply(categorical_columns, function(col) {
-    data %>%
-      group_by(!!sym(col), !!sym(cluster_col)) %>%
-      summarise(count = n(), .groups = 'drop') %>%
-      mutate(proportion = count / sum(count)) %>%
-      select(-count) %>%
-      spread(!!sym(cluster_col), proportion, fill = 0) %>%
-      rename_with(~paste0(col, "_", .), -!!sym(col))
-  })
-  
-  # 将所有表格合并到一个数据框中
-  proportion_table <- do.call(cbind, proportion_tables)
-  return(proportion_table)
-}
+row.names(StudentLM_data1) <- StudentLM_data$student_ID
+#StudentLM_data1 <- select(StudentLM_data1, c(1, 2:13))
+StudentLM_data_matrix1 <- data.matrix(StudentLM_data1)
 
-# 创建显示占比的表格
-proportion_table <- create_proportion_table(cluster_data, categorical_columns[-7], "cluster")
+StudentLM_data_d1 <- dist(
+  normalize(StudentLM_data_matrix1[, -c(1)]), 
+  method = "euclidean")
+dend_expend(StudentLM_data_d1)[[3]]
 
-# 查看结果
-print(proportion_table)
+StudentLM_data_clust <- hclust(StudentLM_data_d1, method = "average")
+num_k <- find_k(StudentLM_data_clust)
+plot(num_k)
 
+cluster_cut <- cutree(StudentLM_data_clust, k = 9)
+
+# Add the cluster assignment to the data
+StudentLM_data1_n <- normalize(StudentLM_data1)
+
+StudentLM_data1_n$cluster_hc <- as.factor(cluster_cut)
+
+glimpse(StudentLM_data1_n)
 ```
