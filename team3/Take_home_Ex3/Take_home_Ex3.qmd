@@ -988,7 +988,6 @@ Point score based on:
   -   Proportion of absolutely and partially correct attempts: 
     -   absolutely correct attempts - award 1 pt
     -   partially correct attempts - award (actual_score / question_score)
-    -   wrong attempts - penalise 1 pt
     -   normalise attempts across questions - uses (total point / total attempts)  
   -   use more than 1 method per question - multiply by no. of methods
 
@@ -1584,9 +1583,24 @@ model2 <- lm(`Sum of points Overall` ~
 
 
 ggcoefstats(model1, 
-            output = "plot")
+            output = "plot") +
+  theme(
+    plot.title = element_text(size = 16),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+
 ggcoefstats(model2, 
-            output = "plot")
+            output = "plot") +
+    theme(
+    plot.title = element_text(size = 16),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
 
 
 ```
