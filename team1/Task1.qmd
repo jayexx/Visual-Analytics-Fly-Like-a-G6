@@ -1,0 +1,1118 @@
+---
+title: "Take-home Exercise 3"
+author: "Xiao Fudi"
+date: "June 09, 2024"
+
+
+execute:
+  warning: false
+  code-flow : true
+  output: html_document
+---
+
+# 1. **Overview**
+
+NorthClass, a prominent higher education institution with over 300,000 registered learners, offers more than 100 courses across various disciplines. To enhance its digital age competitiveness, NorthClass launched a programming course requiring learners to complete tasks with multiple submissions. Post-course, the institution collects learning data to assess instructional quality. NorthClass plans to form a Smart Education Development and Innovation Group to leverage AI for improving education and nurturing innovative talents. Visualization and Visual Analytics are proposed to transform complex learning data into intuitive graphical representations, aiding in diagnosing knowledge mastery, monitoring learning trends, and identifying factors causing learning difficulties. The task is to design and implement a Visual Analytics solution to help NorthClass perceive learners' progress and provide recommendations for teaching strategy adjustments and course design improvements.
+
+# 2. **Our Task**
+
+From the Challenge, the key problem statement was to perform a comprehensive analysis of multiple datasets that describe various aspects of the learner’s profile, learning patterns and status, to derive key insights to enhance teaching strategies and course design.
+
+Consequently the key requirements based on the 5 stipulated tasks in the challenge were as follows.
+
+-   Task 1: To provide a quantitative assessment of the learners’ knowledge mastery and identify weak links in their knowledge system, based on the multi-dimensional attributes such as answer scores and answer status in the learners’ log records of the learners’ question-answering behaviors.
+
+    This would entail an analysis of the learners’ aggregate performance in their programming tasks (a.k.a. questions in the dataset), including measures of central tendency, or any notable patterns that can glean insights towards knowledge mastery and weaknesses from the given datasets.
+
+# 3. **The Datasets**
+
+The provided materials for the challenge include 3 datasets described below, as well as a separate document providing a more detailed description of the data and variables
+
+Dataset 1: Student Information - This comprises of 5 Cols, 1364 Rows, providing individualised demographic variables of the learners (a.k.a students) within the scope this project
+
+Dataset 2: Learning Subject Title Information - This comprises of 5 Cols, 44 Rows, providing variables of the questions from the programming tasks which are collated in the scope of this project
+
+Dataset 3: Class Submission Records - This comprises of multiple datasets, each with 10 Cols and various number of rows, providing supposedly the participating learners’ answering variables to the questions collated in the scope of this project
+
+# **4. Methodology**
+
+Our methodology systematically integrates data collection, data processing, analysis, pattern mining, modeling, and recommendations to create a comprehensive Visual Analytics solution for improving teaching strategies and course designs at NorthClass Institute, showing as below: ![](images/IMG_5447.jpg){width="633"}
+
+# **5. Getting Started**
+
+## **5.1 Loading R packages**
+
+The code chunk below imports the dataset into R environment by using [*`read_csv()`*](https://readr.tidyverse.org/reference/read_delim.html) function of [`readr`](https://readr.tidyverse.org/) package. **readr** is one of the tidyverse package.
+
+Read the individual CSV files into data frames. Check that the structure of each data frame is the same.
+
+```{r}
+pacman::p_load(dplyr,tidyr,stringr,readr,fs,purrr,ggplot2, plotly, ggstatsplot,igraph,lubridate,hms, vcd)
+```
+
+## **5.2 Importing data**
+
+The code chunk below imports the dataset into R environment by using [*`read_csv()`*](https://readr.tidyverse.org/reference/read_delim.html) function of [`readr`](https://readr.tidyverse.org/) package. **readr** is one of the tidyverse package.
+
+Read the individual CSV files into data frames. Check that the structure of each data frame is the same.
+
+```{r}
+df_StudentInfo <- read_csv("data/Data_StudentInfo.csv")
+df_TitleInfo <- read_csv("data/Data_TitleInfo.csv")
+
+```
+
+
+```{r}
+csv_file_list <- dir('data/Data_SubmitRecord')
+csv_file_list <- paste0("./data/Data_SubmitRecord/",csv_file_list)
+
+
+df_StudentRecord <- NULL
+for (file in csv_file_list) { # for every file...
+  file <- read_csv(file)
+    df_StudentRecord <- rbind(df_StudentRecord, file) # then stick together by rows
+}
+df_StudentRecord %>% glimpse()
+```
+
+
+## 5.3 Data Preparation
+
+### 5.3.1 Check Missing Values
+
+First, we identify students who are enrolled in more than one class. This helps us focus on those who need their class assignments reviewed. For students enrolled in multiple classes, we determine the correct class by identifying which class they attended most frequently. Finally, we update the class assignments in the original dataset. We replace the incorrect class values with the correct class determined in the previous step. This ensures that each student is associated with the class they attended most often. \#### Missing Data
+
+colSums() and is.NA() functions are used to search for missing values as a whole for the 3 data sets in the code chunks as follows.
+
+```{R}
+#| warning: false
+
+#Find the number of missing values for each col
+colSums(is.na(df_StudentInfo))
+```
+
+```{R}
+#| warning: false
+
+#Find the number of missing values for each col
+colSums(is.na(df_TitleInfo))
+```
+
+```{R}
+#| warning: false
+
+#Find the number of missing values for each col
+colSums(is.na(df_StudentRecord))
+
+```
+
+<details>
+
+<summary>Click to show code</summary>
+
+#### Check for duplicate rows
+
+Using duplicated(), duplicate rows in each of the 3 data sets are identified and extracted in the following code chunks.
+
+```{R}
+df_StudentInfo[duplicated(df_StudentInfo), ]
+```
+
+```{R}
+df_TitleInfo[duplicated(df_TitleInfo), ]
+```
+
+```{R}
+df_StudentRecord[duplicated(df_StudentRecord), ]
+```
+
+From the outputs above, there were no duplicate rows found.
+
+### Data Wrangling for Inconsistencies
+
+To get a better understanding of the variables in the original dataset, the glimpse() function is used in the following code chunks.
+
+```{R}
+glimpse(df_StudentInfo)
+```
+
+
+
+#### Identifying Other Unexpected Duplicate Values
+
+Considering intuitively unique values for certain variables or dependent variables, other forms of duplicates are also identified and cleaned where relevant.
+
+1.  Duplicate student_ID in StudentInfo
+
+```{r}
+# Find the duplicated student_IDs
+duplicates <- df_StudentInfo[duplicated(df_StudentInfo$student_ID) | duplicated(df_StudentInfo$student_ID, fromLast = TRUE), ]
+
+# Display the rows with duplicate student_IDs
+duplicates
+```
+
+From the output above, no duplicates found.
+
+2.  Duplicate title_ID (aka questions) in TitleInfo
+
+```{r}
+# Find the duplicated title_IDs
+duplicates <- df_TitleInfo[duplicated(df_TitleInfo$title_ID) | duplicated(df_TitleInfo$title_ID, fromLast = TRUE), ]
+
+# Display the rows with duplicate title_IDs
+duplicates
+```
+
+```{r}
+unique(duplicates$knowledge)
+unique(duplicates$sub_knowledge)
+```
+
+
+```{R}
+unique(df_TitleInfo$knowledge)
+unique(df_TitleInfo$sub_knowledge)
+```
+
+Based on the output above, there is a total of 8 knowledge areas and 15 sub-knowledge areas. This suggests that majority of the knowledge areas and approximately half of sub-knowledge areas have overlapping title_ID. From the nomenclature, each sub-knowledge area is tagged to only 1 knowledge area.
+
+To meaningfully analyse the relationship between knowledge areas & sub knowledge areas and other variables, additional columns are introduced where the values in these 2 columns are transposed as column labels with binary values to indicate the tagging of each question to that value. This is done in the following code chunk.
+3.  Duplicate class for each Individual Students in StudentRecord
+
+```{r}
+# Identify students with multiple classes
+students_multiple_classes <- df_StudentRecord %>%
+  group_by(student_ID) %>%
+  summarise(unique_classes = n_distinct(class)) %>%
+  filter(unique_classes > 1)
+
+students_multiple_classes_entries <- df_StudentRecord %>%
+  filter(student_ID %in% students_multiple_classes$student_ID) %>%
+  group_by(student_ID, class) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  arrange(desc(student_ID))
+
+# Display the results
+print(students_multiple_classes_entries)
+```
+
+Based on the output above, it is apparent that the 2nd class for each of the student above is an erroneous value. Hence this inconsistency will be cleaned in the following code chunk
+
+```{r}
+# Step 1: Identify the correct class for each student (the class with the highest frequency)
+correct_classes <- df_StudentRecord %>%
+  filter(student_ID %in% students_multiple_classes$student_ID) %>%
+  group_by(student_ID, class) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  slice(1) %>%
+  select(student_ID, correct_class = class)
+
+# Step 2: Replace wrong class values
+df_StudentRecord <- df_StudentRecord %>%
+  left_join(correct_classes, by = "student_ID") %>%
+  mutate(class = ifelse(!is.na(correct_class), correct_class, class)) %>%
+  select(-correct_class)
+```
+
+For completeness, a check is done for existence of other students with class that has no class number in the following code chunk.
+
+```{R}
+MissingClassNo <- df_StudentRecord %>%
+  filter(class == "class")
+MissingClassNo
+```
+
+Based on the output above, there are no further students with class without number.
+
+#### Identifying Other Unexpected and/or Missing Values
+
+1.  Missing Student_ID and title_ID in StudentRecord are also identified.
+
+```{r}
+missing_students <- anti_join(df_StudentRecord, df_StudentInfo, by = "student_ID")
+
+# Display the missing student IDs
+missing_student_ids <- missing_students %>% select(student_ID) %>% distinct()
+print(missing_student_ids)
+```
+
+```{r}
+missing_questions <- anti_join(df_StudentRecord, df_TitleInfo, by = "title_ID")
+
+# Display the missing title IDs
+missing_questions <- missing_questions %>% select(title_ID) %>% distinct()
+print(missing_questions)
+```
+
+There is 1 missing student between either StudentRecord or StudentInfo, but no missing questions. Since there is partial missing info on this student, it isn't meaningful to include in this analysis, hence the student_ID will be excluded in the following code chunk.
+
+```{R}
+df_StudentInfo <- df_StudentInfo %>%
+  filter (student_ID != '44c7cf3881ae07f7fb3eD')
+df_StudentRecord <- df_StudentRecord %>%
+  filter (student_ID != '44c7cf3881ae07f7fb3eD')
+```
+
+2.  Other unexpected values
+
+The unique values for each column is queried to check for unexpected values in the following code chunk, wherein Index, time, class, title_ID and student_ID are excluded since they will be dealt with separately
+
+```{R}
+unique(df_StudentRecord$state)
+unique(df_StudentRecord$score)
+unique(df_StudentRecord$method)
+unique(df_StudentRecord$memory)
+unique(df_StudentRecord$timeconsume)
+```
+
+```{R}
+unique(df_StudentInfo$sex)
+unique(df_StudentInfo$age)
+unique(df_StudentInfo$major)
+```
+
+```{R}
+unique(df_TitleInfo$score)
+unique(df_TitleInfo$knowledge)
+unique(df_TitleInfo$sub_knowledge)
+```
+
+From the outputs above, there is an unexpected value for state and timeconsume in StudentRecord.
+
+Starting with state, the rows with unexpected value(s) are queried in the following code chunk to better understand the number of affected rows.
+
+```{R}
+Outlier_state <- df_StudentRecord %>%
+  filter (state == '�������')
+Outlier_state
+```
+
+From the output above, there are only 6 rows that are affected. Further cross-validation with the data description document found that there should only be 12 unique values for this variable, and including this outlier state value will give 13. Hence this is likely a wrong entry, and so it will be excluded from the analysis in the following code chunk.
+
+```{R}
+df_StudentRecord <- df_StudentRecord %>%
+  filter (state != '�������')
+```
+
+For timeconsume, the rows with unexpected value(s) are queried in the following code chunk to better understand the number of affected rows.
+
+```{R}
+Outlier_timeconsume <- df_StudentRecord %>%
+  filter (timeconsume %in% c('-', '--'))
+Outlier_timeconsume
+```
+
+Based on the output, there is a sizable number of 2,612 rows with the unexpected value. Hence these rows will be kept in the analysis and replaced with 0 (since there is no existing values of 0 too), however subsequent analysis in this exercise involving the timeconsume variable will note these values as missing values. This is done in the following code chunk
+
+```{r}
+df_StudentRecord <- df_StudentRecord %>%
+  mutate(timeconsume = ifelse(timeconsume %in% c("-", "--"), 0, timeconsume))
+unique(df_StudentRecord$timeconsume)
+```
+
+#### Removing Index Col
+
+Each data set contains an index column, which is possibly to keep track of the original order and the total number of rows. This is no longer required and relevant in the analysis, hence it will be excluded.
+
+```{r}
+#remove index column
+df_StudentRecord <- df_StudentRecord %>% select(-1)
+df_TitleInfo <- df_TitleInfo %>% select(-1)
+df_StudentInfo <- df_StudentInfo %>% select(-1)
+
+```
+
+#### Correcting Data Types
+
+Based on the glimpse() function, the time variable of the StudentRecord is currently in numerical format. This will be corrected to date time format with the following steps.
+
+Step 1: From the data description document, the data collection period spans 148 days from 31/8/2023 to 25/1/2024, and the time variable of the StudentRecord in this data set is in seconds. This is compared against the min and max values of the time variable converted to days and deducted from the given start and end date of the collection period given, in the following code chunk.
+
+```{R}
+# Get the min and max values of the time column
+min_time <- min(df_StudentRecord$time, na.rm = TRUE)
+max_time <- max(df_StudentRecord$time, na.rm = TRUE)
+
+# Display the min & max values
+date_adjustment1 <- as.numeric(as.Date("2023-08-31")) - (min_time / 24 / 60 / 60)
+date_adjustment2 <- as.numeric(as.Date("2024-01-25")) - (max_time / 24 / 60 / 60)
+date_adjustmentavg <- as.Date((date_adjustment1 + date_adjustment2)/2, origin = "1970-01-01")
+date_adjustmentavg
+```
+
+Step 2: Apply date_adjustmentavg to the time variable to amend the data type to date time format in the folloiwing code chunk
+
+```{r}
+# Convert time from timestamp to POSIXct
+df_StudentRecord$time_change <- as.POSIXct(df_StudentRecord$time, origin=date_adjustmentavg, tz="UTC")
+
+glimpse(df_StudentRecord)
+```
+
+Further, the timeconsume variable will be converted to numeric, wherein since the '-' and '--' values found earlier had taken the value of 0, there will not be an issue of NA values affecting subsequent analysis.
+
+```{R}
+df_StudentRecord <- df_StudentRecord %>%
+  mutate(timeconsume = as.numeric(timeconsume))
+
+glimpse(df_StudentRecord)
+```
+
+### 5.3.4 Merge data
+
+<details>
+
+<summary>Click to show code</summary>
+
+
+```{r}
+# Merge StudentInfo with SubmitRecord based on student_ID
+merged_data <- merge(df_StudentRecord, df_StudentInfo, by = "student_ID")
+
+# Merge TitleInfo with the already merged data based on title_ID
+merged_data <- merge(merged_data, df_TitleInfo, by = "title_ID")
+
+merged_data <- merged_data %>%
+  rename(
+    actual_score = score.x,
+    question_score = score.y
+  )
+```
+
+</details>
+
+### 5.3.5 Point system for knowledge mastery
+
+The point system is designed to quantify a student's knowledge mastery based on their performance in answering questions. This system awards points based on the correctness of their answers, which helps in tracking their progress and identifying areas that need improvement.Point allocation as below:
+
+Learners will be rewarding 1 point for Absolutely correct Learners will be rewarding Actual score/ Question score points for partially correct Learners will get 0 for Error\
+Points will be normalized across number of attempts, such that the relative proportion of submissions will be considered rather absolute numbers in parts (a) to (c) above
+
+If learners attained absolutely correct scores, their mastery points will also be multiplied according to the numbers of methods used
+
+```{r}
+
+adjusted_scores <- merged_data %>%
+  mutate(points = case_when(
+    state == "Absolutely_Correct" ~ 1,
+    state == "Partially_Correct" ~ actual_score / question_score,
+    TRUE ~ 0 # default case for any unexpected states
+  ))
+
+mastery_scores <- adjusted_scores %>%
+  group_by(student_ID, title_ID, knowledge, class,sub_knowledge) %>%
+  summarise(
+    total_points = sum(points),
+    total_attempts = n(),
+    unique_methods = n_distinct(method),
+    absolutely_correct_methods = sum(points == 1)
+  ) %>%
+  mutate(
+    adjusted_points = total_points / total_attempts,
+    adjusted_points = adjusted_points * ifelse(absolutely_correct_methods > 0, unique_methods, 1)
+  )
+
+knowledge_mastery <- mastery_scores %>%
+  group_by(student_ID, class, knowledge, sub_knowledge) %>%
+  summarise(total_score = sum(adjusted_points)) %>%
+  left_join(df_StudentInfo %>% select(student_ID, sex, age, major), by = "student_ID") %>%
+  mutate(age = as.character(age))
+
+knowledge_expanded <- merged_data %>%
+  separate_rows(knowledge, sep = ",") %>%
+  mutate(knowledge = str_trim(knowledge))
+
+```
+
+<details>
+
+<summary>Click to show code</summary>
+
+```{r}
+summary(adjusted_scores)
+saveRDS(adjusted_scores, file = "adjusted_scores.RDS")
+```
+
+</details>
+
+```{r}
+# Calculate the total number of knowledge groups
+total_knowledge_groups <- knowledge_mastery %>%
+  pull(knowledge) %>%
+  unique() %>%
+  length()
+
+# Calculate total scores for each student
+total_scores <- knowledge_mastery %>%
+  group_by(student_ID, class) %>%
+  summarize(total_score = sum(total_score, na.rm = TRUE)) %>%
+  ungroup()
+
+# Calculate overall mastery by dividing the total score by the total number of knowledge groups
+overall_mastery <- total_scores %>%
+  mutate(overall_mastery = total_score / total_knowledge_groups) %>%
+  filter (total_score > 1)  %>%
+  left_join(df_StudentInfo %>% select(student_ID, sex, age, major), by = "student_ID") %>%
+  mutate(age = as.character(age))
+
+# View the overall mastery for each student
+print(overall_mastery)
+
+saveRDS(overall_mastery, file = "overall_mastery.RDS")
+
+```
+
+# 6.Visualization on Learners Question-Answering Performance
+
+To provide a quantitative assessment of the learners’ knowledge mastery and identify weak links in their knowledge system.
+
+## 6.1 Overview
+
+### Distribution of overview
+
+<details>
+
+<summary>Click to show code</summary>
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(patchwork)
+
+# Ensure actual_score is numeric
+merged_data$actual_score <- as.numeric(as.character(merged_data$actual_score))
+
+# Convert necessary columns to factors if they are not numeric
+merged_data$title_ID <- as.factor(merged_data$title_ID)
+merged_data$state <- as.factor(merged_data$state)
+merged_data$method <- as.factor(merged_data$method)
+merged_data$class <- as.factor(merged_data$class)
+merged_data$sex <- as.factor(merged_data$sex)
+merged_data$major <- as.factor(merged_data$major)
+merged_data$age <- as.numeric(as.character(merged_data$age))
+
+# Aggregate data by student_ID to ensure unique counts for class, age, sex, and major
+unique_students <- merged_data %>%
+  group_by(student_ID) %>%
+  summarise(class = first(class),
+            age = first(age),
+            sex = first(sex),
+            major = first(major),
+            .groups = 'drop')
+
+# Plot distributions
+p1 <- ggplot(merged_data, aes(x = title_ID)) +
+  geom_bar(fill = 'steelblue', color = 'black') +
+  labs(x = 'Title ID', y = 'Number') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+
+p2 <- ggplot(merged_data, aes(x = actual_score)) +
+  geom_histogram(binwidth = 1, fill = 'steelblue', color = 'black') +
+  labs(x = 'Actual Score', y = 'Number')
+
+p3 <- ggplot(merged_data, aes(x = state)) +
+  geom_bar(fill = 'steelblue', color = 'black') +
+  labs(x = 'State', y = 'Number') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+
+p4 <- ggplot(unique_students, aes(x = major)) +
+  geom_bar(fill = 'steelblue', color = 'black') +
+  labs(x = 'Major', y = 'Counts') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+
+p5 <- ggplot(unique_students, aes(x = age)) +
+  geom_histogram(binwidth = 1, fill = 'steelblue', color = 'black') +
+  labs(x = 'Age', y = 'Counts')
+
+p6 <- ggplot(unique_students, aes(x = class)) +
+  geom_bar(fill = 'steelblue', color = 'black') +
+  labs(x = 'Class', y = 'Counts') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+
+p7 <- ggplot(unique_students, aes(x = sex)) +
+  geom_bar(fill = 'steelblue', color = 'black') +
+  labs(x = 'Sex', y = 'Counts')
+
+# Combine the plots into one layout
+combined_plot <- (p1 | p2 | p3) / (p4 | p5 | p6 | p7)
+```
+
+</details>
+
+```{r}
+print(combined_plot)
+
+```
+
+## 6.2 Pertentage of attempted Knowledge
+
+The plot reveals the distribution of different knowledge areas based on their occurrence percentages. It shows that the knowledge areas are not evenly distributed among the students, with some areas being more prevalent than others.
+
+<details>
+
+<summary>Click to show code</summary>
+
+```{r}
+# Ensure 'knowledge' is a factor
+knowledge_expanded$knowledge <- as.factor(knowledge_expanded$knowledge)
+
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+
+# Check the column names in knowledge_expanded
+print(colnames(knowledge_expanded))
+
+# Calculate the count of questions for each knowledge area
+knowledge_counts <- knowledge_expanded %>%
+  group_by(knowledge) %>%
+  summarise(count = n(), .groups = 'drop')
+
+# Calculate the total number of questions
+total_questions <- nrow(knowledge_expanded)
+
+# Calculate the percentage of questions for each knowledge area
+knowledge_percentages <- knowledge_counts %>%
+  mutate(percentage = count / total_questions * 100)
+
+# Add percentage labels to the data frame
+knowledge_percentages <- knowledge_percentages %>%
+  mutate(label = paste0(round(percentage, 1), "%"))
+
+# Reorder knowledge areas by percentage
+knowledge_percentages <- knowledge_percentages %>%
+  arrange(desc(percentage)) %>%
+  mutate(knowledge = factor(knowledge, levels = knowledge))
+
+# Create a histogram for knowledge percentages with percentage labels
+p_knowledge_histogram <- ggplot(knowledge_percentages, aes(x = knowledge, y = percentage, fill = knowledge)) +
+  geom_bar(stat = "identity", color = 'black') +
+  labs(title = 'Attempted Percentage of Knowledge Area', x = 'Knowledge Area', y = 'Percentage') +
+  scale_fill_brewer(palette = "Set3") +
+  geom_text(aes(label = label), vjust = -0.5, size = 3, color = "black") +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.title.x = element_text(size = 14, margin = margin(t = 20)),
+    axis.title.y = element_text(size = 14, margin = margin(r = 20)),
+    plot.title = element_text(size = 12, face = "bold", margin = margin(b = 20)),
+    legend.position = "none"
+  )
+```
+
+</details>
+
+```{r}
+print(p_knowledge_histogram)
+
+```
+
+::: callout-tip
+-   The least represented knowledge areas are `4W1c` (2.3%) and `5Y2f` (2.2%). These areas show significantly lower representation compared to the major knowledge areas.
+
+-   The higher percentages in certain knowledge areas suggest that students may be more focused or more frequently exposed to these areas.
+:::
+
+## 
+
+## 6.2 Performance by questions
+
+### 6.2.1 Static heatmap for average max actual score per question (normalised and non normalised)
+
+<details>
+
+<summary>Click to show code</summary>
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+# Check the column names in knowledge_expanded
+print(knowledge_expanded)
+
+# Ensure 'actual_score' and 'question_score' are numeric
+knowledge_expanded <- knowledge_expanded %>%
+  mutate(actual_score = as.numeric(actual_score),
+         question_score = as.numeric(question_score))
+
+# Calculate the normalised highest actual_score for each student for each question and knowledge area
+highest_scores <- knowledge_expanded %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(highest_actual_score = max(actual_score, na.rm = TRUE)/question_score, .groups = 'drop')
+
+# Calculate the normalised average highest actual_score for each title_ID and knowledge area
+average_highest_scores <- highest_scores %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(average_highest_score = mean(highest_actual_score, na.rm = TRUE), .groups = 'drop')
+
+# Retrieve the question_score for each title_ID and knowledge
+average_highest_scores <- average_highest_scores %>%
+  left_join(knowledge_expanded %>% select(title_ID, question_score) %>% distinct(), by = "title_ID")
+
+# Ensure 'knowledge' is treated as a factor for ggplot2 aesthetics
+average_highest_scores <- average_highest_scores %>%
+  mutate(knowledge = as.factor(knowledge))
+
+# Define the color scale limits based on your data range
+color_scale_limits <- range(average_highest_scores$average_highest_score, na.rm = TRUE)
+
+# Create the heatmap using ggplot2 with custom hover text
+p_heatmap <- ggplot(average_highest_scores, aes(x = knowledge, y = title_ID, fill = average_highest_score,
+                                       text = paste("Avg Highest Score:", round(average_highest_score, 2),
+                                                    "<br>Question Score:", question_score))) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", mid = "green", high = "red", midpoint = 0.9, 
+                       limits = color_scale_limits, name = "Avg Highest Score") +
+  labs(title = "Normalised Average Highest Actual Score per Knowledge Area per Question",
+       x = "Knowledge Areas",
+       y = "Question IDs",
+       fill = "Avg Highest Score") +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y = element_text(size = 6),
+    axis.title.x = element_text(size = 10, margin = margin(t = 15)),
+    axis.title.y = element_text(size = 10, margin = margin(r = 15)),
+    plot.title = element_text(size = 8, face = "bold", margin = margin(b = 15)),
+    legend.title = element_text(size = 8),  # Adjust legend title size
+    legend.text = element_text(size = 8),  # Adjust legend text size
+    legend.key.size = unit(1, "cm"),        # Adjust size of the legend keys
+    legend.position = "right"
+  )
+
+# Convert the ggplot object to a plotly object for interactivity
+p_heatmap_interactive1 <- ggplotly(p_heatmap, tooltip = "text")
+```
+
+</details>
+
+```{r}
+p_heatmap_interactive1 
+```
+
+::: {.callout-tip appearance="minimal"}
+In the Knowledge Area g7R2j, students perform consistently well on Question_5fgqjSBwTPG7KUV3it6O, achieving the highest average score of 0.96. This is the same score as seen in Question_Az73sM0rHfWVKuc4X2kL from the Knowledge Area y9W5d, indicating a strong understanding of the concepts in both g7R2j and y9W5d. Following closely is the Knowledge Area t5V9e, where students score an average highest score of 0.95 on Question_3MwAFlmNO8EKrpY5zjUd.
+
+However, in the Knowledge Area g7R2j, Question_xqlJkmRaP0otZcX4fK3W stands out with the lowest average highest score of 0.85, suggesting that this particular question poses more challenges for students. Meanwhile, all questions in the Knowledge Area r8S3g show a relatively low average highest score, around 0.9, indicating a consistent level of difficulty across this area.
+
+Overall, Knowledge Area g7R2j exhibits the most diverse range of scores, highlighting variability in student performance that could be due to a mix of easier and more challenging questions.
+:::
+
+<details>
+
+<summary>Click to show code</summary>
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+print(knowledge_expanded)
+
+# Ensure 'actual_score' and 'question_score' are numeric
+knowledge_expanded <- knowledge_expanded %>%
+  mutate(actual_score = as.numeric(actual_score),
+         question_score = as.numeric(question_score))
+
+# Calculate the highest actual_score for each student for each question and knowledge area
+highest_scores <- knowledge_expanded %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(highest_actual_score = max(actual_score, na.rm = TRUE), .groups = 'drop')
+
+# Calculate the average highest actual_score for each title_ID and knowledge area
+average_highest_scores <- highest_scores %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(average_highest_score = mean(highest_actual_score, na.rm = TRUE), .groups = 'drop')
+
+# Retrieve the question_score for each title_ID and knowledge
+average_highest_scores <- average_highest_scores %>%
+  left_join(knowledge_expanded %>% select(title_ID, question_score) %>% distinct(), by = "title_ID")
+
+# Ensure 'knowledge' is treated as a factor for ggplot2 aesthetics
+average_highest_scores <- average_highest_scores %>%
+  mutate(knowledge = as.factor(knowledge))
+
+# Define the color scale limits based on your data range
+color_scale_limits <- range(average_highest_scores$average_highest_score, na.rm = TRUE)
+
+# Create the heatmap using ggplot2 with custom hover text
+p_heatmap <- ggplot(average_highest_scores, aes(x = knowledge, y = title_ID, fill = average_highest_score,
+                                       text = paste("Avg Highest Score:", round(average_highest_score, 2),
+                                                    "<br>Question Score:", question_score))) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", mid = "green", high = "red", midpoint = 2.5, 
+                       limits = color_scale_limits, name = "Avg Highest Score") +
+  labs(title = "Non-normalised Average Highest Actual Score per Knowledge Area per Question",
+       x = "Knowledge Areas",
+       y = "Question IDs",
+       fill = "Avg Highest Score") +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y = element_text(size = 6),
+    axis.title.x = element_text(size = 10, margin = margin(t = 15)),
+    axis.title.y = element_text(size = 10, margin = margin(r = 15)),
+    plot.title = element_text(size = 8, face = "bold", margin = margin(b = 15)),
+    legend.title = element_text(size = 8),  # Adjust legend title size
+    legend.text = element_text(size = 8),  # Adjust legend text size
+    legend.key.size = unit(1, "cm"),        # Adjust size of the legend keys
+    legend.position = "right"
+  )
+
+# Convert the ggplot object to a plotly object for interactivity
+p_heatmap_interactive2 <- ggplotly(p_heatmap, tooltip = "text")
+```
+
+</details>
+
+```{r}
+p_heatmap_interactive2
+```
+
+::: {.callout-tip appearance="simple"}
+The plot illustrates the average highest scores students achieve across different knowledge areas. In Knowledge Area b3C9s, Question_FNg8X9v5zcbB1tQrxHR3 stands out with a question score of 4, resulting in a more intense color on the plot. Conversely, Knowledge Area r8S3g has questions with a question score of 1, and Knowledge Area t5V9e has questions with a question score of 2. The remaining questions across other knowledge areas generally have a question score of 2.
+
+Although many scores are displayed in shades of green, indicating a similar range of scores, the color intensity variations provide insights into the relative difficulty and performance across different questions.
+
+### 
+:::
+
+### 6.2.2 Static heatmap for Average of methods used per question
+
+<details>
+
+<summary>Click to show code</summary>
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+# Check the column names in mastery_scores
+print(mastery_scores)
+
+# Ensure 'unique_methods' column is numeric if needed
+mastery_scores <- mastery_scores %>%
+  mutate(unique_methods = as.numeric(unique_methods))
+
+# Aggregate data to calculate the average number of unique methods per question and knowledge area
+method_counts <- mastery_scores %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(avg_methods = mean(unique_methods, na.rm = TRUE), .groups = 'drop')
+
+# Further aggregate to get the average number of methods across all students for each title_ID and knowledge
+method_counts_summary <- method_counts %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(avg_methods = mean(avg_methods, na.rm = TRUE), .groups = 'drop')
+
+# Ensure 'knowledge' is treated as a factor for ggplot2 aesthetics
+method_counts_summary <- method_counts_summary %>%
+  mutate(knowledge = as.factor(knowledge))
+
+# Create the heatmap using ggplot2
+p_heatmap <- ggplot(method_counts_summary, aes(x = knowledge, y = title_ID, fill = avg_methods,
+                                               text = paste("Knowledge Area:", knowledge,
+                                                            "<br>Title ID:", title_ID,
+                                                            "<br>Avg Methods:", round(avg_methods, 2)))) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "white", high = "blue", mid = "green", midpoint = mean(method_counts_summary$avg_methods, na.rm = TRUE), name = "Avg Methods") +
+  labs(title = "Average Methods used per Knowledge Area per Question",
+       x = "Knowledge Areas",
+       y = "Question IDs",
+       fill = "Avg Methods") +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y = element_text(size = 8),
+    axis.title.x = element_text(size = 10, margin = margin(t = 20)),
+    axis.title.y = element_text(size = 10, margin = margin(r = 20)),
+    plot.title = element_text(size = 8, face = "bold", margin = margin(b = 20)),
+    legend.title = element_text(size = 8),  # Adjust legend title size
+    legend.text = element_text(size = 8),  # Adjust legend text size
+    legend.key.size = unit(1, "cm"),        # Adjust size of the legend keys
+    legend.position = "right"
+  )
+
+# Convert the ggplot object to a plotly object for interactivity
+p_heatmap_interactive_method <- ggplotly(p_heatmap, tooltip = "text")
+```
+
+</details>
+
+```{r}
+p_heatmap_interactive_method
+```
+
+::: {.callout-tip appearance="simple"}
+Students applied more methods in certain knowledge areas, particularly in `g7R2j` with Question_5fgqjSBwTPG7KUV3it6O, in `r8S3g` with Question_q7OpB2zCMmW9wS8uNt3H and Question_fZrP3FJ4ebUogW9V7taS, and in `t5V9e` with Question_3oPyUzDmQtcMfLpGZ0jW and Question_3MwAFlmNO8EKrpY5zjUd. This indicates a higher level of engagement and perhaps complexity in these specific areas and questions.
+:::
+
+### 6.2.3 Static heatmap for Total points per question
+
+<details>
+
+<summary>Click to show code</summary>
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+
+# Ensure 'points' is numeric
+adjusted_scores <- adjusted_scores %>%
+  mutate(points = as.numeric(points))
+
+# Calculate total attempts per question per knowledge area for each student
+adjusted_scores <- adjusted_scores %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  mutate(attempts = n()) %>%
+  ungroup()
+
+# Aggregate data to calculate the total points and total attempts per question and knowledge area for each student
+total_points_attempts <- adjusted_scores %>%
+  group_by(student_ID, title_ID, knowledge) %>%
+  summarise(total_points_sum = sum(points, na.rm = TRUE),
+            total_attempts = sum(attempts, na.rm = TRUE), .groups = 'drop')
+
+# Further aggregate to get the total points sum and total attempts across all students for each title_ID and knowledge
+total_summary <- total_points_attempts %>%
+  group_by(title_ID, knowledge) %>%
+  summarise(total_points_sum = sum(total_points_sum, na.rm = TRUE),
+            total_attempts = sum(total_attempts, na.rm = TRUE), .groups = 'drop')
+
+# Ensure 'knowledge' is treated as a factor for ggplot2 aesthetics
+total_summary <- total_summary %>%
+  mutate(knowledge = as.factor(knowledge))
+
+# Define the color scale limits based on your data range
+color_scale_limits <- range(total_summary$total_points_sum, na.rm = TRUE)
+
+# Create the heatmap using ggplot2 with custom hover text
+p_heatmap <- ggplot(total_summary, aes(x = knowledge, y = title_ID, fill = total_points_sum,
+                                       text = paste("Total Points:", total_points_sum, "<br>Total Attempts:", total_attempts))) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", mid = "green", high = "red", midpoint = mean(color_scale_limits, na.rm = TRUE), 
+                       limits = color_scale_limits, name = "Total Points") +
+  labs(title = "Total Points per Question per Knowledge Area",
+       x = "Knowledge Areas",
+       y = "Question IDs",
+       fill = "Total Points") +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y = element_text(size = 6),
+    axis.title.x = element_text(size = 10, margin = margin(t = 15)),
+    axis.title.y = element_text(size = 10, margin = margin(r = 15)),
+    plot.title = element_text(size = 8, face = "bold", margin = margin(b = 15)),
+    legend.title = element_text(size = 8),  # Adjust legend title size
+    legend.text = element_text(size = 8),  # Adjust legend text size
+    legend.key.size = unit(1, "cm"),        # Adjust size of the legend keys
+    legend.position = "right"
+  )
+
+# Convert the ggplot object to a plotly object for interactivity
+p_heatmap_interactive <- ggplotly(p_heatmap, tooltip = "text")
+
+```
+
+</details>
+
+```{r}
+# Print the interactive heatmap
+p_heatmap_interactive
+
+```
+
+::: {.callout-tip appearance="simple"}
+Based on the point system, there are notable concentrations of total points in various knowledge areas. High Total Points Concentration is observed in the `g7R2j` knowledge area, particularly for Question_5fgqjSBwTPG7KUV3it6O, which has the highest total points indicated by the darker blue color. This suggests that a significant number of students attempted this question and scored well. Following closely is the `t5V9e` knowledge area with Question_3MwAFlmNO8EKrpY5zjUd, which has the second highest total points. Middle Points Concentration is seen in several knowledge areas:
+
+-   In `r8S3g` with Question_q7OpB2zCMmW9wS8uNt3H.
+
+-   In `m3D1v` with Questions_QRm48lXxzdP7Tn1WgNOf and Question_4nHcauCQ0Y6Pm8DgKlLo.
+
+-   In `y9W5d` with Questions_QRm48lXxzdP7Tn1WgNOf, Question_Az73sM0rHfWVKuc4X2kL, and Question_EhVPdmlB31M8WKGqL0wc.
+
+Low Points Concentration is observed in the `r8S3g` and `m3D1v` knowledge areas, indicating that these areas may be more challenging for students or less frequently attempted.
+:::
+
+## 6.3 Performance by knowledge
+
+### 6.3.1 Ridge plot for sum(max actual score per qns) for 8 knowledge normalised
+
+<details>
+
+<summary>Click to show code</summary>
+
+```{r}
+# Load the necessary library
+library(dplyr)
+
+# Group by 'title_ID', 'student_ID', and 'knowledge' and find the max 'actual_score' for each group
+max_scores <- adjusted_scores %>%
+  group_by(title_ID, student_ID, knowledge) %>%
+  summarize(max_actual_score = max(actual_score, na.rm = TRUE))
+
+# Display the result
+print(max_scores)
+```
+
+```{r}
+# Load the necessary libraries
+library(dplyr)
+library(ggplot2)
+library(ggridges)
+library(viridis)  # For the viridis color palette
+
+# Assuming your dataframe is named adjusted_score
+# and it has columns 'title_ID', 'student_ID', 'knowledge', and 'actual_score'
+
+# Group by 'title_ID', 'student_ID', and 'knowledge' and find the max 'actual_score' for each group
+max_scores <- adjusted_scores %>%
+  group_by(title_ID, student_ID, knowledge) %>%
+  summarize(max_actual_score = max(actual_score, na.rm = TRUE), .groups = 'drop')
+
+# Check the aggregated data
+print(head(max_scores))
+
+# Create the ridge plot with quantiles and quartiles
+p_ridge_max_scores_quantiles <- ggplot(max_scores, aes(x = max_actual_score, y = knowledge, fill = factor(stat(quantile)))) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE,
+    quantiles = 4,
+    quantile_lines = TRUE
+  ) +
+  scale_fill_viridis_d(name = "Quartiles") +
+  labs(title = "Max Actual Scores Distribution per Knowledge Area", x = "Max Actual Score", y = "Knowledge Area") +
+  theme_ridges() +
+  theme(
+    axis.text.y = element_text(size = 8),
+    axis.title.x = element_text(size = 10, margin = margin(t = 10), hjust = 0.5),
+    axis.title.y = element_text(size = 10, margin = margin(r = 10), hjust = 0.5),
+    plot.title = element_text(size = 10, face = "bold", margin = margin(b = 20)),
+    legend.position = "right",
+    legend.title = element_text(size = 8),  # Customize the legend title font
+    legend.text = element_text(size = 8
+  ))
+
+```
+
+</details>
+
+```{r}
+# Print the ridge plot
+print(p_ridge_max_scores_quantiles)
+
+```
+
+::: {.callout-tip appearance="simple"}
+From the plot, we can observe distinct patterns in score distribution across different knowledge areas. Knowledge areas with prominent yellow sections indicate that students performed well in these areas.Areas with more purple suggest lower student performance, we can tell the performance of students getting highest score on the knowledge y9W5d, s8Y2f, m3D1v, k4W1c and g7R2j are quite similar. R8S3g has more students get score of 0. Areas with a wider distribution of colors and less sharp peaks, indicate more variability in student performance, such as knowledge b3C9s
+:::
+
+### 6.3.2 Distribution of Total Mastery Points by Knowledge
+
+<details>
+
+<summary>Click to show code</summary>
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Assuming your dataframe is named knowledge_mastery and it has columns 'knowledge' and 'total_score'
+
+# Calculate the mean total score for each knowledge area
+mean_scores <- knowledge_mastery %>%
+  group_by(knowledge) %>%
+  summarize(mean_total_score = mean(total_score, na.rm = TRUE)) %>%
+  arrange(desc(mean_total_score))
+
+# Reorder the factor levels of knowledge based on the mean total scores
+knowledge_mastery <- knowledge_mastery %>%
+  mutate(knowledge = factor(knowledge, levels = mean_scores$knowledge))
+
+# Create the ggplot2 boxplot with uniform color, ordered by mean total score
+p <- ggplot(knowledge_mastery, aes(x = knowledge, y = total_score)) +
+  geom_boxplot(fill = "gray", color = "darkblue", alpha = 0.7) +
+  geom_jitter(width = 0.2, alpha = 0.5, color = "skyblue") +  # Adding jitter for individual points
+  theme_minimal() +
+  labs(
+    title = "Distribution of Total Mastery Points by Knowledge",
+    x = "Knowledge",
+    y = "Total Mastery Points"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
+
+</details>
+
+```{r}
+# Print the boxplot
+print(p)
+```
+
+::: {.callout-tip appearance="simple"} The knowledge areas `m3D1v`, `y9W5d`, and `t5V9e` demonstrate the highest median total mastery points, reflecting strong student performance and effective teaching methods. In contrast, `k4W1c`, `b3C9s`, and `s8Y2f` exhibit the lowest median scores, indicating these areas are more challenging for students and may require targeted interventions. Additionally, knowledge areas such as `t5V9e` and `g7R2j` show moderate performance, suggesting a fair understanding but highlighting opportunities for further improvement.
+
+<details>
+
+:::
+
+<summary>Click to show code</summary>
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Assuming your dataframe is named knowledge_mastery and it has columns 'sub_knowledge' and 'total_score'
+
+# Calculate the mean total score for each sub_knowledge area
+mean_scores <- knowledge_mastery %>%
+  group_by(sub_knowledge) %>%
+  summarize(mean_total_score = mean(total_score, na.rm = TRUE)) %>%
+  arrange(desc(mean_total_score))
+
+# Reorder the factor levels of sub_knowledge based on the mean total scores
+knowledge_mastery <- knowledge_mastery %>%
+  mutate(sub_knowledge = factor(sub_knowledge, levels = mean_scores$sub_knowledge))
+
+# Create the ggplot2 boxplot with uniform color, ordered by mean total score
+p <- ggplot(knowledge_mastery, aes(x = sub_knowledge, y = total_score)) +
+  geom_boxplot(fill = "gray", color = "darkblue", alpha = 0.7) +
+  geom_jitter(width = 0.2, alpha = 0.5, color = "skyblue") +  # Adding jitter for individual points
+  theme_minimal() +
+  labs(
+    title = "Distribution of Total Mastery Points by Sub-Knowledge",
+    x = "Sub-Knowledge",
+    y = "Total Mastery Points"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
+
+</details>
+
+```{r}
+# Print the boxplot
+print(p)
+
+```
+
+::: {.callout-tip appearance="simple"}
+The boxplots provide a comprehensive view of the distribution of total mastery points across different knowledge and sub-knowledge areas. In the first plot, which shows the distribution of total mastery points by knowledge, there is significant variation in scores across the different knowledge areas. For instance, knowledge areas like `y9W5d`, `m3D1v`, have higher maximum scores, with some students achieving mastery points close to 20. This indicates that these areas are well-understood by many students. Conversely, areas such as `K4W1c` and `s8Y2f` show lower median scores and fewer high outliers, suggesting these might be less well-mastered or less attempted by students.
+
+The second plot breaks down the performance further by sub-knowledge areas. This detailed view shows how students perform on specific topics within each broader knowledge area. High-performing sub-knowledge areas, such as `m3D1v_r1d7f3j`, `y9W5d_q0w4mj5h`, and `t5V9e_e1k6cixp`, mirror their parent knowledge areas in achieving high maximum scores. In contrast, sub-knowledge areas like `s8Y2f_v4x8b9vj` and `g7R2j_j1g8g3v` have lower overall scores, indicating these topics might need more attention in teaching or resources. The plots also highlight consistency in scores.
+:::
+
+# **7. Conclusion**
+
+In summary, the high mastery knowledge areas identified are y9W5d, m3D1v, t5V9e, and g7R2j. These areas have shown higher maximum scores and mastery points, indicating good student understanding and performance. Within these knowledge areas, specific sub-knowledge topics such as y9W5d_q0w4mj5h, m3D1v_r1d7f3j, and t5V9e_e1k6cixp are particularly well-mastered, reflecting students' strong grasp of these topics. In contrast, sub-knowledge areas like s8Y2f_v4x8by9j and g7R2j_j1g8g3v show lower overall scores, indicating these topics are not well mastered by students and may require additional attention in teaching or resources.
