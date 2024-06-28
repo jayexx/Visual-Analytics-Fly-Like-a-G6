@@ -235,6 +235,8 @@ StudentLM_data <- StudentLM_data %>%
 #         -`Total no. of different qns_attempted`, 
          -`Span of different sub knowledge in qns`)
 
+saveRDS(StudentLM_data, "StudentLM_data.rds")
+
 glimpse(StudentLM_data)
 ```
 
@@ -847,6 +849,8 @@ With the both data frames prepared, they will now be merged for the next sub-tas
 # Join the two dataframes on the column student_ID
 StudentLMKA_data <- left_join(StudentLM_data, StudentKA_data_merged, by = "student_ID")
 
+saveRDS(StudentLMKA_data, "StudentLMKA_data.rds")
+
 glimpse(StudentLMKA_data)
 ```
 
@@ -1162,10 +1166,13 @@ ggbetweenstats(
   messages = FALSE
 )
 ```
+Based on the figures, the p-value is extremely small which suggest that there is strong statistical significance between the 2 clusters in the performance of mastery points of students in each cluster, wherein, cluster 2 had fared better than cluster 1. 
 
-## Bivariate and Multivariate analysis of variables
+Combining the 3 findings, a sensible explanation is that cluster 2 students likely submitted more attempts in order to get a higher actual score and use a wider variety of answering methods than cluster 1 .
 
-As an alternative perspective, the learning mode features are now plot on a multi linear regression model against the knowledge acquistion features of highest actual score and mastery points in the following code chunks.
+## Multivariate analysis of variables
+
+As an alternative perspective, the learning mode features are now plot on a multi-linear regression model against the knowledge acquisition features of highest actual score and mastery points in the following code chunks.
 
 ```{r}
 #| fig-width: 18
@@ -1361,12 +1368,19 @@ model10 <- lm(`Sum of points for y9W5d knowledge` ~
 
 ## Conclusion
 
-In conclusion, the visual analysis of learning modes clustering found that 2 substantially distinct clusters can be formed using the selected students' learning mode features, whereby cluster 2 tends to be the more earnest learning mode cluster.
+In conclusion, the visual analysis of learning modes clustering found that 2 substantially distinct clusters can be formed using k-means clustering of the selected students' learning mode features, whereby cluster 2 tends to be the more earnest learning mode cluster.
 
-Using these clusters to draw a relationship with indicators of students' knowledge acquistion found that 
+Considering the differences in the 2 clusters across the features in addition to the statistical differences in relation to the indicators of students' knowledge acquisition it was found that 
 
-(1) attempting questions over a wider span of questions and different knowledge,-+-*/
+(1) attempting questions over a wider span of questions and different knowledge,
 (2) attempting more demanding questions that required more effort, 
-(3) applying more effort in answer attempts were congruent with knowledge acquisition in terms of higher scores, higher proportion of correct submissions and the use of more answering methods, especially for knowledge in g7R2j, m3D1v, t5V9e and y9W5. Furthermore, we also discovered that, 
-(4) applying a more evenly spread effort across questions and 
-(5) attempting higher scoring questions had a statistically more significant effect on overall points and scores.
+(3) applying more effort in answer attempts 
+
+were congruent with knowledge acquisition in terms of higher scores, higher proportion of correct submissions and the use of more answering methods, especially for knowledge in g7R2j, m3D1v, t5V9e and y9W5. 
+
+Furthermore, from the multiple linear regression model fit, it was also discovered that, 
+
+(1) applying a more evenly spread effort across questions and 
+(2) attempting higher scoring questions 
+
+had a statistically more significant effect on overall points and scores.

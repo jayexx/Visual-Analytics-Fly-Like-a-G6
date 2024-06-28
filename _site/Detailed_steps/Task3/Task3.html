@@ -128,10 +128,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="nav-link" href="../../Project_Proposal/Group6_project_proposal.html"> 
 <span class="menu-text">Project Proposal</span></a>
   </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../../team3/Take_home_Ex3/Take_home_Ex3.html"> 
-<span class="menu-text">Task3</span></a>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-tasks" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Tasks</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-tasks">    
+        <li>
+    <a class="dropdown-item" href="../../team3/Take_home_Ex3/Take_home_Ex3.html">
+ <span class="dropdown-text">Task1</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="../../team3/Take_home_Ex3/Take_home_Ex3.html">
+ <span class="dropdown-text">Task2</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../team3/Take_home_Ex3/Take_home_Ex3.html">
+ <span class="dropdown-text">Task3</span></a>
+  </li>  
+    </ul>
+  </li>
   <li class="nav-item">
     <a class="nav-link" href="../../about.html"> 
 <span class="menu-text">About</span></a>
@@ -185,7 +200,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#merging-students-learning-modes-with-knowledge-acqusition-features" id="toc-merging-students-learning-modes-with-knowledge-acqusition-features" class="nav-link" data-scroll-target="#merging-students-learning-modes-with-knowledge-acqusition-features">Merging Students’ Learning Modes with Knowledge Acqusition features</a></li>
   <li><a href="#visualisation-of-knowledge-aquisition-by-learning-mode-clusters" id="toc-visualisation-of-knowledge-aquisition-by-learning-mode-clusters" class="nav-link" data-scroll-target="#visualisation-of-knowledge-aquisition-by-learning-mode-clusters">Visualisation of Knowledge Aquisition by learning mode clusters</a></li>
   </ul></li>
-  <li><a href="#bivariate-and-multivariate-analysis-of-variables" id="toc-bivariate-and-multivariate-analysis-of-variables" class="nav-link" data-scroll-target="#bivariate-and-multivariate-analysis-of-variables">Bivariate and Multivariate analysis of variables</a></li>
+  <li><a href="#multivariate-analysis-of-variables" id="toc-multivariate-analysis-of-variables" class="nav-link" data-scroll-target="#multivariate-analysis-of-variables">Multivariate analysis of variables</a></li>
   <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
   </ul>
 </nav>
@@ -219,7 +234,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Modified</div>
     <div class="quarto-title-meta-contents">
-      <p class="date-modified">June 28, 2024</p>
+      <p class="date-modified">June 29, 2024</p>
     </div>
   </div>
     
@@ -671,7 +686,9 @@ $ `Total timeconsume of submissions`                &lt;dbl&gt; 802, 2583, 9814,
 <span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="co">#         -`Total no. of different qns_attempted`, </span></span>
 <span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>         <span class="sc">-</span><span class="st">`</span><span class="at">Span of different sub knowledge in qns</span><span class="st">`</span>)</span>
 <span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(StudentLM_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(StudentLM_data, <span class="st">"StudentLM_data.rds"</span>)</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(StudentLM_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Rows: 1,364
 Columns: 13
@@ -1522,7 +1539,9 @@ $ `Sum of points for y9W5d knowledge`                            &lt;dbl&gt; 11.
 <div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Join the two dataframes on the column student_ID</span></span>
 <span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>StudentLMKA_data <span class="ot">&lt;-</span> <span class="fu">left_join</span>(StudentLM_data, StudentKA_data_merged, <span class="at">by =</span> <span class="st">"student_ID"</span>)</span>
 <span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(StudentLMKA_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(StudentLMKA_data, <span class="st">"StudentLMKA_data.rds"</span>)</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(StudentLMKA_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Rows: 1,364
 Columns: 34
@@ -1994,11 +2013,13 @@ $ `Sum of points for y9W5d knowledge`                            &lt;dbl&gt; 11.
 </div>
 </div>
 </div>
+<p>Based on the figures, the p-value is extremely small which suggest that there is strong statistical significance between the 2 clusters in the performance of mastery points of students in each cluster, wherein, cluster 2 had fared better than cluster 1.</p>
+<p>Combining the 3 findings, a sensible explanation is that cluster 2 students likely submitted more attempts in order to get a higher actual score and use a wider variety of answering methods than cluster 1 .</p>
 </section>
 </section>
-<section id="bivariate-and-multivariate-analysis-of-variables" class="level2">
-<h2 class="anchored" data-anchor-id="bivariate-and-multivariate-analysis-of-variables">Bivariate and Multivariate analysis of variables</h2>
-<p>As an alternative perspective, the learning mode features are now plot on a multi linear regression model against the knowledge acquistion features of highest actual score and mastery points in the following code chunks.</p>
+<section id="multivariate-analysis-of-variables" class="level2">
+<h2 class="anchored" data-anchor-id="multivariate-analysis-of-variables">Multivariate analysis of variables</h2>
+<p>As an alternative perspective, the learning mode features are now plot on a multi-linear regression model against the knowledge acquisition features of highest actual score and mastery points in the following code chunks.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Multi linear regression model for sum_highest_actual_score and sum_points overall</span></span>
 <span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>model1 <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="st">`</span><span class="at">Sum of overall highest submission scores</span><span class="st">`</span> <span class="sc">~</span> </span>
@@ -2253,15 +2274,20 @@ $ `Sum of points for y9W5d knowledge`                            &lt;dbl&gt; 11.
 </section>
 <section id="conclusion" class="level2">
 <h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
-<p>In conclusion, the visual analysis of learning modes clustering found that 2 substantially distinct clusters can be formed using the selected students’ learning mode features, whereby cluster 2 tends to be the more earnest learning mode cluster.</p>
-<p>Using these clusters to draw a relationship with indicators of students’ knowledge acquistion found that</p>
+<p>In conclusion, the visual analysis of learning modes clustering found that 2 substantially distinct clusters can be formed using k-means clustering of the selected students’ learning mode features, whereby cluster 2 tends to be the more earnest learning mode cluster.</p>
+<p>Considering the differences in the 2 clusters across the features in addition to the statistical differences in relation to the indicators of students’ knowledge acquisition it was found that</p>
 <ol type="1">
 <li>attempting questions over a wider span of questions and different knowledge,</li>
 <li>attempting more demanding questions that required more effort,</li>
-<li>applying more effort in answer attempts were congruent with knowledge acquisition in terms of higher scores, higher proportion of correct submissions and the use of more answering methods, especially for knowledge in g7R2j, m3D1v, t5V9e and y9W5. Furthermore, we also discovered that,</li>
-<li>applying a more evenly spread effort across questions and</li>
-<li>attempting higher scoring questions had a statistically more significant effect on overall points and scores.</li>
+<li>applying more effort in answer attempts</li>
 </ol>
+<p>were congruent with knowledge acquisition in terms of higher scores, higher proportion of correct submissions and the use of more answering methods, especially for knowledge in g7R2j, m3D1v, t5V9e and y9W5.</p>
+<p>Furthermore, from the multiple linear regression model fit, it was also discovered that,</p>
+<ol type="1">
+<li>applying a more evenly spread effort across questions and</li>
+<li>attempting higher scoring questions</li>
+</ol>
+<p>had a statistically more significant effect on overall points and scores.</p>
 
 
 </section>
