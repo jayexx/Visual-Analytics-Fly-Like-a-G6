@@ -16,8 +16,6 @@ library(scales)
 
 library(ggridges)
 library(ggdist)
-library(colorspace)
-library(ggrepel)
 library(patchwork)
 library(ggstatsplot)
 library(cluster)
@@ -30,33 +28,18 @@ library(gridExtra)
 library(GGally)
 library(parallelPlot)
 library(seriation)
-library(dendextend)
-library(corrplot)
-library(ggalluvial)
-library(entropy)
 library(ineq)
 library(ggthemes)
 library(hrbrthemes)
 
+library(rlang)
+
 # Load preprocessed RDS files
 # Task 3:
+StudentLMKA_data <- read_rds("StudentLMKA_data.rds")
+StudentLM_data <- read_rds("StudentLM_data.rds")
 
 # Task 4:
-merged_data <- readRDS("merged_data.RDS")
-knowledge_expanded <- readRDS("knowledge_expanded.RDS")
-never_absolutely_correct <- readRDS("never_absolutely_correct.RDS")
-aggregate_title_info <- readRDS("aggregate_title_info.RDS")
-percentage_correct <- readRDS("percentage_correct.RDS")
-overall_mastery <- readRDS ("overall_mastery.RDS")
-df_IRT <- readRDS ("mirtdata.RDS")
-
-
-
-
-# Ensure class is a factor with ordered levels
-class_levels <- paste0("Class", 1:15)
-overall_mastery <- overall_mastery %>%
-  mutate(class = factor(class, levels = class_levels))
 
 #Shiny app starts here
 library(shiny)
@@ -68,11 +51,11 @@ ui <- dashboardPage(skin = 'green',
                     
                     dashboardSidebar(
                       sidebarMenu(menuItem('HomePage', tabName = 'HomePage'),
-                                  menuItem('Task 1: Knowledge Mastery & Weak links', tabName = 'Task 1: Knowledge Mastery & Weak links'),
-                                  menuItem('Task 2: Learners Profile', tabName = 'Task 2: Learners Profile'),
-                                  menuItem('Task 3: Learning Mode & Knowledge Acquisition', tabName = 'Task 3: Learning Mode & Knowledge Acquisition'),
-                                  menuItem('Task 4: Question Difficulty & Learners Knowledge Level',tabName = 'Task 4: Question Difficulty & Learners Knowledge Level'),
-                                  menuItem('Task 5: Recommendations', tabName = 'Task 5: Recommendations')
+                                  menuItem('Task 1: Knowledge Mastery & Weak links', tabName = 'Task1'),
+                                  menuItem('Task 2: Learners Profile', tabName = 'Task2'),
+                                  menuItem('Task 3: Learning Mode & Knowledge Acquisition', tabName = 'Task3'),
+                                  menuItem('Task 4: Question Difficulty & Learners Knowledge Level',tabName = 'Task4'),
+                                  menuItem('Task 5: Recommendations', tabName = 'Task5')
                       )
                     ),
                     dashboardBody(
@@ -100,7 +83,7 @@ ui <- dashboardPage(skin = 'green',
                         
                         
                         
-                        tabItem(tabName = 'Task 1: Knowledge Mastery & Weak links',
+                        tabItem(tabName = 'Task1',
                                 fluidPage(
                                   titlePanel("Knowledge Mastery & Weak links"),
 
@@ -119,7 +102,7 @@ ui <- dashboardPage(skin = 'green',
                                   
                                 )),
                         
-                        tabItem(tabName = 'Task 2: Learners Profile',
+                        tabItem(tabName = 'Task2',
                                 fluidPage(
                                   titlePanel("Learners Profile"),
                                   
@@ -140,104 +123,135 @@ ui <- dashboardPage(skin = 'green',
                         
                         
                         
-                        tabItem(tabName = 'Task 3: Learning Mode & Knowledge Acquisition',
+                        tabItem(tabName = 'Task3',
                                 fluidPage(
                                   titlePanel("Learning Mode & Knowledge Acquisition"),
                                   tabsetPanel(
-                                    tabPanel("Vehicle Population",
-                                             box(
-                                               radioButtons('xcol',
-                                                            label = tags$strong('Analyse By:'),
-                                                            choices = c('Vehicle Category' = 'category',
-                                                                        'Fuel Type' = 'Combined.Type'
-                                                            ),
-                                                            inline = TRUE)
-                                             ),
-                                             box(
-                                               width = 12,
-                                               height = 600,
-                                               solidHeader = TRUE,
-                                               collapsible = FALSE,
-                                               collapsed = FALSE,
-                                               plotlyOutput('BarGraph', height = 500)
-                                             )
-                                    ),
-                                    tabPanel("Mileage travelled", 
-                                             box(
-                                               width = 12,
-                                               height = 500,
-                                               solidHeader = TRUE,
-                                               collapsible = FALSE,
-                                               collapsed = FALSE,
-                                               plotlyOutput('chart_mileage', height = 300)
-                                             )
+                                    tabPanel("Clustering Analysis for Learning Modes",
                                              
-                                    ),
-                                    
-                                    
-                                    tabPanel("Vehicle Fuel Economy Distribution",
-                                             box(
-                                               radioButtons('ycol',
-                                                            label = tags$strong('Analyse By:'),
-                                                            choices = c('Emissions (g/km)' = 'Combined..CO2...g.km.',
-                                                                        'Fuel Economy (l/100km)' = 'Combined..Fuel.Economy...L.100.km.'
-                                                            ),
-                                                            inline = TRUE)
-                                             ),
-                                             box(
-                                               width = 12,
-                                               height = 500,
-                                               solidHeader = TRUE,
-                                               collapsible = FALSE,
-                                               collapsed = FALSE,
-                                               plotOutput('BoxPlot', height = 400)
-                                             )
-                                             
-                                             
-                                    ),
-                                    
-                                    
-                                    tabPanel("Trend Analysis",
-                                             
-                                             box(
-                                               radioButtons('TAycol',
-                                                            label = tags$strong('Analyse By:'),
-                                                            choices = c('Total CO2 Emissions (in tonnes)' = 'Total_CO2_Emission_Tonnes',
-                                                                        'Total number of Vehicles' = 'number'
-                                                                        
-                                                            ),
-                                                            inline = TRUE)
-                                             ),
-                                             
-                                             box(
+                                             #box(
+                                               #radioButtons('xcol',
+                                                            #label = tags$strong('Analyse By:'),
+                                                            #choices = c('Vehicle Category' = 'category',
+                                                                        #'Fuel Type' = 'Combined.Type'
+                                                            #),
+                                                            #inline = TRUE)
+                                             #),
+
+                                             #box(
+                                               #selectInput("category",tags$strong("Choose an category:"), choices = c("All Category",unique(NumofVehbytype6$category)),selected = "Cars"),
+                                               #selectInput("type", tags$strong("Choose a Fuel type:"), choices = c("All Fuel Type",unique(NumofVehbytype6$type)),selected = "Petrol")
                                                
-                                               selectInput("category",tags$strong("Choose an category:"), choices = c("All Category",unique(NumofVehbytype6$category)),selected = "Cars"),
-                                               selectInput("type", tags$strong("Choose a Fuel type:"), choices = c("All Fuel Type",unique(NumofVehbytype6$type)),selected = "Petrol")
-                                               
-                                             ),
-                                             
-                                             
-                                             
-                                             
+                                             #),
                                              
                                              box(
-                                               width = 12,
-                                               height = 500,
-                                               solidHeader = TRUE,
-                                               collapsible = FALSE,
-                                               collapsed = FALSE,
-                                               plotlyOutput('TAPlot', height = 300)
+                                               title = "Silhouette Analysis for Number of K-means Clusters",
+                                               plotOutput("plot1", height = "400px")
+                                             ),
+                                             
+                                             box(
+                                               title = "Parallel Coordinate plot",
+                                               plotOutput("plot2", height = "400px")
+                                             )
+                                             
+
+                                    ),
+ 
+                                    tabPanel("Knowledge Acquisition Distribution Across Both Clusters", 
+                                             
+                                             #box(
+                                             #radioButtons('xcol',
+                                             #label = tags$strong('Analyse By:'),
+                                             #choices = c('Vehicle Category' = 'category',
+                                             #'Fuel Type' = 'Combined.Type'
+                                             #),
+                                             #inline = TRUE)
+                                             #),
+                                             
+                                             box(
+                                             #selectInput("type", tags$strong("Choose a Fuel type:"), choices = c("All Fuel Type",unique(NumofVehbytype6$type)),selected = "Petrol"),
+                                             selectInput("KAindicator1",tags$strong("Choose an indicator:"), choices = c("No. of questions answered fully or partially correct", "Overall sum of highest submission scores per question", "Overall sum of question mastery points"), selected = "Overall sum of question mastery points")
+                                             ),
+                                             
+                                             box(
+                                               title = "Ridgeline Plot of Distribution of Both Clusters",
+                                               plotOutput("plot3", height = "400px")
+                                             ),
+                                             
+                                             box(
+                                               title = "Ridgeline Plot of Distribution by Knowledge Areas for Both Clusters",
+                                               plotOutput("plot4", height = "400px")
+                                             ),
+                                             
+                                    ),
+                                                                       
+                                    tabPanel("2-Sample Mean Statistical Test For Both Clusters",
+                                             
+                                             #box(
+                                             #radioButtons('xcol',
+                                             #label = tags$strong('Analyse By:'),
+                                             #choices = c('Vehicle Category' = 'category',
+                                             #'Fuel Type' = 'Combined.Type'
+                                             #),
+                                             #inline = TRUE)
+                                             #),
+                                             
+                                             box(
+                                               #selectInput("type", tags$strong("Choose a Fuel type:"), choices = c("All Fuel Type",unique(NumofVehbytype6$type)),selected = "Petrol"),
+                                               selectInput("KAindicator2",tags$strong("Choose an indicator:"), choices = c("Percent of submissions absolutely correct", "Overall sum of highest submission scores per question", "Overall sum of question mastery points"), selected = "Overall sum of question mastery points")
+                                               ),
+
+                                             box(
+                                               title = "2-Sample Difference in Mean Statistical Test for Both Clusters",
+                                               plotOutput("plot5", height = "400px")
+                                             ),
+                                             
+                                             #box(
+                                               #title = "Silhouette Analysis for Number of K-means Clusters",
+                                               #plotOutput("plot1", height = "400px")
+                                             #),
+                                             
+                                             #box(
+                                               #title = "Parallel Coordinate plot",
+                                               #plotOutput("plot2", height = "400px")
+                                             #)
+                                             
+                                    ),
+                                    
+                                    tabPanel("Multi-linear Regression (Alternative from Clustering)",
+                                             
+                                             #box(
+                                             #radioButtons('xcol',
+                                             #label = tags$strong('Analyse By:'),
+                                             #choices = c('Vehicle Category' = 'category',
+                                             #'Fuel Type' = 'Combined.Type'
+                                             #),
+                                             #inline = TRUE)
+                                             #),
+                                             
+                                             box(
+                                               #selectInput("type", tags$strong("Choose a Fuel type:"), choices = c("All Fuel Type",unique(NumofVehbytype6$type)),selected = "Petrol"),
+                                               selectInput("KAindicator3",tags$strong("Choose an indicator:"), choices = c("Overall sum of highest submission scores per question", "Overall sum of question mastery points"), selected = "Overall sum of question mastery points")
+                                               ),
+                                             
+                                             box(
+                                               title = "Multi-linear Regression of learning mode features (Overall)",
+                                               plotOutput("plot6", height = "400px")
+                                             ),
+                                             
+                                             box(
+                                               title = "Multi-linear Regression of learning mode features (By Knowledge Areas)",
+                                               plotOutput("plot7", height = "400px")
                                              )
                                              
                                              
-                                             
-                                             
-                                    )
+                                    ),
                                     
                                   )
                                 )
                                 ),
-                        tabItem(tabName = 'Task 4: Question Difficulty & Learners Knowledge Level',
+                        
+                        tabItem(tabName = 'Task4',
                                 fluidPage(
                                   titlePanel("Question Difficulty & Learners Knowledge Level"),
                                   
@@ -256,7 +270,7 @@ ui <- dashboardPage(skin = 'green',
                                   
                                 )),
                         
-                        tabItem(tabName = 'Task 5: Recommendations',
+                        tabItem(tabName = 'Task5',
                                 fluidPage(
                                   titlePanel("Recommendations"),
                                   
@@ -273,284 +287,444 @@ ui <- dashboardPage(skin = 'green',
                                             p("2) point 2")
                                   ) #main panel
                                   
-                                ))                        
-                        
-                        )))
+                                ))
+                        )
+                        )
+                        )
 
 server <- function(input, output, session) { 
-  
-  output$BarGraph <- renderPlotly({
-    
-       # Define the dynamic variable based on the radio button selection
-    if (input$xcol == 'category') {
-      analysis <- NumofVehbytype6 %>%
-        filter(number != 0, Year != 2023) %>%
-        group_by(Year, category) %>% 
-        summarise(sum_number = sum(number)/12)
-    } else {
-      analysis <- NumofVehbytype6 %>%
-        filter(number != 0, Year != 2023) %>%
-        group_by(Year, Combined.Type) %>% 
-        summarise(sum_number = sum(number)/12)
-    }
-    
-    #Generate a bar chart using ggplot
-    p1 <- ggplot(analysis, aes_string(x = input$xcol,y = 'sum_number',fill = 'Year')) +
-      geom_bar(stat = 'identity',position = 'dodge') + 
-      labs(title = paste('Number of Vehicles by ', input$xcol), subtitle = paste('by', input$xcol),
-           x = input$xcol, y = 'Number of Vehicles', fill = input$xcol) +
-      scale_y_continuous(labels = scales::comma, limits = c(0, 800000)) + 
-      scale_fill_manual(values = c("#BBDEFB","#90CAF9","#64B5F6","#42A5F5","#2196F3","#1E88E5","#1976D2","#1565C0" ))
-    
-    
-    ggplotly(p1)
-  
-  })
 
-  output$BoxPlot <- renderPlot({
-    
-    # Generate a bar chart using ggplot
-    p2 <- ggplot(VehicleFEData, aes_string(x = 'Fuel.Type', y=input$ycol, fill='Fuel.Type')) +
-      geom_boxplot(alpha=0.3) +
-      theme(legend.position="none") +
-      scale_fill_brewer(palette="BuPu") + labs("Distribution of Combined CO2g/km of Different Fuel Types")
-      
-    
-    return(p2)
-  })
-  
-  output$chart_mileage <- renderPlotly({
-    
-    chart_mileage_plot <- ggplot(df_line_chart_avg_mileage, aes(x = year, y = sum_average)) +
-      geom_line(aes(color=category)) + 
-      geom_point() + 
-      labs(y="Average Mileage (Annual)", x= "Year") + 
-      scale_y_continuous(labels = scales::comma, limits = c(1000, 100000))
-      # theme_bw()
-    
-    return(chart_mileage_plot)
-    
-  })
- 
-  output$TAPlot <- renderPlotly({
-    
-    # Filter data based on user inputs
-    filtered_data <- reactive({
-      df <- Main  
-      
-      # Filter out data for year 2023
-      df <- df[df$Year != 2023, ]
-      
-      # Filter by category if selected
-      if (input$category != "All Category") {
-        df <- df[df$category == input$category, ]
-      }
-      
-      # Filter by fuel type if selected
-      if (input$type != "All Fuel Type") {
-        df <- df[df$type == input$type, ]
-      }
-      
-      return(df)
-    })
-    
-    # Create a scatter plot
-    df <- filtered_data()
-    
-    plot <- plot_ly(data = df, x = ~month)
-    
-    # Get unique combinations of Category and type
-    unique_combinations <- unique(paste(df$category, df$type, sep = "_"))
-    
-    for (comb in unique_combinations) {
-      filtered_df <- df[paste(df$category, df$type, sep = "_") == comb, ]
-      
-      if (input$TAycol == "Total_CO2_Emission_Tonnes") {
-        
-        # Connect scatter points with lines for each combination
-        plot <- plot %>% add_lines(data = filtered_df,
-                                   y = ~Total_CO2_Emission_Tonnes, 
-                                   name = comb,
-                                   line = list(shape = "linear", color = comb))
-        
-      } else if (input$TAycol == "number") {
-        
-        # Connect scatter points with lines for each combination
-        plot <- plot %>% add_lines(data = filtered_df,
-                                   y = ~number, 
-                                   name = comb,
-                                   line = list(shape = "linear", color = comb))
-      }
-    }
-    
-    # Create a title based on user selections
-    title_text <- paste(input$TAycol, "of", 
-                        paste(input$category, collapse = ", "),
-                        "and with",
-                        paste(input$type, collapse = ", "))
-    
-    plot <- plot %>% 
-      layout(title = title_text, 
-             xaxis = list(title = "Year"),
-             yaxis = list(title = input$TAycol))  # Update y-axis title based on input
-    
-    return(plot)
-  })
-  
-  output$ScatterPlot <- renderPlot({
-    
-    # Filter data based on user inputs
-    filtered_data1 <- reactive({
-      df1 <- VehicleFEData 
-      
-      # Filter by Body type if selected
-      if (input$Body_Type != "All Body Type") {
-        df1 <- df1[df1$Body.Type == input$Body_Type, ]
-      }
-      
-      # Filter by fuel type if selected
-      if (input$Fuel_Type != "All Fuel Type") {
-        df1 <- df1[df1$Fuel.Type == input$Fuel_Type, ]
-      }
-      
-      return(df1)
-    })
-    
-    df1 <- filtered_data1()
-    
-    # Create a new variable that combines Body Type and Fuel Type
-    df1$Combined_Category <- paste(df1$Body.Type, df1$Fuel.Type, sep = " - ")
-    
-    # Calculate R-squared
-    fit <- lm(Combined..Fuel.Economy...L.100.km. ~ Combined..CO2...g.km., data = df1)
-    r_squared <- summary(fit)$r.squared
-    
-    # Create a plot
-    p <- ggplot(df1, aes(x = Combined..CO2...g.km., y = Combined..Fuel.Economy...L.100.km., color = Combined_Category)) +
-      geom_point() +
-      scale_color_discrete(name = "Combined Category") +
-      
-      # Add R-squared label to the plot
-      geom_text(aes(x = max(df1$Combined..CO2...g.km.) - 1, 
-                    y = max(df1$Combined..Fuel.Economy...L.100.km.) - 1,
-                    label = paste("R-squared =", r_squared)),
-                hjust = 1, vjust = 1, size = 4, color = "black")
-    
-    print(p)
-  })
-  
-  # Create the linear regression models (replace with your actual models)
-  fit10 <- lm(Total_CO2_Emission_Tonnes4 ~ Mileage4, data = my_data)
-  fit11 <- lm(Total_CO2_Emission_Tonnes4 ~ Population4, data = my_data)
-  fit12 <- lm(Total_CO2_Emission_Tonnes4 ~ Fuel_Economy4, data = my_data)
-  fit13 <- lm(Total_CO2_Emission_Tonnes4 ~ Percentage_Elec_hybrid, data = my_data)
-  
-  # Plot 1: Total CO2 Emissions vs Mileage
   output$plot1 <- renderPlot({
-    plot(my_data$Mileage4, my_data$Total_CO2_Emission_Tonnes4, type = "p", main = "Total CO2 Emissions vs Mileage", 
-         xlab = "Mileage (KM)", ylab = "Total CO2 Emissions (Tonnes)", col = 'red', cex = 1.2)
-    abline(fit10, col = 'blue', lty = 'dashed')
-  })
-  
-  # Plot 2: Total CO2 Emissions vs Fuel Economy
+    
+    # Filter Non-clustering features
+    clustering_data <- StudentLM_data %>%
+      select(-student_ID)
+    
+    # Function to compute silhouette widths
+    silhouette_analysis <- function(data, max_clusters) {
+      avg_sil_widths <- numeric(max_clusters)
+      
+      for (k in 2:max_clusters) {
+        # Perform k-means clustering
+        kmeans_result <- kmeans(data, centers = k, nstart = 25)
+        
+        # Compute silhouette widths
+        sil <- silhouette(kmeans_result$cluster, dist(data))
+        
+        # Calculate average silhouette width
+        avg_sil_widths[k] <- mean(sil[, 3])
+      }
+      
+      return(avg_sil_widths)
+    }
+    
+    # Determine the maximum number of clusters to test
+    max_clusters <- 12
+    
+    # Perform silhouette analysis
+    avg_sil_widths <- silhouette_analysis(clustering_data, max_clusters)
+    
+    # Plot the average silhouette widths
+    plot(1:max_clusters, avg_sil_widths, type = "b", pch = 19, frame = FALSE,
+         xlab = "Number of clusters", ylab = "Average silhouette width",
+         main = "Silhouette Analysis for Determining Optimal Number of Clusters")
+    
+    # Highlight the optimal number of clusters
+    optimal_clusters <- which.max(avg_sil_widths)
+    points(optimal_clusters, avg_sil_widths[optimal_clusters], col = "red", pch = 19)
+    
+  })  
+
   output$plot2 <- renderPlot({
-    plot(my_data$Fuel_Economy4, my_data$Total_CO2_Emission_Tonnes4, type = "p", main = "Total CO2 Emissions vs Fuel Economy", 
-         xlab = "Fuel Economy (KM/L)", ylab = "Total CO2 Emissions (Tonnes)", col = 'red', cex = 1.2)
-    abline(fit12, col = 'blue', lty = 'dashed')
-  })
-  
-  # Plot 3: Total CO2 Emissions vs Population
-  output$plot3 <- renderPlot({
-    plot(my_data$Population4, my_data$Total_CO2_Emission_Tonnes4, type = "p", main = "Total CO2 Emissions vs Population", 
-         xlab = "Vehicle Population", ylab = "Total CO2 Emissions (Tonnes)", col = 'red', cex = 1.2)
-    abline(fit11, col = 'blue', lty = 'dashed')
-  })
-  
-  # Plot 4: Total CO2 Emissions vs Percentage of Electric & Hybrid Vehicles
-  output$plot4 <- renderPlot({
-    plot(my_data$Percentage_Elec_hybrid, my_data$Total_CO2_Emission_Tonnes4, type = "p", main = "Total CO2 Emissions vs Percentage of Population Electric & Hybrid Vehicles", 
-         xlab = "Percentage of Vehicle Population (Electric & Hybrid Vehicles)", ylab = "Total CO2 Emissions (Tonnes)", col = 'red', cex = 1.2)
-    abline(fit13, col = 'blue', lty = 'dashed')
-  })
-
-
-
-  # Observe changes in the monthSlider input
-  
-  observe({
-    # Convert the selected month from the slider to a POSIXct date
-    selectedMonth <- as.POSIXct(input$monthSlider, origin = "1970-01-01")
     
-    # Calculate the start and end date for the selected month
-    start_date <- floor_date(selectedMonth, unit = "month")
-    end_date <- ceiling_date(selectedMonth, unit = "month") - 1
+    # Filter Non-clustering features
+    clustering_data <- StudentLM_data %>%
+      select(-student_ID)
     
-    cat("Selected month:", selectedMonth, "\n")
-    cat("Start date:", start_date, "\n")
-    cat("End date:", end_date, "\n")
+    # Standardize the data
+    clustering_data_scaled <- scale(clustering_data)
     
-    # Filter data for the selected month
-    filtered_data <- Main[Main$MonthYear >= start_date & Main$MonthYear <= end_date, ]
+    # Perform k-means clustering
+    set.seed(123)  # For reproducibility
+    kmeans_result <- kmeans(clustering_data_scaled, centers = 2, nstart = 25)
     
-    # Print the number of rows in the filtered data
-    cat("Number of rows in filtered data:", nrow(filtered_data), "\n")
+    # Add the cluster assignments to the original data
+    StudentLM_data$cluster <- kmeans_result$cluster
     
-    # Create a ggplot for the total CO2 emissions
-    p <- ggplot(filtered_data, aes(x = Total_CO2_Emission_Tonnes, y = category, fill = type)) +
-      geom_bar(stat = "identity") +
-      labs(title = paste("Total CO2 Emissions for", format(selectedMonth, format = "%b %Y")),
-           x = "Category",
-           y = "Total CO2 Emission (Tonnes)") +
-      scale_fill_manual(values = c(
-        "CNG" = "#FF5733",
-        "Diesel" = "#1F77B4",
-        "Diesel-Electric" = "#2CA02C",
-        "Diesel-Electric (Plug-In)" = "#FFD700",
-        "Electric" = "#FFA500",
-        "Petrol" = "#D55E00",
-        "Petrol-CNG" = "#DCB61D",
-        "Petrol-Electric" = "#808080",
-        "Petrol-Electric (Plug-In)" = "#AA9D7A"
-      ))
+    # Ensure cluster in factor format
+    StudentLM_data_factor <- StudentLM_data
+    StudentLM_data_factor$cluster <- as.character(StudentLM_data_factor$cluster)
     
-    # Set the fixed x-axis scale (replace min_x and max_x with your desired values)
-    p <- p + coord_cartesian(xlim = c(0, 350000))
-          
-    
-    output$animatedGraph <- renderPlot({
-      print(p)
-    })
-  })
- 
-  # Define a reactive expression to compute the annual CO2 emissions
-  annualCO2Emissions <- reactive({
-    data <- Main  # Replace 'data' with your actual data frame
-    
-    # Extract the year from the 'MonthYear' column
-    data$Year <- format(data$MonthYear, "%Y")
-    
-    # Filter out data for year 2023
-    data <- data[data$Year != "2023", ]
-    
-    # Group the data by 'Year' and calculate the total sum of CO2 emissions
-    summary_data <- data %>%
-      group_by(Year) %>%
-      summarise(Total_CO2_Emission_Tonnes = sum(Total_CO2_Emission_Tonnes))
-    
-    return(summary_data)
-  })
-  
-  # Define the output for the CO2 emissions table
-  output$co2EmissionsTable <- renderDataTable({
-    datatable(annualCO2Emissions(),
-              width = 500,
-              height = 500) %>%
-      formatRound(
-        columns = 2,  # Apply rounding to the second column (Total_CO2_Emission_Tonnes)
-        digits = 0  # Set the number of decimal places to 0
+    # Plot facet Parallel coordinates plot
+    ggparcoord(data = StudentLM_data_factor,
+               columns = c(2:13), 
+               groupColumn = 14,
+               scale = "uniminmax",
+               alphaLines = 0.2,
+               boxplot = TRUE, 
+               title = "Parallel Coordinates Split Plot of Students' learning modes")+
+      facet_wrap(~ cluster)+
+      theme(
+        plot.title = element_text(size = 10),
+        axis.text.x = element_text(angle = 30, hjust = 0.8, size = 8),
+        axis.text.y = element_text(size = 8),
+        axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 8),
+        legend.title = element_text(size = 8),
+        legend.text = element_text(size = 8)
       )
+    
+  })
+      
+  output$plot3 <- renderPlot({
+
+    StudentLMKA_data$cluster <- as.factor(StudentLMKA_data$cluster)
+    
+    # Define the dynamic variable based on the input selection
+    KAindicator01 <- NULL
+    if (input$KAindicator1 == "No. of questions answered fully or partially correct") {
+      KAindicator01 <- "`No. of questions answered fully or partially correct`"
+    } else if (input$KAindicator1 == "Overall sum of highest submission scores per question") {
+      KAindicator01 <- "`Sum of overall highest submission scores`"
+    } else if (input$KAindicator1 == "Overall sum of question mastery points") {
+      KAindicator01 <- "`Sum of points Overall`"
+    }
+    
+    # Generate a ridgeline chart using ggplot
+    ggplot(StudentLMKA_data, 
+           aes_string(x = KAindicator01, 
+                      y = "cluster",
+                      fill = "factor(stat(quantile))"
+           )) +
+      stat_density_ridges(
+        geom = "density_ridges_gradient",
+        calc_ecdf = TRUE, 
+        quantiles = 4,
+        quantile_lines = TRUE) +
+      scale_fill_viridis_d(name = "Quartiles") +
+      theme_ridges() 
   })
   
+  output$plot4 <- renderPlot({
+    
+    StudentLMKA_data$cluster <- as.factor(StudentLMKA_data$cluster)
+    
+    # Define the dynamic variable based on the input selection
+    #KAindicator01 <- NULL
+    #if (input$KAindicator1 == "No. of questions answered fully or partially correct") {
+    #  KAindicator01 <- "`Sum of overall highest submission scores for`"
+    #} else if (input$KAindicator1 == "Overall sum of highest submission scores per question") {
+    #  KAindicator01 <- "`Sum of overall highest submission scores for`"
+    #} else if (input$KAindicator1 == "Overall sum of question mastery points") {
+    #  KAindicator01 <- "`Sum of points for`"
+    #}
+    
+    # Generate a Combined Ridgeline chart using ggplot
+    a <- 
+    ggplot(StudentLMKA_data, 
+           aes(x = `Sum of points for b3C9s knowledge`,
+               y = cluster,
+               fill = factor(stat(quantile))
+           )) +
+      stat_density_ridges(
+        geom = "density_ridges_gradient",
+        calc_ecdf = TRUE, 
+        quantiles = 4,
+        quantile_lines = TRUE) +
+      scale_fill_viridis_d(name = "Quartiles") +
+      theme_ridges()
+    
+    b <- 
+    ggplot(StudentLMKA_data, 
+           aes(x = `Sum of points for g7R2j knowledge`,
+               y = cluster,
+               fill = factor(stat(quantile))
+           )) +
+      stat_density_ridges(
+        geom = "density_ridges_gradient",
+        calc_ecdf = TRUE, 
+        quantiles = 4,
+        quantile_lines = TRUE) +
+      scale_fill_viridis_d(name = "Quartiles") +
+      theme_ridges()
+    c <- 
+    ggplot(StudentLMKA_data, 
+           aes(x = `Sum of points for m3D1v knowledge`, 
+               y = cluster,
+               fill = factor(stat(quantile))
+           )) +
+      stat_density_ridges(
+        geom = "density_ridges_gradient",
+        calc_ecdf = TRUE, 
+        quantiles = 4,
+        quantile_lines = TRUE) +
+      scale_fill_viridis_d(name = "Quartiles") +
+      theme_ridges()
+    d <- 
+    ggplot(StudentLMKA_data, 
+           aes(x = `Sum of points for r8S3g knowledge`, 
+               y = cluster,
+               fill = factor(stat(quantile))
+           )) +
+      stat_density_ridges(
+        geom = "density_ridges_gradient",
+        calc_ecdf = TRUE, 
+        quantiles = 4,
+        quantile_lines = TRUE) +
+      scale_fill_viridis_d(name = "Quartiles") +
+      theme_ridges()
+    e <- 
+    ggplot(StudentLMKA_data, 
+           aes(x = `Sum of points for t5V9e knowledge`, 
+               y = cluster,
+               fill = factor(stat(quantile))
+           )) +
+      stat_density_ridges(
+        geom = "density_ridges_gradient",
+        calc_ecdf = TRUE, 
+        quantiles = 4,
+        quantile_lines = TRUE) +
+      scale_fill_viridis_d(name = "Quartiles") +
+      theme_ridges()
+    f <- 
+    ggplot(StudentLMKA_data, 
+           aes(x = `Sum of points for y9W5d knowledge`, 
+               y = cluster,
+               fill = factor(stat(quantile))
+           )) +
+      stat_density_ridges(
+        geom = "density_ridges_gradient",
+        calc_ecdf = TRUE, 
+        quantiles = 4,
+        quantile_lines = TRUE) +
+      scale_fill_viridis_d(name = "Quartiles") +
+      theme_ridges()
+    g <- 
+    ggplot(StudentLMKA_data, 
+           aes(x = `Sum of points for k4W1c knowledge`, 
+               y = cluster,
+               fill = factor(stat(quantile))
+           )) +
+      stat_density_ridges(
+        geom = "density_ridges_gradient",
+        calc_ecdf = TRUE, 
+        quantiles = 4,
+        quantile_lines = TRUE) +
+      scale_fill_viridis_d(name = "Quartiles") +
+      theme_ridges()
+    h <- 
+    ggplot(StudentLMKA_data, 
+           aes(x = `Sum of points for s8Y2f knowledge`, 
+               y = cluster,
+               fill = factor(stat(quantile))
+           )) +
+      stat_density_ridges(
+        geom = "density_ridges_gradient",
+        calc_ecdf = TRUE, 
+        quantiles = 4,
+        quantile_lines = TRUE) +
+      scale_fill_viridis_d(name = "Quartiles") +
+      theme_ridges()
+    
+    (a + b) / (c + d) / (e + f) / (g + h)
+  })
+
+  output$plot5 <- renderPlot({
+    
+    # Define the dynamic variable based on the input selection
+    KAindicator02 <- NULL
+    if (input$KAindicator2 == "Percent of submissions absolutely correct") {
+      KAindicator02 <- "Percent of submissions absolutely correct"
+    } else if (input$KAindicator2 == "Overall sum of highest submission scores per question") {
+      KAindicator02 <- "Sum of overall highest submission scores"
+    } else if (input$KAindicator2 == "Overall sum of question mastery points") {
+      KAindicator02 <- "Sum of points Overall"
+    }
+    
+    ggbetweenstats(
+      data = StudentLMKA_data,
+      x = "cluster", 
+      y = !!sym(KAindicator02),  # Use !!sym() to evaluate the variable name correctly
+      type = "np",
+      messages = FALSE
+    )
+  })
+  
+  output$plot6 <- renderPlot({
+    
+  # Define the dynamic variable based on the input selection
+  KAindicator03 <- NULL
+  if (input$KAindicator3 == "Overall sum of highest submission scores per question") {
+    KAindicator03 <- "Sum of overall highest submission scores"
+  } else {
+    KAindicator03 <- "Sum of points Overall"
+  }
+  
+  # Fit the multi-linear regression model
+  model <- lm(get(KAindicator03) ~  
+                 `Percent of submissions on weekdays`+
+                 `Percent of submissions during working hrs`+
+                 `Total no. of different qns_attempted`+
+                 `Gini Index for qns in submission`+
+                 `Mean selected question scores`+
+                 `Mean submission memory size by qns`+
+                 `Mean timeconsume by qns`+
+                 `Total no. of submissions`+
+                 `Mean no. of different answering methods per qns`+
+                 `Gini index for answering methods used per qns`+
+                 `Total memory size of submissions`+
+                 `Total timeconsume of submissions`, data = StudentLMKA_data)
+  
+  # Plot coefficients
+  ggcoefstats(model, 
+              output = "plot") +
+    theme(
+      plot.title = element_text(size = 10),
+      axis.title = element_text(size = 8),
+      axis.text = element_text(size = 8),
+      legend.title = element_text(size = 10),
+      legend.text = element_text(size = 8)
+    )
+    
+    
+  })
+  
+  output$plot7 <- renderPlot({
+    
+    model3 <- lm(`Sum of points for b3C9s knowledge` ~  
+                   `Percent of submissions on weekdays`+
+                   `Percent of submissions during working hrs`+
+                   `Total no. of different qns_attempted`+
+                   `Gini Index for qns in submission`+
+                   `Mean selected question scores`+
+                   `Mean submission memory size by qns`+
+                   `Mean timeconsume by qns`+
+                   `Total no. of submissions`+
+                   `Mean no. of different answering methods per qns`+
+                   `Gini index for answering methods used per qns`+
+                   `Total memory size of submissions`+
+                   `Total timeconsume of submissions`, data = StudentLMKA_data)
+    model4 <- lm(`Sum of points for g7R2j knowledge` ~ 
+                   `Percent of submissions on weekdays`+
+                   `Percent of submissions during working hrs`+
+                   `Total no. of different qns_attempted`+
+                   `Gini Index for qns in submission`+
+                   `Mean selected question scores`+
+                   `Mean submission memory size by qns`+
+                   `Mean timeconsume by qns`+
+                   `Total no. of submissions`+
+                   `Mean no. of different answering methods per qns`+
+                   `Gini index for answering methods used per qns`+
+                   `Total memory size of submissions`+
+                   `Total timeconsume of submissions`, data = StudentLMKA_data)
+    model5 <- lm(`Sum of points for k4W1c knowledge` ~  
+                   `Percent of submissions on weekdays`+
+                   `Percent of submissions during working hrs`+
+                   `Total no. of different qns_attempted`+
+                   `Gini Index for qns in submission`+
+                   `Mean selected question scores`+
+                   `Mean submission memory size by qns`+
+                   `Mean timeconsume by qns`+
+                   `Total no. of submissions`+
+                   `Mean no. of different answering methods per qns`+
+                   `Gini index for answering methods used per qns`+
+                   `Total memory size of submissions`+
+                   `Total timeconsume of submissions`, data = StudentLMKA_data)
+    model6 <- lm(`Sum of points for m3D1v knowledge` ~  
+                   `Percent of submissions on weekdays`+
+                   `Percent of submissions during working hrs`+
+                   `Total no. of different qns_attempted`+
+                   `Gini Index for qns in submission`+
+                   `Mean selected question scores`+
+                   `Mean submission memory size by qns`+
+                   `Mean timeconsume by qns`+
+                   `Total no. of submissions`+
+                   `Mean no. of different answering methods per qns`+
+                   `Gini index for answering methods used per qns`+
+                   `Total memory size of submissions`+
+                   `Total timeconsume of submissions`, data = StudentLMKA_data)
+    model7 <- lm(`Sum of points for r8S3g knowledge` ~ 
+                   `Percent of submissions on weekdays`+
+                   `Percent of submissions during working hrs`+
+                   `Total no. of different qns_attempted`+
+                   `Gini Index for qns in submission`+
+                   `Mean selected question scores`+
+                   `Mean submission memory size by qns`+
+                   `Mean timeconsume by qns`+
+                   `Total no. of submissions`+
+                   `Mean no. of different answering methods per qns`+
+                   `Gini index for answering methods used per qns`+
+                   `Total memory size of submissions`+
+                   `Total timeconsume of submissions`, data = StudentLMKA_data)
+    model8 <- lm(`Sum of points for s8Y2f knowledge` ~  
+                   `Percent of submissions on weekdays`+
+                   `Percent of submissions during working hrs`+
+                   `Total no. of different qns_attempted`+
+                   `Gini Index for qns in submission`+
+                   `Mean selected question scores`+
+                   `Mean submission memory size by qns`+
+                   `Mean timeconsume by qns`+
+                   `Total no. of submissions`+
+                   `Mean no. of different answering methods per qns`+
+                   `Gini index for answering methods used per qns`+
+                   `Total memory size of submissions`+
+                   `Total timeconsume of submissions`, data = StudentLMKA_data)
+    model9 <- lm(`Sum of points for t5V9e knowledge` ~  
+                   `Percent of submissions on weekdays`+
+                   `Percent of submissions during working hrs`+
+                   `Total no. of different qns_attempted`+
+                   `Gini Index for qns in submission`+
+                   `Mean selected question scores`+
+                   `Mean submission memory size by qns`+
+                   `Mean timeconsume by qns`+
+                   `Total no. of submissions`+
+                   `Mean no. of different answering methods per qns`+
+                   `Gini index for answering methods used per qns`+
+                   `Total memory size of submissions`+
+                   `Total timeconsume of submissions`, data = StudentLMKA_data)
+    model10 <- lm(`Sum of points for y9W5d knowledge` ~ 
+                    `Percent of submissions on weekdays`+
+                    `Percent of submissions during working hrs`+
+                    `Total no. of different qns_attempted`+
+                    `Gini Index for qns in submission`+
+                    `Mean selected question scores`+
+                    `Mean submission memory size by qns`+
+                    `Mean timeconsume by qns`+
+                    `Total no. of submissions`+
+                    `Mean no. of different answering methods per qns`+
+                    `Gini index for answering methods used per qns`+
+                    `Total memory size of submissions`+
+                    `Total timeconsume of submissions`, data = StudentLMKA_data)
+    
+    a <- 
+    ggcoefstats(model3, 
+                output = "plot")
+    b <- 
+    ggcoefstats(model4, 
+                output = "plot")
+    c <- 
+    ggcoefstats(model5, 
+                output = "plot")
+    d <- 
+    ggcoefstats(model6, 
+                output = "plot")
+    e <- 
+    ggcoefstats(model7, 
+                output = "plot")
+    f <- 
+    ggcoefstats(model8, 
+                output = "plot")
+    g <- 
+    ggcoefstats(model9, 
+                output = "plot")
+    h <- 
+    ggcoefstats(model10, 
+                output = "plot")
+    (a + b) / (c + d) / (e + f) / (g + h) 
+    
+  })
+  
+
   }
 
 shinyApp(ui, server)

@@ -250,7 +250,7 @@ To determine the ideal number of clusters for K-means clustering on the recompil
 
 ```{r}
 # Exclude non-numeric columns
-StudentLM_data_numeric <- StudentLM_data %>%
+clustering_data <- StudentLM_data %>%
   select(-student_ID)
 
 # Function to compute silhouette widths
@@ -275,7 +275,7 @@ silhouette_analysis <- function(data, max_clusters) {
 max_clusters <- 12
 
 # Perform silhouette analysis
-avg_sil_widths <- silhouette_analysis(StudentLM_data_numeric, max_clusters)
+avg_sil_widths <- silhouette_analysis(clustering_data, max_clusters)
 
 # Plot the average silhouette widths
 plot(1:max_clusters, avg_sil_widths, type = "b", pch = 19, frame = FALSE,
@@ -327,10 +327,6 @@ text(elbow_point, sse_values[elbow_point], labels = paste("Elbow Point:", elbow_
 K Means clustering is then performed on the recompiled learners' learning mode features with the number of clusters set as 2 based on the above results, in the following code chunk
 
 ```{r}
-# Drop the student_ID column
-clustering_data <- StudentLM_data %>%
-  select(-student_ID)
-
 # Standardize the data
 clustering_data_scaled <- scale(clustering_data)
 
@@ -879,6 +875,19 @@ ggplot(StudentLMKA_data,
   theme_ridges()
 
 ggplot(StudentLMKA_data, 
+       aes(x = `Sum of overall highest submission scores`, 
+           y = cluster,
+           fill = factor(stat(quantile))
+           )) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE, 
+    quantiles = 4,
+    quantile_lines = TRUE) +
+  scale_fill_viridis_d(name = "Quartiles") +
+  theme_ridges()
+
+ggplot(StudentLMKA_data, 
        aes(x = `Sum of points Overall`, 
            y = cluster,
            fill = factor(stat(quantile))
@@ -891,7 +900,6 @@ ggplot(StudentLMKA_data,
   scale_fill_viridis_d(name = "Quartiles") +
   theme_ridges()
 ```
-
 Cluster 2 has a sharper peak and more packed to the right which suggests that students in this cluster generally performed better, while for cluster 1 there is a 2nd smaller group of that performs even worse.
 
 A multi faceted plot to compare the distribution of answering performance based on *mastery points* in respect to the 2 clusters across 6 knowledge areas is plotted with the following code chunk.
@@ -986,26 +994,26 @@ ggplot(StudentLMKA_data,
            y = cluster,
            fill = factor(stat(quantile))
            )) +
-  stat_density_ridges(
-    geom = "density_ridges_gradient",
-    calc_ecdf = TRUE, 
-    quantiles = 4,
-    quantile_lines = TRUE) +
-  scale_fill_viridis_d(name = "Quartiles") +
-  theme_ridges()
-#h <- 
-  ggplot(StudentLMKA_data, 
-       aes(x = `Sum of points for s8Y2f knowledge`, 
-           y = cluster,
-           fill = factor(stat(quantile))
-           )) +
-  stat_density_ridges(
-    geom = "density_ridges_gradient",
-    calc_ecdf = TRUE, 
-    quantiles = 4,
-    quantile_lines = TRUE) +
-  scale_fill_viridis_d(name = "Quartiles") +
-  theme_ridges()
+    stat_density_ridges(
+      geom = "density_ridges_gradient",
+      calc_ecdf = TRUE, 
+      quantiles = 4,
+      quantile_lines = TRUE) +
+    scale_fill_viridis_d(name = "Quartiles") +
+    theme_ridges()
+  #h <- 
+    ggplot(StudentLMKA_data, 
+         aes(x = `Sum of points for s8Y2f knowledge`, 
+             y = cluster,
+             fill = factor(stat(quantile))
+             )) +
+    stat_density_ridges(
+      geom = "density_ridges_gradient",
+      calc_ecdf = TRUE, 
+      quantiles = 4,
+      quantile_lines = TRUE) +
+    scale_fill_viridis_d(name = "Quartiles") +
+    theme_ridges()
 
 #(a + b) / (c + d) / (e + f) / (g + h)
 
