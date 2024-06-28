@@ -1,7 +1,5 @@
 ---
-title: "G6 Project Website"
+title: "G6 Project Website 1"
 ---
 
-
-
-![](image/VA Group Project proposal image.jpg)
+![](image/VA%20Group%20Project%20proposal%20image.jpg)

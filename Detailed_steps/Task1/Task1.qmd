@@ -62,7 +62,6 @@ df_TitleInfo <- read_csv("data/Data_TitleInfo.csv")
 
 ```
 
-
 ```{r}
 csv_file_list <- dir('data/Data_SubmitRecord')
 csv_file_list <- paste0("./data/Data_SubmitRecord/",csv_file_list)
@@ -75,7 +74,6 @@ for (file in csv_file_list) { # for every file...
 }
 df_StudentRecord %>% glimpse()
 ```
-
 
 ## 5.3 Data Preparation
 
@@ -137,8 +135,6 @@ To get a better understanding of the variables in the original dataset, the glim
 glimpse(df_StudentInfo)
 ```
 
-
-
 #### Identifying Other Unexpected Duplicate Values
 
 Considering intuitively unique values for certain variables or dependent variables, other forms of duplicates are also identified and cleaned where relevant.
@@ -170,7 +166,6 @@ unique(duplicates$knowledge)
 unique(duplicates$sub_knowledge)
 ```
 
-
 ```{R}
 unique(df_TitleInfo$knowledge)
 unique(df_TitleInfo$sub_knowledge)
@@ -178,8 +173,7 @@ unique(df_TitleInfo$sub_knowledge)
 
 Based on the output above, there is a total of 8 knowledge areas and 15 sub-knowledge areas. This suggests that majority of the knowledge areas and approximately half of sub-knowledge areas have overlapping title_ID. From the nomenclature, each sub-knowledge area is tagged to only 1 knowledge area.
 
-To meaningfully analyse the relationship between knowledge areas & sub knowledge areas and other variables, additional columns are introduced where the values in these 2 columns are transposed as column labels with binary values to indicate the tagging of each question to that value. This is done in the following code chunk.
-3.  Duplicate class for each Individual Students in StudentRecord
+To meaningfully analyse the relationship between knowledge areas & sub knowledge areas and other variables, additional columns are introduced where the values in these 2 columns are transposed as column labels with binary values to indicate the tagging of each question to that value. This is done in the following code chunk. 3. Duplicate class for each Individual Students in StudentRecord
 
 ```{r}
 # Identify students with multiple classes
@@ -367,7 +361,6 @@ glimpse(df_StudentRecord)
 <details>
 
 <summary>Click to show code</summary>
-
 
 ```{r}
 # Merge StudentInfo with SubmitRecord based on student_ID

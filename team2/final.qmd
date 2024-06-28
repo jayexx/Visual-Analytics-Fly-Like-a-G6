@@ -624,6 +624,9 @@ ggplot(plot_data, aes(x = attempt, y = correct_rate, color = student_ID)) +
        y = "Correct Rate") +
   theme_minimal() +
   theme(legend.position = "none") # 如果学生太多，可以移除图例
+
+# 将 cluster_data 保存成 .rds 文件
+saveRDS(plot_data, "data/shinydata/trend_score.rds")
 ```
 
 ## 3.5 sex, age, major
@@ -663,6 +666,9 @@ cluster_data <- cluster_data %>%
 
 # 查看结果
 head(cluster_data)
+
+# 将 cluster_data 保存成 .rds 文件
+saveRDS(cluster_data, "data/cluster_data.rds")
 ```
 
 # 4 visualization
@@ -998,45 +1004,6 @@ if(length(cluster_assignments) == nrow(cluster_data)) {
 ```
 
 ```{r}
-
-# 检查数据结构
-str(cluster_data)
-
-# 将分类特征转换为因子类型
-categorical_columns <- c("sex", "age", "knowledge", "major1", "method", "title", "cluster")
-cluster_data[categorical_columns] <- lapply(cluster_data[categorical_columns], as.factor)
-
-# 转换数据以适合随机森林模型
-cluster_data <- cluster_data %>%
-  select(-student_ID)  # 排除不相关的列
-
-# 训练随机森林模型
-set.seed(123)  # 设置随机种子以保证结果可重复
-rf_model <- randomForest(cluster ~ ., data = cluster_data, importance = TRUE)
-
-# 获取变量重要性
-importance <- importance(rf_model)
-importance_df <- as.data.frame(importance)
-importance_df$Variable <- rownames(importance_df)
-rownames(importance_df) <- NULL
-
-# 按重要性排序
-importance_df <- importance_df %>% arrange(desc(MeanDecreaseGini))
-
-# 打印变量重要性
-print(importance_df)
-
-# 可视化变量重要性
-ggplot(importance_df, aes(x = reorder(Variable, MeanDecreaseGini), y = MeanDecreaseGini)) +
-  geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
-  coord_flip() +
-  theme_minimal() +
-  labs(title = "Variable Importance",
-       x = "Variables",
-       y = "Mean Decrease in Gini Index")
-```
-
-```{r}
 # 将需要的列转换为因子类型
 categorical_columns <- c("sex", "age", "knowledge", "major1", "method", "title", "cluster")
 cluster_data[categorical_columns] <- lapply(cluster_data[categorical_columns], as.factor)
@@ -1095,32 +1062,4 @@ hclust_result <- hclust(gower_dist, method = "ward.D2")
 # 绘制树状图
 dend <- as.dendrogram(hclust_result)
 plot(dend, main = "Dendrogram of Students Data", xlab = "Students", sub = "", ylab = "Height")
-```
-
-```{r}
-StudentLM_data1 <- StudentLM_data  %>%
-  select(-cluster) 
-#  mutate(across(everything(), scale))
-
-row.names(StudentLM_data1) <- StudentLM_data$student_ID
-#StudentLM_data1 <- select(StudentLM_data1, c(1, 2:13))
-StudentLM_data_matrix1 <- data.matrix(StudentLM_data1)
-
-StudentLM_data_d1 <- dist(
-  normalize(StudentLM_data_matrix1[, -c(1)]), 
-  method = "euclidean")
-dend_expend(StudentLM_data_d1)[[3]]
-
-StudentLM_data_clust <- hclust(StudentLM_data_d1, method = "average")
-num_k <- find_k(StudentLM_data_clust)
-plot(num_k)
-
-cluster_cut <- cutree(StudentLM_data_clust, k = 9)
-
-# Add the cluster assignment to the data
-StudentLM_data1_n <- normalize(StudentLM_data1)
-
-StudentLM_data1_n$cluster_hc <- as.factor(cluster_cut)
-
-glimpse(StudentLM_data1_n)
 ```
