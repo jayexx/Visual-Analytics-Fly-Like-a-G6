@@ -624,6 +624,9 @@ ggplot(plot_data, aes(x = attempt, y = correct_rate, color = student_ID)) +
        y = "Correct Rate") +
   theme_minimal() +
   theme(legend.position = "none") # 如果学生太多，可以移除图例
+
+# 将 cluster_data 保存成 .rds 文件
+saveRDS(plot_data, "data/shinydata/trend_score.rds")
 ```
 
 ## 3.5 sex, age, major
@@ -663,6 +666,9 @@ cluster_data <- cluster_data %>%
 
 # 查看结果
 head(cluster_data)
+
+# 将 cluster_data 保存成 .rds 文件
+saveRDS(cluster_data, "data/cluster_data.rds")
 ```
 
 # 4 visualization
