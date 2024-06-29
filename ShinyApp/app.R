@@ -63,7 +63,9 @@ aggregate_title_info <- readRDS("aggregate_title_info.RDS")
 percentage_correct <- readRDS("percentage_correct.RDS")
 overall_mastery <- readRDS ("overall_mastery.RDS")
 df_IRT <- readRDS ("mirtdata.RDS")
-
+# task 2 for yuhui
+avg_sil_widths <- readRDS("avg_sil_widths.rds")
+cluster_factor <- readRDS("cluster_factor.rds")
 # Ensure 'actual_score' and 'question_score' are numeric
 knowledge_expanded <- knowledge_expanded %>%
   mutate(actual_score = as.numeric(actual_score),
@@ -80,7 +82,7 @@ ui <- dashboardPage(skin = 'blue',
                     dashboardHeader(title = 'VISUALISING LEARNING EFFECTIVENESS FOR INSIGHTS ON NORTHCLASS INSTITUTE’S EDUCATION SYSTEM', titleWidth = 800),
                     
                     dashboardSidebar(
-                      width = 350,
+                      width = 400,
                       sidebarMenu(
                         menuItem('HomePage', tabName = 'HomePage'),
                         menuItem('Task 1: Knowledge Mastery & Weak links', tabName = 'Task1'),
@@ -162,12 +164,19 @@ ui <- dashboardPage(skin = 'blue',
                                   tabsetPanel(
                                     tabPanel("Silhouette Analysis",
                                              fluidRow(
-                                               plotOutput("plot1", height = "400px")  # Placeholder for Silhouette Analysis plot
+                                               plotOutput("plot01", height = "400px")  # Silhouette Analysis plot
                                              )
                                     ),
                                     tabPanel("Parallel Coordinates Plot",
                                              fluidRow(
-                                               plotlyOutput("plot2", height = "400px")  # Placeholder for Parallel Coordinates Plot
+                                               column(3, 
+                                                      sliderInput("num_clusters", "Number of Clusters:",
+                                                                  min = 2, max = 10, value = 2)),
+                                               column(9, 
+                                                      plotlyOutput("plot02", height = "800px"))  # Parallel Coordinates Plot
+                                             ),
+                                             fluidRow(
+                                               plotOutput("plot03", height = "400px")  # Data Table
                                              )
                                     )
                                   )
@@ -182,11 +191,17 @@ ui <- dashboardPage(skin = 'blue',
                                   titlePanel("Task3: Learning Mode & Knowledge Acquisition"),
                                   tabsetPanel(
                                     tabPanel("Clustering Analysis for Learning Modes",
-                                             box(
+                                             fluidRow( 
                                                title = "Silhouette Analysis for Number of K-means Clusters",
                                                plotOutput("plot1", height = "400px")
                                              ),
-                                             box(
+                                             
+                                             fluidRow(
+
+
+                                               sliderInput("num_clusters1", "Number of Clusters:",
+                                                           min = 2, max = 10, value = 2) ,                                            
+                                             
                                                title = "Parallel Coordinate plot",
                                                plotOutput("plot2", height = "400px")
                                              )
@@ -230,18 +245,18 @@ ui <- dashboardPage(skin = 'blue',
                                                          selected = "Overall sum of question mastery points"),
                                              fluidRow(
                                                column( width = 12,
-                                                 box(
+                                                 
                                                  title = "Multi-linear Regression of learning mode features (Overall)",
-                                                 plotOutput("plot6", width = NULL, height = "400px")
-                                               )
+                                                 plotOutput("plot6", width = NULL, height = "600px")
+                                               
                                                )
                                              ),
                                              fluidRow(
                                                column( width = 12,
-                                               box(
+                                               
                                                  title = "Multi-linear Regression of learning mode features (By Knowledge Areas)",
-                                                 plotOutput("plot7", width = NULL, height = "1000px")
-                                               )
+                                                 plotOutput("plot7", width = NULL, height = "1500px")
+                                               
                                                )
                                              )
                                              
@@ -587,41 +602,49 @@ server <- function(input, output) {
     }
   })
   
-  # Add server logic for Task 2 here
+  # Add server logic for Task 2 here yuhui
     
   # Define server logic for Task2
     
     # Silhouette Analysis logic
-    output$plot1 <- renderPlot({
-      req(avg_sil_widths, optimal_clusters)  # Ensure avg_sil_widths and optimal_clusters are available
-      plot(1:max_clusters, avg_sil_widths, type = "b", pch = 19, frame = FALSE,
+    output$plot01 <- renderPlot({
+      # Plot the average silhouette widths
+      plot(1:18, avg_sil_widths, type = "b", pch = 19, frame = FALSE,
            xlab = "Number of clusters", ylab = "Average silhouette width",
            main = "Silhouette Analysis for Determining Optimal Number of Clusters")
+      
+      # Highlight the optimal number of clusters
+      optimal_clusters <- which.max(avg_sil_widths)
       points(optimal_clusters, avg_sil_widths[optimal_clusters], col = "red", pch = 19)
     })
     
     # Parallel Coordinates Plot logic
-    output$plot2 <- renderPlotly({
-      req(cluster_data_clean)  # Ensure cluster_data_clean is available
+    output$plot02 <- renderPlotly({
       
-      # Prepare data for parallel coordinates plot
-      parallel_data <- cluster_data_clean %>%
-        select(sex, age, knowledge_pre, major, method_pre, title_pre, cluster)
-      
-      # Convert categorical variables to factors
-      parallel_data <- as.data.frame(lapply(parallel_data, as.factor))
-      
-      # Create parallel coordinates plot
-      parallel_plot <- ggplot(parallel_data, aes(color = cluster)) +
-        geom_line(aes(group = cluster)) +
-        labs(title = "Parallel Coordinates Plot of Students' Learning Modes",
-             x = "Variables", y = "Values") +
-        theme_minimal()
-      
-      # Convert ggplot to plotly for interactive visualization
-      ggplotly(parallel_plot, tooltip = "text") %>% layout(showlegend = FALSE)
+      generate_clusters <- function(data, k) {
+        numeric_data <- data %>% select_if(is.numeric)
+        kmeans_result <- kmeans(numeric_data, centers = k)
+        data$cluster <- as.factor(kmeans_result$cluster)
+        return(data)
+      }
+
+    cluster_data <- generate_clusters(cluster_factor, input$num_clusters)
+    parallel_plot <- ggparcoord(data = cluster_data, 
+                                columns = c(2, 3, 5, 7, 9, 10, 11, 12, 13), 
+                                groupColumn = 14, # cluster column index
+                                scale = "uniminmax",
+                                alphaLines = 0.2,
+                                boxplot = TRUE, 
+                                title = "Parallel Coordinates Plot of Students' learning modes") +
+      theme(axis.text.x = element_text(angle = 30, size = 20))
+    ggplotly(parallel_plot, tooltip = "text") %>% layout(showlegend = FALSE)
     })
     
+    # table output
+    output$plot03 <- renderPlotly({
+      
+      
+    })
 
   
   
@@ -659,12 +682,14 @@ server <- function(input, output) {
   })
   
   output$plot2 <- renderPlot({
+
+    
     clustering_data <- StudentLM_data %>%
       select(-student_ID)
     
     clustering_data_scaled <- scale(clustering_data)
     set.seed(123)
-    kmeans_result <- kmeans(clustering_data_scaled, centers = 2, nstart = 25)
+    kmeans_result <- kmeans(clustering_data_scaled, centers = input$num_clusters1, nstart = 25)
     
     StudentLM_data$cluster <- kmeans_result$cluster
     StudentLM_data_factor <- StudentLM_data
@@ -1113,7 +1138,8 @@ server <- function(input, output) {
                      alpha = 0.5) +
         geom_point(aes(x = percentage, y = title_ID, color = color_condition), size = 4, show.legend = TRUE) +
         #color points
-        scale_color_manual(values = c("1" = "#009688", "2" = "#762a83", "red" = "red"))+
+        scale_color_manual(values = c("1" = "#009688", "2" = "#762a83", "red" = "red"),
+                           labels = c("1" = "High Mastery Students", "2" = "Low Mastery Students"))+
         #add annotations for mean and standard deviations
         geom_text(x = stats_low_mastery$mean + 5, y = 38, label = "MEAN", angle = 90, size = 2.5, color = "#009688")+
         geom_text(x = stats_low_mastery$meanpos + 5, y = 38, label = "STDEV", angle = 90, size = 2.5, color = "#009688")+
