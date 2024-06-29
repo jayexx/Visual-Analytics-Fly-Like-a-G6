@@ -47,11 +47,11 @@ library(hrbrthemes)
 library(rlang)
 
 # Load your data
-merged_data <- readRDS("data/merged_data.RDS")
-knowledge_expanded <- readRDS("data/knowledge_expanded.RDS")
-mastery_scores <- readRDS("data/mastery_scores.RDS")
-adjusted_scores <- readRDS("data/adjusted_scores.RDS")
-knowledge_mastery <- readRDS("data/knowledge_mastery.RDS")
+merged_data <- readRDS("merged_data1.RDS")
+knowledge_expanded <- readRDS("knowledge_expanded1.RDS")
+mastery_scores <- readRDS("mastery_scores1.RDS")
+adjusted_scores <- readRDS("adjusted_scores1.RDS")
+knowledge_mastery <- readRDS("knowledge_mastery1.RDS")
 
 StudentLMKA_data <- readRDS("StudentLMKA_data.rds")
 StudentLM_data <- readRDS("StudentLM_data.rds")
@@ -249,7 +249,28 @@ ui <- dashboardPage(skin = 'blue',
                                 fluidPage(
                                   titlePanel("Task5: Recommendations"), 
                                   mainPanel(
-                                    textOutput("all_recommendations")
+                                    h3("", align = 'center'),
+                                    br(),
+                                    strong('Recommendations to enhance Course design & management: '),
+                                    p('This project focuses on analysis of the learning and performance of students in a computer programming course at NorthClass Training Institute to provide insights and recommendations on its education system.'),
+                                    br(),
+                                    strong('The Dataset'),
+                                    p('The provided materials for the challenge include 3 datasets described below, as well as a separate document providing a more detailed description of the data and variables:'),
+                                    tags$ul(
+                                      tags$li('Dataset 1: Student Information - This comprises of 5 columns and 1364 rows, providing individualized demographic variables of the learners (a.k.a students) within the scope of this project.'),
+                                      tags$li('Dataset 2: Learning Subject Title Information - This comprises of 5 columns and 44 rows, providing variables of the questions from the programming tasks which are collated in the scope of this project.'),
+                                      tags$li('Dataset 3: Class Submission Records - This comprises of multiple datasets, each with 10 columns and various number of rows, providing the participating learners’ answering variables to the questions collated in the scope of this project.')
+                                    ),
+                                    br(),
+                                    strong('Objective'),
+                                    p('The objectives of the study are as follows:'),
+                                    tags$ul(
+                                      tags$li("1) Knowledge Mastery & Weak Links: Quantitatively assess the learners' question-answering behaviors to identify weak links in their knowledge system."),
+                                      tags$li('2) Learner Profiling: Profile learners from various perspectives based on their personalized learning behavior patterns and characteristics.'),
+                                      tags$li('3) Learning Modes & Knowledge Acquisition: Examine the relationship between the learners\' learning modes and knowledge acquisition.'),
+                                      tags$li('4) Question Difficulty & Learner Knowledge: Analyse the alignment of questions\' difficulty level with learners\' knowledge levels to identify inappropriate questions.'),
+                                      tags$li('5) Provide recommendations for adjusting the question bank and teaching strategies based on the analysis.')
+                                    )
                                   )
                                 )
                         )
@@ -1105,23 +1126,7 @@ calculate_threshold_scores <- function(overall_mastery_df, threshold) {
 
   
   # Add server logic for Task 5 here
-output$Recommendations <- renderText({
-  paste(
-    "Recommendations to Enhance Course Design & Management:\n",
-    "1. Targeted Remediation for Weak Knowledge Areas: Identify students with poor performance on specific knowledge areas such as r8S3g, s8Y2f. Provide focused remediation sessions with targeted exercises and practice problems to address these gaps.",
-    "2. Supporting Variable Sub-Knowledge Areas: For areas like m3D1v, where specific sub-knowledge shows variability, offer detailed feedback, small group instruction, and supplemental tutoring sessions. Utilize targeted practice and peer tutoring to improve understanding.",
-    "3. Addressing High Error Rate Questions: Questions such as Question_5fgqjSBwTPG7KUV3it6O and Question_YWXHr4G6Cl7bEm9iF2kQ, which consistently show higher error rates, tailor teaching methods to meet varied learning needs. Provide additional explanations, simplified examples, and hands-on activities. Break down complex topics into smaller, manageable chunks, offering support at each step and gradually reducing assistance to build confidence and competence.",
-    "4. Reinforcing Foundational Concepts: Reinforce foundational concepts through interactive and hands-on learning activities. Relate these concepts to real-world examples and applications to help students understand their relevance and practical use.",
-    "5. Frequent Formative Assessments: Conduct frequent formative assessments to monitor students’ progress and understanding. Use the results to adjust teaching strategies and provide timely, constructive feedback.",
-    "\n\nRecommendations to Improve Question Bank:\n",
-    "1. Balanced Coverage of Knowledge Areas: Currently, some knowledge areas and sub-knowledge areas, such as k4W1c and s8Y2f, include only one question, b3C9s have three questions. This limits the assessment of learners' mastery. To provide a comprehensive evaluation, ensure that the question bank includes a balanced number of questions across all knowledge and sub-knowledge areas. This will help in identifying gaps in students' understanding more accurately.",
-    "2. Incorporate Various Question Types: Include diverse format of questions, such as multiple-choice, short answer, problem-solving, and essay questions. Add more question types specifically targeting weaker sub-knowledge areas like s8Y2f_v4x8by9j and g7R2j_j1g8g3v. These questions should vary in difficulty to progressively build students' mastery.",
-    "3. Sequential Difficulty and Instant Feedback: Arrange questions in a sequence of increasing difficulty. Start with basic questions to build confidence and gradually introduce more complex problems to challenge students. Design questions that provide instant feedback, offering explanations for both correct and incorrect responses. This helps students learn from their mistakes.",
-    "4. Engagement through Application: Diversify the sub-knowledge areas by incorporating real-world scenarios through case studies and project-based questions. This approach will engage students, encourage them to apply their knowledge, and facilitate learning through answering questions.",
-    "5. Dynamic Question Bank: Regularly update the question bank based on student feedback to ensure balanced and thorough assessments. These strategies will help identify knowledge gaps and inform more effective teaching methods, ultimately leading to improved student performance across all knowledge areas.",
-    sep = "\n\n"
-  )
-})
+
 }
 
 

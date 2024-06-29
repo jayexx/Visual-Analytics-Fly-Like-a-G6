@@ -198,6 +198,7 @@ head(method)
 ```
 
 ## 3.3 knowledge
+
 ```{r}
 # 创建 knowledge dataframe 并放入 student_ID 列的内容
 knowledge <- data.frame(student_ID = final_data$student_ID)
@@ -632,7 +633,3 @@ print(major_cluster_percentage)
 print(method_cluster_percentage)
 print(title_cluster_percentage)
 ```
-
-
-
-

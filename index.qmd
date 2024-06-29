@@ -1,7 +1,7 @@
 ---
 title: ""
 format: html
-css: styles.css
+css: homepage.css
 ---
 
 ![](images/chinavis.png){width="800" height="250"}

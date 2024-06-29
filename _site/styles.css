@@ -1,27 +1,7 @@
-body {
-  background: url('images/frontpage.jpg') no-repeat center center fixed;
-  background-size: cover;
-  background-color: rgba(255, 255, 255, 0.2); /* 添加半透明背景色 */
-  background-blend-mode: lighten; /* 混合模式设置为lighten以达到透明效果 */
-}
-
 .quarto-title-block-title {
   color: black; /* 设置标题文字颜色为黑色 */
   background: rgba(255, 255, 255, 0.8); /* 半透明背景框 */
   padding: 10px; /* 添加一些内边距 */
-}
-
-.fullscreen {
-  height: 180vh;
-  display: flex;
-  flex-direction: column; /* 使内容垂直排列 */
-  align-items: center; /* 水平居中 */
-  justify-content: flex-start; /* 靠近顶部对齐 */
-  color: black; /* 设置全屏部分文字颜色为黑色 */
-  background: rgba(255, 255, 255, 0.8); /* 半透明背景框 */
-  padding: 20px; /* 添加一些内边距 */
-  font-size: 24px; /* 设置字体大小 */
-  width: 120%; /* 设置宽度 */
 }
 
 /* 设置导航栏字体颜色为黑色 */
