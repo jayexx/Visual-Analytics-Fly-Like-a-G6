@@ -80,7 +80,6 @@ From the raw data, the file was cleaned, prepared and merged in the Data Prepara
 
 The code chunk below imports the prepared dataset into R environment by using [*`read_csv()`*](https://readr.tidyverse.org/reference/read_delim.html) function of [`readr`](https://readr.tidyverse.org/), which is part of the tidyverse package.
 
-
 ```{r}
 merged_data <- readRDS("merged_data_df.rds")
 
@@ -97,13 +96,12 @@ Based on assessment of the given data and contextual information provided, the s
 
 Recap on Mastery Point metric from task 1:
 
-  -   Proportion of absolutely and partially correct attempts:
-    -   absolutely correct attempts - award 1 pt 
-    -   partially correct attempts - award (actual_score / question_score) 
-    -   normalise attempts across questions - uses (total point / total attempts)\
-  -   Use of more than 1 method per question - multiply by no. of methods if absolutely correct attempt submitted for that question
+-   Proportion of absolutely and partially correct attempts: - absolutely correct attempts - award 1 pt - partially correct attempts - award (actual_score / question_score) - normalise attempts across questions - uses (total point / total attempts)\
+
+-   Use of more than 1 method per question - multiply by no. of methods if absolutely correct attempt submitted for that question
 
 -   Identify the top percentile of students with the highest mastery points as high mastery students
+
 -   Conversely, identify the bottom percentile of students with lowest mastery points as low mastery students
 
 This is computed in the following code chunks.
@@ -135,7 +133,7 @@ glimpse(mastery_scores_byQns)
 
 ```
 
-```
+```         
 # Combine the adjusted score with knowledge-transposed titleInfo dataframe
 mastery_scores2 <- df_TitleInfo_gp %>%
   distinct(title_ID, .keep_all = TRUE) %>%
@@ -158,11 +156,10 @@ mastery_scores_byStudent <- mastery_scores_byQns %>%
   )
 
 glimpse(mastery_scores_byStudent)
-str(mastery_scores_byStudent)
-head(mastery_scores_byStudent)
+
 ```
 
-The high knowledge level (aka high mastery) and low knowledge level (aka low mastery) are identified with the following code chunk
+Using a 95th and 5th percentile threshold, the high knowledge level (aka high mastery) and low knowledge level (aka low mastery) students are identified with the following code chunk
 
 ```{r}
 
@@ -190,7 +187,7 @@ glimpse(low_mastery_students)
 
 ### Poor correct answer rate
 
-Based on assessment of the given data and contextual information provided, the selected metrics to identify  poor correct answering rate is assessed to be as follows:
+Based on assessment of the given data and contextual information provided, the selected metrics to identify poor correct answering rate is assessed to be as follows:
 
 -   Never Correct Questions - Questions where a learner never gotten absolutely correct across all answers submitted
 -   Error rate - percentage of wrong answer (0 score) submissions
@@ -230,12 +227,11 @@ saveRDS(percentage_error, file = "percentage_error.RDS")
 
 ```
 
+## Visualising Inappropriate questions
 
-## Visualising In appropriate questions
+### Dumbell plot Analysis
 
-### Dumbell plot
-
-Dumbbell Plot Analysis Utilizing a dumbbell plot, we examined the discrepancies in question performance between high and low mastery students based on percentage of never correct questions.
+Utilizing a dumbbell plot, we examined the discrepancies in question performance between high and low mastery students based on percentage of never correct questions.
 
 ```{r}
 # Filter never absolutely correct questions based on high mastery students
@@ -244,10 +240,8 @@ filtered_never_correct <- never_absolutely_correct %>%
       distinct(student_ID, title_ID) %>%
       group_by(title_ID) %>%
       summarise(
-#        number_of_students = n_distinct(student_ID[never_absolutely_correct == TRUE]),
-        number_of_students = n(),
+        number_of_students = n_distinct(student_ID),
         .groups = 'drop') %>%
-#      left_join(aggregate_title_info, by = "title_ID") %>%
       mutate(percentage_of_student_wrong = (number_of_students/length(high_mastery_students$student_ID)*100)) 
     
     
@@ -332,6 +326,70 @@ glimpse(bottom_percentage_never_correct)
     comparison_long$color_condition <- as.factor(comparison_long$color_condition)
 ```
 
+```{r}
+    # Calculate percentages for high mastery and low mastery students
+    high_mastery_percent <- filtered_never_correct %>%
+      mutate(high_mastery = number_of_students / nrow(high_mastery_students) * 100) %>%
+      select (title_ID, high_mastery)
+    
+    low_mastery_percent <- bottom_percentage_never_correct %>%
+      mutate(low_mastery = no_of_students / nrow(low_mastery_students) * 100) %>%
+      select (title_ID, low_mastery)
+    
+    comparison_data <- high_mastery_percent %>%
+      left_join(low_mastery_percent, by = "title_ID") %>%
+      mutate(diff = round(low_mastery - high_mastery),digits = 2) %>%
+      pivot_longer (cols = c(low_mastery,high_mastery)) %>%
+      rename (type_of_student = name,
+              percentage = value)
+    
+    low_mastery <-  comparison_data %>%
+      filter(type_of_student == "low_mastery")
+    
+    high_mastery <-  comparison_data %>%
+      filter(type_of_student == "high_mastery")
+    
+    stats <- comparison_data %>%
+      group_by(type_of_student) %>%
+      summarise(mean = mean(percentage),
+                SE = sd(percentage)) %>%
+      mutate(meanpos = mean + 1 *SE,
+             meanneg = mean - 1 *SE)
+    
+    stats_low_mastery <- stats %>%
+      filter(type_of_student == "low_mastery")
+    stats_high_mastery <- stats %>%
+      filter(type_of_student == "high_mastery")
+    
+    diff <- comparison_data %>% 
+      filter(type_of_student == "low_mastery") %>%
+      mutate(x_pos = percentage + (-diff/2))
+    
+    comparison_spread <- comparison_data %>%
+      spread(type_of_student, percentage)
+    
+    # Join the stats to get the mean values
+    comparison_spread <- comparison_spread %>%
+      left_join(stats %>% filter(type_of_student == "high_mastery") %>% select(-type_of_student), by = character()) %>%
+      rename(high_mastery_mean = mean, high_mastery_SE = SE, high_mastery_meanpos = meanpos, high_mastery_meanneg = meanneg) %>%
+      left_join(stats %>% filter(type_of_student == "low_mastery") %>% select(-type_of_student), by = character()) %>%
+      rename(low_mastery_mean = mean, low_mastery_SE = SE, low_mastery_meanpos = meanpos, low_mastery_meanneg = meanneg)
+    
+    # Create the color condition
+    comparison_spread <- comparison_spread %>%
+      mutate(color_condition = case_when(
+        high_mastery > high_mastery_meanpos & low_mastery > low_mastery_meanpos ~ "red",
+        TRUE ~ "default"
+      ))
+    
+    # Gather the data back to long format
+    comparison_long <- comparison_spread %>%
+      gather(type_of_student, percentage, high_mastery, low_mastery) %>%
+      mutate(type_of_student = factor(type_of_student, levels = c("high_mastery", "low_mastery"))) %>%
+      mutate (color_condition = ifelse(color_condition == "default", type_of_student, color_condition))
+    
+    comparison_long$color_condition <- as.factor(comparison_long$color_condition)
+```
 
 ```{r}
       ggplot(comparison_long) +
@@ -352,7 +410,9 @@ glimpse(bottom_percentage_never_correct)
                      alpha = 0.5) +
         geom_point(aes(x = percentage, y = title_ID, color = color_condition), size = 4, show.legend = TRUE) +
         #color points
-        scale_color_manual(values = c("1" = "#009688", "2" = "#762a83", "red" = "red"))+
+        scale_color_manual(values = c("1" = "#009688", "2" = "#762a83", "red" = "red"),
+                           labels = c("1" = "High Mastery Students", "2" = "Low Mastery Students")
+                           ) +
         #add annotations for mean and standard deviations
         geom_text(x = stats_low_mastery$mean + 5, y = 38, label = "MEAN", angle = 90, size = 2.5, color = "#009688")+
         geom_text(x = stats_low_mastery$meanpos + 5, y = 38, label = "STDEV", angle = 90, size = 2.5, color = "#009688")+
@@ -383,7 +443,7 @@ glimpse(bottom_percentage_never_correct)
 
 ### Lollipop Chart Analysis
 
-Our subsequent analysis involved a lollipop chart to identify the error rates among high mastery students across all assessed questions. 
+Our subsequent analysis involved a lollipop chart to identify the error rates among high mastery students across all assessed questions.
 
 ```{r}
 
@@ -421,8 +481,8 @@ ggplot(percentage_error, aes(x = reorder(title_ID,avg_percentage_wrong), y = avg
     panel.spacing.x = unit(2, "cm")
     )
 ```
-By focusing on the 75th percentile of error rates, we identified several questions that frequently tripped up otherwise proficient students. Notable examples include Question_5fgqjSBwTPG7KUV3it6O and Question_YWXHr4G6Cl7bEm9iF2kQ, which consistently demonstrated higher error rates, indicating potential misalignment with the expected competencies of high mastery students. These findings highlight the need for a reassessment of these questions to ensure they accurately measure and reflect true student performance.
 
+By focusing on the 75th percentile of error rates, we identified several questions that frequently tripped up otherwise proficient students. Notable examples include Question_5fgqjSBwTPG7KUV3it6O and Question_YWXHr4G6Cl7bEm9iF2kQ, which consistently demonstrated higher error rates, indicating potential misalignment with the expected competencies of high mastery students. These findings highlight the need for a reassessment of these questions to ensure they accurately measure and reflect true student performance.
 
 ### Information Characteristic Curve (ICC) Analysis
 
@@ -505,18 +565,5 @@ plot(fit3PL, type = 'trace', which.item = c(1:38), facet_items = TRUE,
      main = "Category Characteristic Curves Plot of 2PL Model",
      layout = c(10, ceiling(38 / 10)))
 ```
+
 This analysis highlighted items like Question_h7pXNg80nJbw1C4kAPRm and Question_Az73sM0rHfWVKuc4X2kL, which showed shallow gradients and did not peak at optimal probabilities. This indicates a low discrimination ability among various student abilities, underscoring the ineffectiveness of these questions in differentiating between differing levels of student mastery. Coupled with information from high mastery student ICCs, which ideally should show steeper slopes, it was confirmed that even top-performing students struggled with these questions, suggesting they are poorly suited for assessing high-level competencies.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
