@@ -1,9 +1,4 @@
 ---
 title: "G6 Project Website"
 format: html
-css: styles.css
 ---
-
-::: fullscreen
-<h1>Welcome to G6 Project Website</h1>
-:::
