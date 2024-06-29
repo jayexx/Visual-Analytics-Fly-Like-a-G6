@@ -7,14 +7,20 @@ website:
     left:
       - href: "Project_Proposal/Group6_project_proposal.html"
         text: "Project Proposal"
-      - text: Tasks
+      - text: Detailed steps
         menu:
-        - href: "team3/Take_home_Ex3/Take_home_Ex3.html"
+        - href: "Detailed_steps/DataPrep/DataPrep.html"
+          text: "Data Preparation"
+        - href: "Detailed_steps/Task1/Task1.html"
           text: "Task1"
-        - href: "team3/Take_home_Ex3/Take_home_Ex3.html"
+        - href: "Detailed_steps/Task2/Task2.html"
           text: "Task2"
-        - href: "team3/Take_home_Ex3/Take_home_Ex3.html"
+        - href: "Detailed_steps/Task3/Task3.html"
           text: "Task3"
+        - href: "Detailed_steps/Task4/Task4.html"
+          text: "Task4"
+      - href: ""
+      - text: Shinny app
       - about.qmd
     right:
       - href: index.qmd

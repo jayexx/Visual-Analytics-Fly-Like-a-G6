@@ -1,5 +1,9 @@
 ---
-title: "G6 Project Website 1"
+title: "G6 Project Website"
+format: html
+css: styles.css
 ---
 
-![](image/VA%20Group%20Project%20proposal%20image.jpg)
+::: fullscreen
+<h1>Welcome to G6 Project Website</h1>
+:::

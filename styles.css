@@ -1,1 +1,18 @@
 /* css styles */
+
+body {
+  background: url('images/home_background.png') no-repeat center center fixed;
+  background-size: cover;
+}
+
+.quarto-title-block-title {
+  color: white;
+}
+
+.fullscreen {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
