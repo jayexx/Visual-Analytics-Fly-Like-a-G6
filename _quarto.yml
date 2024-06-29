@@ -19,9 +19,8 @@ website:
           text: "Task3"
         - href: "Detailed_steps/Task4/Task4.html"
           text: "Task4"
-      - href: ""
+      - href: "ShinyApp/app.R"
       - text: Shinny app
-      - about.qmd
     right:
       - href: index.qmd
         text: Home

@@ -1,9 +1,11 @@
 ---
-title: "About"
+title: "Our Team"
 ---
 
-About this site
+::: panel-tabset
+## Fudi Xiao
 
-```{r}
-1 + 1
-```
+## Low Jixiong
+
+## Wang Yuhui
+:::
