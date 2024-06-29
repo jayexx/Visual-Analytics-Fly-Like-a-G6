@@ -18,9 +18,9 @@ body {
   align-items: center; /* 水平居中 */
   justify-content: flex-start; /* 靠近顶部对齐 */
   color: black; /* 设置全屏部分文字颜色为黑色 */
-  background: rgba(255, 255, 255, 0.8); /* 半透明背景框 */
+  background: rgba(300, 300, 300, 0.8); /* 半透明背景框 */
   padding: 20px; /* 添加一些内边距 */
-  font-size: 24px; /* 设置字体大小 */
+  font-size: 18px; /* 设置字体大小 */
   width: 120%; /* 设置宽度 */
 }
 

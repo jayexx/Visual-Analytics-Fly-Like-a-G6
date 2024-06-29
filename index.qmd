@@ -4,7 +4,7 @@ format: html
 css: homepage.css
 ---
 
-![](images/chinavis.png){width="800" height="250"}
+![](images/chinavis.png){width="25.4cm" height="9cm"}
 
 ::: fullscreen
 NorthClass, a prominent higher education training institution, offers over 100 courses across various disciplines, attracting around 300,000 registered learners. The institution collects temporal learning data to assess instructional quality. To optimize teaching resources and improve quality, NorthClass plans to establish a Smart Education Development and Innovation Group. This group will explore the use of next-generation AI technology to cultivate innovative talents.

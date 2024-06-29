@@ -81,7 +81,6 @@ From the raw data, the file was cleaned, prepared and merged in the Data Prepara
 
 The code chunk below imports the prepared dataset into R environment by using [*`read_csv()`*](https://readr.tidyverse.org/reference/read_delim.html) function of [`readr`](https://readr.tidyverse.org/), which is part of the tidyverse package.
 
-
 ```{r}
 merged_data <- readRDS("merged_data_df.rds")
 
@@ -123,26 +122,26 @@ The following variables will be obtained with the code chunk below in preparatio
 
 -   Peak answering hours
 
-  (a) percentage of answers on weekdays,
-  (b) percentage of answers during working hours
+(a) percentage of answers on weekdays,
+(b) percentage of answers during working hours
 
 -   Variety of question types attempted
 
-  (a) total number of different questions attempted,
-  (b) total number of different knowledge and sub knowledge areas covered,
+(a) total number of different questions attempted,
+(b) total number of different knowledge and sub knowledge areas covered,
 
 -   Depth of question types
 
-  (a) mean question scores,
-  (b) mean memory size of file submissions across questions
-  (c) mean time consume across questions
+(a) mean question scores,
+(b) mean memory size of file submissions across questions
+(c) mean time consume across questions
 
 -   Level of learning effort in answers submitted
 
-  (a) total number of answering attempts,
-  (b) average number of different answering methods used across questions,
-  (c) total memory size of file submission
-  (d) total time consume for answers submitted
+(a) total number of answering attempts,
+(b) average number of different answering methods used across questions,
+(c) total memory size of file submission
+(d) total time consume for answers submitted
 
 ```{r}
 StudentLM_data <- merged_data_lm %>%
@@ -309,7 +308,7 @@ compute_sse <- function(data, max_clusters) {
 max_clusters <- 18
 
 # Compute SSE for each number of clusters
-sse_values <- compute_sse(StudentLM_data_numeric, max_clusters)
+sse_values <- compute_sse(clustering_data, max_clusters)
 
 # Plot SSE against number of clusters
 plot(1:max_clusters, sse_values, type = "b", pch = 19, frame = FALSE,
@@ -492,6 +491,7 @@ StudentLM_data_clust <- hclust(StudentLM_data_d1, method = "average")
 num_k <- find_k(StudentLM_data_clust)
 plot(num_k)
 ```
+
 Based on the output above, 9 clusters were identified to be optimal in terms of distinction in separation.
 
 ### Hierarchical Clustering and Visualisation
@@ -602,10 +602,9 @@ From the plots above, it can be observed that although hierarchical clustering c
 
 Based on the given data, the relevant features that best defines a learner's knowledge acquisition is assessed to be as follows:
 
--   Knowledge mastery determined by (a) overall sum of highest actual score for each question attempted, (b) sum of highest actual score of each question by knowledge area 
+-   Knowledge mastery determined by (a) overall sum of highest actual score for each question attempted, (b) sum of highest actual score of each question by knowledge area
 -   Knowledge mastery determined by combined metric defined in Task 1, (a) overall total mastery points, (d) sum of mastery points by knowledge area
 -   correct answering rate determined by (a) percentage of answers absolutely correct, (b) total number of questions with answers absolutely correct and partially correct
-
 
 ### Feature engineering
 
@@ -622,11 +621,8 @@ The following variables will be obtained with the code chunks below in preparati
 
 Recap on Mastery Point metric from task 1:
 
-  -   Proportion of absolutely and partially correct attempts:
-    -   absolutely correct attempts - award 1 pt 
-    -   partially correct attempts - award (actual_score / question_score) 
-    -   normalise attempts across questions - uses (total point / total attempts)\
-  -   Use of more than 1 method per question - multiply by no. of methods if absolutely correct attempt submitted for that question
+-   Proportion of absolutely and partially correct attempts: - absolutely correct attempts - award 1 pt - partially correct attempts - award (actual_score / question_score) - normalise attempts across questions - uses (total point / total attempts)\
+-   Use of more than 1 method per question - multiply by no. of methods if absolutely correct attempt submitted for that question
 
 (a) overall total mastery points
 (b) sum of mastery points by knowledge group
@@ -635,8 +631,6 @@ Recap on Mastery Point metric from task 1:
 
 (a) percentage of answers absolutely correct,
 (b) total number of questions with answers absolutely correct and partially correct
-
-
 
 ```{r}
 #| eval: false
@@ -900,6 +894,7 @@ ggplot(StudentLMKA_data,
   scale_fill_viridis_d(name = "Quartiles") +
   theme_ridges()
 ```
+
 Cluster 2 has a sharper peak and more packed to the right which suggests that students in this cluster generally performed better, while for cluster 1 there is a 2nd smaller group of that performs even worse.
 
 A multi faceted plot to compare the distribution of answering performance based on *mastery points* in respect to the 2 clusters across 6 knowledge areas is plotted with the following code chunk.
@@ -1018,7 +1013,6 @@ ggplot(StudentLMKA_data,
 #(a + b) / (c + d) / (e + f) / (g + h)
 
 ```
-
 
 A multi faceted plot to compare the distribution of answering performance based on *highest actual score* in respect to the 2 clusters across 6 knowledge areas is also plotted with the following code chunk.
 
@@ -1174,7 +1168,8 @@ ggbetweenstats(
   messages = FALSE
 )
 ```
-Based on the figures, the p-value is extremely small which suggest that there is strong statistical significance between the 2 clusters in the performance of mastery points of students in each cluster, wherein, cluster 2 had fared better than cluster 1. 
+
+Based on the figures, the p-value is extremely small which suggest that there is strong statistical significance between the 2 clusters in the performance of mastery points of students in each cluster, wherein, cluster 2 had fared better than cluster 1.
 
 Combining the 3 findings, a sensible explanation is that cluster 2 students likely submitted more attempts in order to get a higher actual score and use a wider variety of answering methods than cluster 1 .
 
@@ -1378,17 +1373,17 @@ model10 <- lm(`Sum of points for y9W5d knowledge` ~
 
 In conclusion, the visual analysis of learning modes clustering found that 2 substantially distinct clusters can be formed using k-means clustering of the selected students' learning mode features, whereby cluster 2 tends to be the more earnest learning mode cluster.
 
-Considering the differences in the 2 clusters across the features in addition to the statistical differences in relation to the indicators of students' knowledge acquisition it was found that 
+Considering the differences in the 2 clusters across the features in addition to the statistical differences in relation to the indicators of students' knowledge acquisition it was found that
 
 (1) attempting questions over a wider span of questions and different knowledge,
-(2) attempting more demanding questions that required more effort, 
-(3) applying more effort in answer attempts 
+(2) attempting more demanding questions that required more effort,
+(3) applying more effort in answer attempts
 
-were congruent with knowledge acquisition in terms of higher scores, higher proportion of correct submissions and the use of more answering methods, especially for knowledge in g7R2j, m3D1v, t5V9e and y9W5. 
+were congruent with knowledge acquisition in terms of higher scores, higher proportion of correct submissions and the use of more answering methods, especially for knowledge in g7R2j, m3D1v, t5V9e and y9W5.
 
-Furthermore, from the multiple linear regression model fit, it was also discovered that, 
+Furthermore, from the multiple linear regression model fit, it was also discovered that,
 
-(1) applying a more evenly spread effort across questions and 
-(2) attempting higher scoring questions 
+(1) applying a more evenly spread effort across questions and
+(2) attempting higher scoring questions
 
 had a statistically more significant effect on overall points and scores.

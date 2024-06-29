@@ -80,7 +80,7 @@ ui <- dashboardPage(skin = 'blue',
                     dashboardHeader(title = 'VISUALISING LEARNING EFFECTIVENESS FOR INSIGHTS ON NORTHCLASS INSTITUTE’S EDUCATION SYSTEM', titleWidth = 800),
                     
                     dashboardSidebar(
-                      width = 400,
+                      width = 350,
                       sidebarMenu(
                         menuItem('HomePage', tabName = 'HomePage'),
                         menuItem('Task 1: Knowledge Mastery & Weak links', tabName = 'Task1'),

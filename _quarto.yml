@@ -5,6 +5,8 @@ website:
   title: "Visual-Analytics-Fly-Like-a-G6"
   navbar:
     left:
+      - href: "Overview"
+        text: "Overview"
       - href: "Project_Proposal/Group6_project_proposal.html"
         text: "Project Proposal"
       - text: Detailed steps
@@ -21,6 +23,7 @@ website:
           text: "Task4"
       - href: "ShinyApp/app.R"
       - text: Shinny app
+
     right:
       - href: index.qmd
         text: Home

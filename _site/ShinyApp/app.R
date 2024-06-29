@@ -80,7 +80,7 @@ ui <- dashboardPage(skin = 'blue',
                     dashboardHeader(title = 'VISUALISING LEARNING EFFECTIVENESS FOR INSIGHTS ON NORTHCLASS INSTITUTE’S EDUCATION SYSTEM', titleWidth = 800),
                     
                     dashboardSidebar(
-                      width = 400,
+                      width = 350,
                       sidebarMenu(
                         menuItem('HomePage', tabName = 'HomePage'),
                         menuItem('Task 1: Knowledge Mastery & Weak links', tabName = 'Task1'),
@@ -97,7 +97,7 @@ ui <- dashboardPage(skin = 'blue',
                         tabItem(tabName = 'HomePage',
                                 fluidPage(
                                   mainPanel(
-                                    h3("G6 Project Title", align = 'center'),
+                                    h3("G6 : Visualising Learning effectiveness for Insights on Noethclass Institute ", align = 'center'),
                                     br(),
                                     strong('Introduction'),
                                     p('This project focuses on analysis of the learning and performance of students in a computer programming course at NorthClass Training Institute to provide insights and recommendations on its education system.'),
@@ -158,9 +158,23 @@ ui <- dashboardPage(skin = 'blue',
                         # Task 2
                         tabItem(tabName = 'Task2',
                                 fluidPage(
-                                  titlePanel("Task2: Learners Profile")
-                                  # Add your UI components for Task 2 here
-                                )),
+                                  titlePanel("Task2: Learners Profile"),
+                                  tabsetPanel(
+                                    tabPanel("Silhouette Analysis",
+                                             fluidRow(
+                                               plotOutput("plot1", height = "400px")  # Placeholder for Silhouette Analysis plot
+                                             )
+                                    ),
+                                    tabPanel("Parallel Coordinates Plot",
+                                             fluidRow(
+                                               plotlyOutput("plot2", height = "400px")  # Placeholder for Parallel Coordinates Plot
+                                             )
+                                    )
+                                  )
+                                )
+                        )
+                        
+                        ,
                         
                         # Task 3
                         tabItem(tabName = 'Task3',
@@ -183,14 +197,20 @@ ui <- dashboardPage(skin = 'blue',
                                                                      "Overall sum of highest submission scores per question", 
                                                                      "Overall sum of question mastery points"), 
                                                          selected = "Overall sum of question mastery points"),
-                                             box(
+                                             
+                                               box(
                                                title = "Ridgeline Plot of Distribution of Both Clusters",
                                                plotOutput("plot3", height = "400px")
-                                             ),
-                                             box(
-                                               title = "Ridgeline Plot of Distribution by Knowledge Areas for Both Clusters",
-                                               plotOutput("plot4", height = "400px")
-                                             )
+                                               ),
+                                             
+                                             
+                                             
+                                               box(
+                                                 title = "Ridgeline Plot of Distribution by Knowledge Areas for Both Clusters",
+                                                 plotOutput("plot4", height = "1000px")
+                                               ) 
+                                             
+                                             
                                     ),
                                     tabPanel("2-Sample Mean Statistical Test For Both Clusters",
                                              selectInput("KAindicator2", tags$strong("Choose an indicator:"), 
@@ -208,14 +228,23 @@ ui <- dashboardPage(skin = 'blue',
                                                          choices = c("Overall sum of highest submission scores per question", 
                                                                      "Overall sum of question mastery points"), 
                                                          selected = "Overall sum of question mastery points"),
-                                             box(
-                                               title = "Multi-linear Regression of learning mode features (Overall)",
-                                               plotOutput("plot6", height = "400px")
+                                             fluidRow(
+                                               column( width = 12,
+                                                 box(
+                                                 title = "Multi-linear Regression of learning mode features (Overall)",
+                                                 plotOutput("plot6", width = NULL, height = "400px")
+                                               )
+                                               )
                                              ),
-                                             box(
-                                               title = "Multi-linear Regression of learning mode features (By Knowledge Areas)",
-                                               plotOutput("plot7", height = "400px")
+                                             fluidRow(
+                                               column( width = 12,
+                                               box(
+                                                 title = "Multi-linear Regression of learning mode features (By Knowledge Areas)",
+                                                 plotOutput("plot7", width = NULL, height = "1000px")
+                                               )
+                                               )
                                              )
+                                             
                                     )
                                   )
                                 )),
@@ -251,29 +280,49 @@ ui <- dashboardPage(skin = 'blue',
                                   mainPanel(
                                     h3("", align = 'center'),
                                     br(),
-                                    strong('Recommendations to enhance Course design & management: '),
-                                    p('This project focuses on analysis of the learning and performance of students in a computer programming course at NorthClass Training Institute to provide insights and recommendations on its education system.'),
-                                    br(),
-                                    strong('The Dataset'),
-                                    p('The provided materials for the challenge include 3 datasets described below, as well as a separate document providing a more detailed description of the data and variables:'),
+                                    strong('Recommendations to enhance Course design & management:'),
+                                    p(''),
                                     tags$ul(
-                                      tags$li('Dataset 1: Student Information - This comprises of 5 columns and 1364 rows, providing individualized demographic variables of the learners (a.k.a students) within the scope of this project.'),
-                                      tags$li('Dataset 2: Learning Subject Title Information - This comprises of 5 columns and 44 rows, providing variables of the questions from the programming tasks which are collated in the scope of this project.'),
-                                      tags$li('Dataset 3: Class Submission Records - This comprises of multiple datasets, each with 10 columns and various number of rows, providing the participating learners’ answering variables to the questions collated in the scope of this project.')
+                                      tags$li(
+                                        "1. Targeted Remediation for Weak Knowledge Areas: Identify students with poor performance on specific knowledge areas such as r8S3g, s8Y2f. Provide focused remediation sessions with targeted exercises and practice problems to address these gaps."
+                                      ),
+                                      tags$li(
+                                        "2. Supporting Variable Sub-Knowledge Areas: For areas like m3D1v, where specific sub-knowledge shows variability, offer detailed feedback, small group instruction, and supplemental tutoring sessions. Utilize targeted practice and peer tutoring to improve understanding."
+                                      ),
+                                      tags$li(
+                                        "3. Addressing High Error Rate Questions: Questions such as Question_5fgqjSBwTPG7KUV3it6O and Question_YWXHr4G6Cl7bEm9iF2kQ, which consistently show higher error rates, tailor teaching methods to meet varied learning needs. Provide additional explanations, simplified examples, and hands-on activities. Break down complex topics into smaller, manageable chunks, offering support at each step and gradually reducing assistance to build confidence and competence."
+                                      ),
+                                      tags$li(
+                                        "4. Reinforcing Foundational Concepts: Reinforce foundational concepts through interactive and hands-on learning activities. Relate these concepts to real-world examples and applications to help students understand their relevance and practical use."
+                                      ),
+                                      tags$li(
+                                        "5. Frequent Formative Assessments: Conduct frequent formative assessments to monitor students’ progress and understanding. Use the results to adjust teaching strategies and provide timely, constructive feedback."
+                                      )
                                     ),
                                     br(),
-                                    strong('Objective'),
-                                    p('The objectives of the study are as follows:'),
+                                    strong('Recommendations to improve Question bank:'),
+                                    p(''),
                                     tags$ul(
-                                      tags$li("1) Knowledge Mastery & Weak Links: Quantitatively assess the learners' question-answering behaviors to identify weak links in their knowledge system."),
-                                      tags$li('2) Learner Profiling: Profile learners from various perspectives based on their personalized learning behavior patterns and characteristics.'),
-                                      tags$li('3) Learning Modes & Knowledge Acquisition: Examine the relationship between the learners\' learning modes and knowledge acquisition.'),
-                                      tags$li('4) Question Difficulty & Learner Knowledge: Analyse the alignment of questions\' difficulty level with learners\' knowledge levels to identify inappropriate questions.'),
-                                      tags$li('5) Provide recommendations for adjusting the question bank and teaching strategies based on the analysis.')
+                                      tags$li(
+                                        "1. Balanced Coverage of Knowledge Areas: Currently, some knowledge areas and sub-knowledge areas, such as k4W1c and s8Y2f, include only one question, while b3C9s has three questions. This limits the assessment of learners' mastery. To provide a comprehensive evaluation, ensure that the question bank includes a balanced number of questions across all knowledge and sub-knowledge areas. This will help in identifying gaps in students' understanding more accurately."
+                                      ),
+                                      tags$li(
+                                        "2. Incorporate Various Question Types: Include diverse formats of questions, such as multiple-choice, short answer, problem-solving, and essay questions. Add more question types specifically targeting weaker sub-knowledge areas like s8Y2f_v4x8by9j and g7R2j_j1g8g3v. These questions should vary in difficulty to progressively build students' mastery."
+                                      ),
+                                      tags$li(
+                                        "3. Sequential Difficulty and Instant Feedback: Arrange questions in a sequence of increasing difficulty. Start with basic questions to build confidence and gradually introduce more complex problems to challenge students. Design questions that provide instant feedback, offering explanations for both correct and incorrect responses. This helps students learn from their mistakes."
+                                      ),
+                                      tags$li(
+                                        "4. Engagement through Application: Diversify the sub-knowledge areas by incorporating real-world scenarios through case studies and project-based questions. This approach will engage students, encourage them to apply their knowledge, and facilitate learning through answering questions."
+                                      ),
+                                      tags$li(
+                                        "5. Dynamic Question Bank: Regularly update the question bank based on student feedback to ensure balanced and thorough assessments. These strategies will help identify knowledge gaps and inform more effective teaching methods, ultimately leading to improved student performance across all knowledge areas."
+                                      )
                                     )
                                   )
                                 )
                         )
+                        
                       )
                     )
 )
@@ -539,6 +588,47 @@ server <- function(input, output) {
   })
   
   # Add server logic for Task 2 here
+    
+  # Define server logic for Task2
+    
+    # Silhouette Analysis logic
+    output$plot1 <- renderPlot({
+      req(avg_sil_widths, optimal_clusters)  # Ensure avg_sil_widths and optimal_clusters are available
+      plot(1:max_clusters, avg_sil_widths, type = "b", pch = 19, frame = FALSE,
+           xlab = "Number of clusters", ylab = "Average silhouette width",
+           main = "Silhouette Analysis for Determining Optimal Number of Clusters")
+      points(optimal_clusters, avg_sil_widths[optimal_clusters], col = "red", pch = 19)
+    })
+    
+    # Parallel Coordinates Plot logic
+    output$plot2 <- renderPlotly({
+      req(cluster_data_clean)  # Ensure cluster_data_clean is available
+      
+      # Prepare data for parallel coordinates plot
+      parallel_data <- cluster_data_clean %>%
+        select(sex, age, knowledge_pre, major, method_pre, title_pre, cluster)
+      
+      # Convert categorical variables to factors
+      parallel_data <- as.data.frame(lapply(parallel_data, as.factor))
+      
+      # Create parallel coordinates plot
+      parallel_plot <- ggplot(parallel_data, aes(color = cluster)) +
+        geom_line(aes(group = cluster)) +
+        labs(title = "Parallel Coordinates Plot of Students' Learning Modes",
+             x = "Variables", y = "Values") +
+        theme_minimal()
+      
+      # Convert ggplot to plotly for interactive visualization
+      ggplotly(parallel_plot, tooltip = "text") %>% layout(showlegend = FALSE)
+    })
+    
+
+  
+  
+  
+  
+  
+  
   
   # Server logic for Task 3
   output$plot1 <- renderPlot({
