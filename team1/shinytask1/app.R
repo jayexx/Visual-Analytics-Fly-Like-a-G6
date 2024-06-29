@@ -18,54 +18,171 @@ knowledge_expanded <- knowledge_expanded %>%
          question_score = as.numeric(question_score))
 
 # Shiny app UI
-ui <- dashboardPage(skin = 'blue',
-                    dashboardHeader(title = 'VISUALISING LEARNING EFFECTIVENESS FOR INSIGHTS ON NORTHCLASS INSTITUTE’S EDUCATION SYSTEM', titleWidth = 800),
-                    
-                    dashboardSidebar(
-                      sidebarMenu(
-                        menuItem('Task1: Knowledge Mastery and Weak Links', tabName = 'Task1')
-                      )
-                    ),
-                    
-                    dashboardBody(
-                      tabItems(
-                        tabItem(tabName = 'Task1',
-                                fluidPage(
-                                  titlePanel("Task1: Knowledge Mastery and Weak Links"),
-                                  tabsetPanel(
-                                    tabPanel("Weak Links by Questions",
-                                             box(
-                                               radioButtons('questionMetric',
-                                                            label = tags$strong('Choose Metric:'),
-                                                            choices = c('Normalized Average Highest Score' = 'NormAvgHighestScore',
-                                                                        'Non-normalized Average Highest Score' = 'NonNormAvgHighestScore',
-                                                                        'Average Methods Applied on Questions' = 'AvgMethodsApplied'),
-                                                            inline = TRUE)
-                                             ),
-                                             box(
-                                               width = 12, height = 500, solidHeader = TRUE, collapsible = FALSE, collapsed = FALSE,
-                                               plotlyOutput('questionPlot', height = 400)
-                                             )
-                                    ),
-                                    tabPanel("Weak Links by Knowledge Area",
-                                             box(
-                                               radioButtons('knowledgeMetric',
-                                                            label = tags$strong('Choose Metric:'),
-                                                            choices = c('Total Points on Each Knowledge Area' = 'TotalPointsKnowledge',
-                                                                        'Mastery Points for Knowledge Area' = 'MasteryPointsKnowledge',
-                                                                        'Mastery Points for Sub Knowledge Area' = 'MasteryPointsSubKnowledge'),
-                                                            inline = TRUE)
-                                             ),
-                                             box(
-                                               width = 12, height = 500, solidHeader = TRUE, collapsible = FALSE, collapsed = FALSE,
-                                               plotlyOutput('knowledgePlot', height = 400)
-                                             )
-                                    )
-                                  )
-                                ))
-                      )
-                    )
+ui <- dashboardPage(
+  skin = 'blue',
+  dashboardHeader(title = 'VISUALISING LEARNING EFFECTIVENESS FOR INSIGHTS ON NORTHCLASS INSTITUTE’S EDUCATION SYSTEM', titleWidth = 800),
+  dashboardSidebar(
+    sidebarMenu(
+      menuItem('HomePage', tabName = 'HomePage'),
+      menuItem('Task 1: Knowledge Mastery & Weak links', tabName = 'Task1'),
+      menuItem('Task 2: Learners Profile', tabName = 'Task2'),
+      menuItem('Task 3: Learning Mode & Knowledge Acquisition', tabName = 'Task3'),
+      menuItem('Task 4: Question Difficulty & Learners Knowledge Level', tabName = 'Task4'),
+      menuItem('Task 5: Recommendations', tabName = 'Task5')
+    )
+  ),
+  dashboardBody(
+    tabItems(
+      # HomePage
+      tabItem(tabName = 'HomePage',
+              fluidPage(theme = shinytheme("simplex"),
+                        mainPanel(h3("G6 Project Title", align ='center'),
+                                  br(),
+                                  strong('Introduction'),
+                                  p('para 1'),
+                                  p('para 2'),
+                                  br(),
+                                  strong('Objective'),
+                                  p('The objective of the study are as follows :'),
+                                  p("1) Objective 1"),
+                                  p("2) Objective 2")
+                        ) # main panel
+              ) # fluid page
+      ), # tab item - intro
+      
+      # Task 1
+      tabItem(tabName = 'Task1',
+              fluidPage(
+                titlePanel("Task1: Knowledge Mastery and Weak Links"),
+                tabsetPanel(
+                  tabPanel("Weak Links by Questions",
+                           selectInput(
+                             'questionMetric',
+                             tags$strong('Choose Metric:'),
+                             choices = c(
+                               'Normalized Average Highest Score' = 'NormAvgHighestScore',
+                               'Non-normalized Average Highest Score' = 'NonNormAvgHighestScore',
+                               'Average Methods Applied on Questions' = 'AvgMethodsApplied'
+                             )
+                           ),
+                           box(
+                             width = 12, height = 500, solidHeader = TRUE, collapsible = FALSE, collapsed = FALSE,
+                             plotlyOutput('questionPlot', height = 400)
+                           )
+                  ),
+                  tabPanel("Weak Links by Knowledge Area",
+                           selectInput(
+                             'knowledgeMetric',
+                             tags$strong('Choose Metric:'),
+                             choices = c(
+                               'Total Points on Each Knowledge Area' = 'TotalPointsKnowledge',
+                               'Mastery Points for Knowledge Area' = 'MasteryPointsKnowledge',
+                               'Mastery Points for Sub Knowledge Area' = 'MasteryPointsSubKnowledge'
+                             )
+                           ),
+                           box(
+                             width = 12, height = 500, solidHeader = TRUE, collapsible = FALSE, collapsed = FALSE,
+                             plotlyOutput('knowledgePlot', height = 400)
+                           )
+                  )
+                )
+              )
+      ),
+      # Task 2
+      tabItem(tabName = 'Task2',
+              fluidPage(
+                titlePanel("Task2: Learners Profile"),
+                # Add your UI components for Task 2 here
+              )
+      ),
+      # Task 3
+      tabItem(tabName = 'Task3',
+              fluidPage(
+                titlePanel("Task3: Learning Mode & Knowledge Acquisition"),
+                tabsetPanel(
+                  tabPanel("Clustering Analysis for Learning Modes",
+                           box(
+                             title = "Silhouette Analysis for Number of K-means Clusters",
+                             plotOutput("plot1", height = "400px")
+                           ),
+                           box(
+                             title = "Parallel Coordinate plot",
+                             plotOutput("plot2", height = "400px")
+                           )
+                  ),
+                  tabPanel("Knowledge Acquisition Distribution Across Both Clusters", 
+                           selectInput(
+                             "KAindicator1", tags$strong("Choose an indicator:"),
+                             choices = c(
+                               "No. of questions answered fully or partially correct", 
+                               "Overall sum of highest submission scores per question", 
+                               "Overall sum of question mastery points"
+                             ), 
+                             selected = "Overall sum of question mastery points"
+                           ),
+                           box(
+                             title = "Ridgeline Plot of Distribution of Both Clusters",
+                             plotOutput("plot3", height = "400px")
+                           ),
+                           box(
+                             title = "Ridgeline Plot of Distribution by Knowledge Areas for Both Clusters",
+                             plotOutput("plot4", height = "400px")
+                           )
+                  ),
+                  tabPanel("2-Sample Mean Statistical Test For Both Clusters",
+                           selectInput(
+                             "KAindicator2", tags$strong("Choose an indicator:"),
+                             choices = c(
+                               "Percent of submissions absolutely correct", 
+                               "Overall sum of highest submission scores per question", 
+                               "Overall sum of question mastery points"
+                             ), 
+                             selected = "Overall sum of question mastery points"
+                           ),
+                           box(
+                             title = "2-Sample Difference in Mean Statistical Test for Both Clusters",
+                             plotOutput("plot5", height = "400px")
+                           )
+                  ),
+                  tabPanel("Multi-linear Regression (Alternative from Clustering)",
+                           selectInput(
+                             "KAindicator3", tags$strong("Choose an indicator:"),
+                             choices = c(
+                               "Overall sum of highest submission scores per question", 
+                               "Overall sum of question mastery points"
+                             ), 
+                             selected = "Overall sum of question mastery points"
+                           ),
+                           box(
+                             title = "Multi-linear Regression of learning mode features (Overall)",
+                             plotOutput("plot6", height = "400px")
+                           ),
+                           box(
+                             title = "Multi-linear Regression of learning mode features (By Knowledge Areas)",
+                             plotOutput("plot7", height = "400px")
+                           )
+                  )
+                )
+              )
+      ),
+      # Task 4
+      tabItem(tabName = 'Task4',
+              fluidPage(
+                titlePanel("Task4: Question Difficulty & Learners Knowledge Level"),
+                # Add your UI components for Task 4 here
+              )
+      ),
+      # Task 5
+      tabItem(tabName = 'Task5',
+              fluidPage(
+                titlePanel("Task5: Recommendations"),
+                # Add your UI components for Task 5 here
+              )
+      )
+    )
+  )
 )
+
 
 # Shiny app server
 server <- function(input, output) {
