@@ -165,12 +165,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
   <li class="dropdown-header">
  <span class="menu-text">Shinny app</span></li>
+<<<<<<< HEAD
   <li class="nav-item compact">
     <a class="nav-link" href="../../Our Team"> 
 <span class="menu-text"></span></a>
   </li>  
   <li class="dropdown-header">
  <span class="menu-text">Our Team</span></li>
+=======
+>>>>>>> 917225838c7734fc29d12f2f6933545bc001a71d
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
@@ -211,9 +214,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#for-high-and-low-knowledge-level-learners" id="toc-for-high-and-low-knowledge-level-learners" class="nav-link" data-scroll-target="#for-high-and-low-knowledge-level-learners">For High and Low Knowledge Level Learners</a></li>
   <li><a href="#poor-correct-answer-rate" id="toc-poor-correct-answer-rate" class="nav-link" data-scroll-target="#poor-correct-answer-rate">Poor correct answer rate</a></li>
   </ul></li>
-  <li><a href="#visualising-in-appropriate-questions" id="toc-visualising-in-appropriate-questions" class="nav-link" data-scroll-target="#visualising-in-appropriate-questions">Visualising In appropriate questions</a>
+  <li><a href="#visualising-inappropriate-questions" id="toc-visualising-inappropriate-questions" class="nav-link" data-scroll-target="#visualising-inappropriate-questions">Visualising Inappropriate questions</a>
   <ul class="collapse">
-  <li><a href="#dumbell-plot" id="toc-dumbell-plot" class="nav-link" data-scroll-target="#dumbell-plot">Dumbell plot</a></li>
+  <li><a href="#dumbell-plot-analysis" id="toc-dumbell-plot-analysis" class="nav-link" data-scroll-target="#dumbell-plot-analysis">Dumbell plot Analysis</a></li>
   <li><a href="#lollipop-chart-analysis" id="toc-lollipop-chart-analysis" class="nav-link" data-scroll-target="#lollipop-chart-analysis">Lollipop Chart Analysis</a></li>
   <li><a href="#information-characteristic-curve-icc-analysis" id="toc-information-characteristic-curve-icc-analysis" class="nav-link" data-scroll-target="#information-characteristic-curve-icc-analysis">Information Characteristic Curve (ICC) Analysis</a></li>
   </ul></li>
@@ -459,53 +462,35 @@ Columns: 2
 $ student_ID              &lt;chr&gt; "0088dc183f73c83f763e", "00cbf05221bb479e66c3"…
 $ `Sum of points Overall` &lt;dbl&gt; 38.75682, 35.69721, 35.28832, 42.32937, 31.982…</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(mastery_scores_byStudent)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>tibble [1,364 × 2] (S3: tbl_df/tbl/data.frame)
- $ student_ID           : chr [1:1364] "0088dc183f73c83f763e" "00cbf05221bb479e66c3" "00df647ee4bf7173642f" "0107f72b66cbd1a0926d" ...
- $ Sum of points Overall: num [1:1364] 38.8 35.7 35.3 42.3 32 ...</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(mastery_scores_byStudent)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 6 × 2
-  student_ID           `Sum of points Overall`
-  &lt;chr&gt;                                  &lt;dbl&gt;
-1 0088dc183f73c83f763e                    38.8
-2 00cbf05221bb479e66c3                    35.7
-3 00df647ee4bf7173642f                    35.3
-4 0107f72b66cbd1a0926d                    42.3
-5 011d454f199c123d44ad                    32.0
-6 01558eef77a8d39b7103                    38.2</code></pre>
-</div>
-</div>
-<p>The high knowledge level (aka high mastery) and low knowledge level (aka low mastery) are identified with the following code chunk</p>
+<p>Using a 95th and 5th percentile threshold, the high knowledge level (aka high mastery) and low knowledge level (aka low mastery) students are identified with the following code chunk</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>calculate_threshold_scores <span class="ot">&lt;-</span> <span class="cf">function</span>(df, column, threshold) {</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  percentile <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">sub</span>(<span class="st">"%"</span>, <span class="st">""</span>, threshold)) <span class="sc">/</span> <span class="dv">100</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  threshold_score <span class="ot">&lt;-</span> <span class="fu">quantile</span>(df[[column]], percentile, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(threshold_score)</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate threshold scores for 99% and 1%</span></span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>threshold_95 <span class="ot">&lt;-</span> <span class="fu">calculate_threshold_scores</span>(mastery_scores_byStudent, <span class="st">"Sum of points Overall"</span>, <span class="st">"95%"</span>)</span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>threshold_5 <span class="ot">&lt;-</span> <span class="fu">calculate_threshold_scores</span>(mastery_scores_byStudent, <span class="st">"Sum of points Overall"</span>, <span class="st">"5%"</span>)</span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter high and low mastery students based on the threshold scores</span></span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>high_mastery_students <span class="ot">&lt;-</span> mastery_scores_byStudent <span class="sc">%&gt;%</span></span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="st">`</span><span class="at">Sum of points Overall</span><span class="st">`</span> <span class="sc">&gt;</span> threshold_95)</span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>low_mastery_students <span class="ot">&lt;-</span> mastery_scores_byStudent <span class="sc">%&gt;%</span></span>
-<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="st">`</span><span class="at">Sum of points Overall</span><span class="st">`</span> <span class="sc">&lt;</span> threshold_5)</span>
-<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(high_mastery_students)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>calculate_threshold_scores <span class="ot">&lt;-</span> <span class="cf">function</span>(df, column, threshold) {</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  percentile <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">sub</span>(<span class="st">"%"</span>, <span class="st">""</span>, threshold)) <span class="sc">/</span> <span class="dv">100</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  threshold_score <span class="ot">&lt;-</span> <span class="fu">quantile</span>(df[[column]], percentile, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(threshold_score)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate threshold scores for 99% and 1%</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>threshold_95 <span class="ot">&lt;-</span> <span class="fu">calculate_threshold_scores</span>(mastery_scores_byStudent, <span class="st">"Sum of points Overall"</span>, <span class="st">"95%"</span>)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>threshold_5 <span class="ot">&lt;-</span> <span class="fu">calculate_threshold_scores</span>(mastery_scores_byStudent, <span class="st">"Sum of points Overall"</span>, <span class="st">"5%"</span>)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter high and low mastery students based on the threshold scores</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>high_mastery_students <span class="ot">&lt;-</span> mastery_scores_byStudent <span class="sc">%&gt;%</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="st">`</span><span class="at">Sum of points Overall</span><span class="st">`</span> <span class="sc">&gt;</span> threshold_95)</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>low_mastery_students <span class="ot">&lt;-</span> mastery_scores_byStudent <span class="sc">%&gt;%</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="st">`</span><span class="at">Sum of points Overall</span><span class="st">`</span> <span class="sc">&lt;</span> threshold_5)</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(high_mastery_students)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Rows: 69
 Columns: 2
 $ student_ID              &lt;chr&gt; "03754dce5ec7731fb3e2", "06aff3e28c5db152f506"…
 $ `Sum of points Overall` &lt;dbl&gt; 59.30627, 53.34722, 48.94286, 54.85595, 50.353…</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(low_mastery_students)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(low_mastery_students)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Rows: 69
 Columns: 2
@@ -522,19 +507,19 @@ $ `Sum of points Overall` &lt;dbl&gt; 0.0000000, 17.1165831, 23.5655844, 21.9944
 <li>Error rate - percentage of wrong answer (0 score) submissions</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Never Correct title_IDs for individual students</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>never_absolutely_correct <span class="ot">&lt;-</span> merged_data <span class="sc">%&gt;%</span></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(student_ID, title_ID) <span class="sc">%&gt;%</span></span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">never_absolutely_correct =</span> <span class="fu">all</span>(state <span class="sc">!=</span> <span class="st">"Absolutely_Correct"</span>),</span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">'drop'</span></span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  )  <span class="sc">%&gt;%</span></span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(never_absolutely_correct)</span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Save processed dataset</span></span>
-<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(never_absolutely_correct, <span class="at">file =</span> <span class="st">"never_absolutely_correct.RDS"</span>)</span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(never_absolutely_correct)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Never Correct title_IDs for individual students</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>never_absolutely_correct <span class="ot">&lt;-</span> merged_data <span class="sc">%&gt;%</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(student_ID, title_ID) <span class="sc">%&gt;%</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">never_absolutely_correct =</span> <span class="fu">all</span>(state <span class="sc">!=</span> <span class="st">"Absolutely_Correct"</span>),</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">'drop'</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  )  <span class="sc">%&gt;%</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(never_absolutely_correct)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Save processed dataset</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(never_absolutely_correct, <span class="at">file =</span> <span class="st">"never_absolutely_correct.RDS"</span>)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(never_absolutely_correct)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Rows: 7,022
 Columns: 3
@@ -544,18 +529,18 @@ $ never_absolutely_correct &lt;lgl&gt; TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE,
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the error rate with consideration of different methods</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>percentage_error <span class="ot">&lt;-</span> merged_data <span class="sc">%&gt;%</span></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(student_ID, title_ID) <span class="sc">%&gt;%</span></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_attempts =</span> <span class="fu">n</span>(),</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">wrong_attempts =</span> <span class="fu">sum</span>(state <span class="sc">!=</span> <span class="st">"Absolutely_Correct"</span>),</span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">percentage_wrong =</span> (wrong_attempts <span class="sc">/</span> total_attempts) <span class="sc">*</span> <span class="dv">100</span>,</span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">'drop'</span></span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="co"># View the result</span></span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(percentage_error)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the error rate with consideration of different methods</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>percentage_error <span class="ot">&lt;-</span> merged_data <span class="sc">%&gt;%</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(student_ID, title_ID) <span class="sc">%&gt;%</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_attempts =</span> <span class="fu">n</span>(),</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">wrong_attempts =</span> <span class="fu">sum</span>(state <span class="sc">!=</span> <span class="st">"Absolutely_Correct"</span>),</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">percentage_wrong =</span> (wrong_attempts <span class="sc">/</span> total_attempts) <span class="sc">*</span> <span class="dv">100</span>,</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">'drop'</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="co"># View the result</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(percentage_error)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Rows: 50,482
 Columns: 5
@@ -565,41 +550,39 @@ $ total_attempts   &lt;int&gt; 23, 9, 7, 22, 1, 1, 2, 4, 8, 11, 1, 1, 5, 1, 1, 1
 $ wrong_attempts   &lt;int&gt; 22, 8, 6, 21, 0, 0, 1, 3, 6, 10, 0, 0, 4, 0, 0, 12, 0…
 $ percentage_wrong &lt;dbl&gt; 95.65217, 88.88889, 85.71429, 95.45455, 0.00000, 0.00…</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Save processed dataset</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(percentage_error, <span class="at">file =</span> <span class="st">"percentage_error.RDS"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Save processed dataset</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(percentage_error, <span class="at">file =</span> <span class="st">"percentage_error.RDS"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 </section>
-<section id="visualising-in-appropriate-questions" class="level2">
-<h2 class="anchored" data-anchor-id="visualising-in-appropriate-questions">Visualising In appropriate questions</h2>
-<section id="dumbell-plot" class="level3">
-<h3 class="anchored" data-anchor-id="dumbell-plot">Dumbell plot</h3>
-<p>Dumbbell Plot Analysis Utilizing a dumbbell plot, we examined the discrepancies in question performance between high and low mastery students based on percentage of never correct questions.</p>
+<section id="visualising-inappropriate-questions" class="level2">
+<h2 class="anchored" data-anchor-id="visualising-inappropriate-questions">Visualising Inappropriate questions</h2>
+<section id="dumbell-plot-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="dumbell-plot-analysis">Dumbell plot Analysis</h3>
+<p>Utilizing a dumbbell plot, we examined the discrepancies in question performance between high and low mastery students based on percentage of never correct questions.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter never absolutely correct questions based on high mastery students</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>filtered_never_correct <span class="ot">&lt;-</span> never_absolutely_correct <span class="sc">%&gt;%</span></span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(student_ID <span class="sc">%in%</span> high_mastery_students<span class="sc">$</span>student_ID) <span class="sc">%&gt;%</span></span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">distinct</span>(student_ID, title_ID) <span class="sc">%&gt;%</span></span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">group_by</span>(title_ID) <span class="sc">%&gt;%</span></span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">summarise</span>(</span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co">#        number_of_students = n_distinct(student_ID[never_absolutely_correct == TRUE]),</span></span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>        <span class="at">number_of_students =</span> <span class="fu">n</span>(),</span>
-<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>        <span class="at">.groups =</span> <span class="st">'drop'</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="co">#      left_join(aggregate_title_info, by = "title_ID") %&gt;%</span></span>
-<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">percentage_of_student_wrong =</span> (number_of_students<span class="sc">/</span><span class="fu">length</span>(high_mastery_students<span class="sc">$</span>student_ID)<span class="sc">*</span><span class="dv">100</span>)) </span>
-<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Check if bottom percentage students got the questions that were never correct by high mastery students correct</span></span>
-<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>bottom_percentage_never_correct <span class="ot">&lt;-</span> merged_data <span class="sc">%&gt;%</span></span>
-<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(student_ID <span class="sc">%in%</span> low_mastery_students<span class="sc">$</span>student_ID) <span class="sc">%&gt;%</span></span>
-<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(title_ID <span class="sc">%in%</span> filtered_never_correct<span class="sc">$</span>title_ID) <span class="sc">%&gt;%</span></span>
-<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(state <span class="sc">==</span> <span class="st">"Absolutely_Correct"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>      <span class="fu">distinct</span>(student_ID, title_ID) <span class="sc">%&gt;%</span></span>
-<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>      <span class="fu">group_by</span>(title_ID) <span class="sc">%&gt;%</span></span>
-<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>      <span class="fu">summarise</span>(<span class="at">no_of_students =</span> <span class="fu">n</span>(), <span class="at">.groups =</span> <span class="st">'drop'</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">percentage_of_student_right =</span> (no_of_students<span class="sc">/</span><span class="fu">length</span>(low_mastery_students<span class="sc">$</span>student_ID)<span class="sc">*</span><span class="dv">100</span>))</span>
-<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(filtered_never_correct)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter never absolutely correct questions based on high mastery students</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>filtered_never_correct <span class="ot">&lt;-</span> never_absolutely_correct <span class="sc">%&gt;%</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(student_ID <span class="sc">%in%</span> high_mastery_students<span class="sc">$</span>student_ID) <span class="sc">%&gt;%</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">distinct</span>(student_ID, title_ID) <span class="sc">%&gt;%</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">group_by</span>(title_ID) <span class="sc">%&gt;%</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">summarise</span>(</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">number_of_students =</span> <span class="fu">n_distinct</span>(student_ID),</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>        <span class="at">.groups =</span> <span class="st">'drop'</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">percentage_of_student_wrong =</span> (number_of_students<span class="sc">/</span><span class="fu">length</span>(high_mastery_students<span class="sc">$</span>student_ID)<span class="sc">*</span><span class="dv">100</span>)) </span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Check if bottom percentage students got the questions that were never correct by high mastery students correct</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>bottom_percentage_never_correct <span class="ot">&lt;-</span> merged_data <span class="sc">%&gt;%</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(student_ID <span class="sc">%in%</span> low_mastery_students<span class="sc">$</span>student_ID) <span class="sc">%&gt;%</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(title_ID <span class="sc">%in%</span> filtered_never_correct<span class="sc">$</span>title_ID) <span class="sc">%&gt;%</span></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(state <span class="sc">==</span> <span class="st">"Absolutely_Correct"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>      <span class="fu">distinct</span>(student_ID, title_ID) <span class="sc">%&gt;%</span></span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>      <span class="fu">group_by</span>(title_ID) <span class="sc">%&gt;%</span></span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>      <span class="fu">summarise</span>(<span class="at">no_of_students =</span> <span class="fu">n</span>(), <span class="at">.groups =</span> <span class="st">'drop'</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">percentage_of_student_right =</span> (no_of_students<span class="sc">/</span><span class="fu">length</span>(low_mastery_students<span class="sc">$</span>student_ID)<span class="sc">*</span><span class="dv">100</span>))</span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(filtered_never_correct)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Rows: 12
 Columns: 3
@@ -607,7 +590,7 @@ $ title_ID                    &lt;chr&gt; "Question_3oPyUzDmQtcMfLpGZ0jW", "Ques
 $ number_of_students          &lt;int&gt; 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1
 $ percentage_of_student_wrong &lt;dbl&gt; 1.449275, 1.449275, 1.449275, 1.449275, 1.…</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(bottom_percentage_never_correct)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(bottom_percentage_never_correct)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Rows: 12
 Columns: 3
@@ -617,119 +600,185 @@ $ percentage_of_student_right &lt;dbl&gt; 49.27536, 50.72464, 49.27536, 50.72464
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calculate percentages for high mastery and low mastery students</span></span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    high_mastery_percent <span class="ot">&lt;-</span> filtered_never_correct <span class="sc">%&gt;%</span></span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">high_mastery =</span> number_of_students <span class="sc">/</span> <span class="fu">nrow</span>(high_mastery_students) <span class="sc">*</span> <span class="dv">100</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span> (title_ID, high_mastery)</span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    low_mastery_percent <span class="ot">&lt;-</span> bottom_percentage_never_correct <span class="sc">%&gt;%</span></span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">low_mastery =</span> no_of_students <span class="sc">/</span> <span class="fu">nrow</span>(low_mastery_students) <span class="sc">*</span> <span class="dv">100</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span> (title_ID, low_mastery)</span>
-<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>    comparison_data <span class="ot">&lt;-</span> high_mastery_percent <span class="sc">%&gt;%</span></span>
-<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">left_join</span>(low_mastery_percent, <span class="at">by =</span> <span class="st">"title_ID"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">diff =</span> <span class="fu">round</span>(low_mastery <span class="sc">-</span> high_mastery),<span class="at">digits =</span> <span class="dv">2</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pivot_longer</span> (<span class="at">cols =</span> <span class="fu">c</span>(low_mastery,high_mastery)) <span class="sc">%&gt;%</span></span>
-<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>      <span class="fu">rename</span> (<span class="at">type_of_student =</span> name,</span>
-<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>              <span class="at">percentage =</span> value)</span>
-<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a>   </span>
-<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>    low_mastery <span class="ot">&lt;-</span>  comparison_data <span class="sc">%&gt;%</span></span>
-<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"low_mastery"</span>)</span>
-<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a>    high_mastery <span class="ot">&lt;-</span>  comparison_data <span class="sc">%&gt;%</span></span>
-<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"high_mastery"</span>)</span>
-<span id="cb26-22"><a href="#cb26-22" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb26-23"><a href="#cb26-23" aria-hidden="true" tabindex="-1"></a>    stats <span class="ot">&lt;-</span> comparison_data <span class="sc">%&gt;%</span></span>
-<span id="cb26-24"><a href="#cb26-24" aria-hidden="true" tabindex="-1"></a>      <span class="fu">group_by</span>(type_of_student) <span class="sc">%&gt;%</span></span>
-<span id="cb26-25"><a href="#cb26-25" aria-hidden="true" tabindex="-1"></a>      <span class="fu">summarise</span>(<span class="at">mean =</span> <span class="fu">mean</span>(percentage),</span>
-<span id="cb26-26"><a href="#cb26-26" aria-hidden="true" tabindex="-1"></a>                <span class="at">SE =</span> <span class="fu">sd</span>(percentage)) <span class="sc">%&gt;%</span></span>
-<span id="cb26-27"><a href="#cb26-27" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">meanpos =</span> mean <span class="sc">+</span> <span class="dv">1</span> <span class="sc">*</span>SE,</span>
-<span id="cb26-28"><a href="#cb26-28" aria-hidden="true" tabindex="-1"></a>             <span class="at">meanneg =</span> mean <span class="sc">-</span> <span class="dv">1</span> <span class="sc">*</span>SE)</span>
-<span id="cb26-29"><a href="#cb26-29" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb26-30"><a href="#cb26-30" aria-hidden="true" tabindex="-1"></a>    stats_low_mastery <span class="ot">&lt;-</span> stats <span class="sc">%&gt;%</span></span>
-<span id="cb26-31"><a href="#cb26-31" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"low_mastery"</span>)</span>
-<span id="cb26-32"><a href="#cb26-32" aria-hidden="true" tabindex="-1"></a>    stats_high_mastery <span class="ot">&lt;-</span> stats <span class="sc">%&gt;%</span></span>
-<span id="cb26-33"><a href="#cb26-33" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"high_mastery"</span>)</span>
-<span id="cb26-34"><a href="#cb26-34" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb26-35"><a href="#cb26-35" aria-hidden="true" tabindex="-1"></a>    diff <span class="ot">&lt;-</span> comparison_data <span class="sc">%&gt;%</span> </span>
-<span id="cb26-36"><a href="#cb26-36" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"low_mastery"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb26-37"><a href="#cb26-37" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">x_pos =</span> percentage <span class="sc">+</span> (<span class="sc">-</span>diff<span class="sc">/</span><span class="dv">2</span>))</span>
-<span id="cb26-38"><a href="#cb26-38" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb26-39"><a href="#cb26-39" aria-hidden="true" tabindex="-1"></a>    comparison_spread <span class="ot">&lt;-</span> comparison_data <span class="sc">%&gt;%</span></span>
-<span id="cb26-40"><a href="#cb26-40" aria-hidden="true" tabindex="-1"></a>      <span class="fu">spread</span>(type_of_student, percentage)</span>
-<span id="cb26-41"><a href="#cb26-41" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb26-42"><a href="#cb26-42" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Join the stats to get the mean values</span></span>
-<span id="cb26-43"><a href="#cb26-43" aria-hidden="true" tabindex="-1"></a>    comparison_spread <span class="ot">&lt;-</span> comparison_spread <span class="sc">%&gt;%</span></span>
-<span id="cb26-44"><a href="#cb26-44" aria-hidden="true" tabindex="-1"></a>      <span class="fu">left_join</span>(stats <span class="sc">%&gt;%</span> <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"high_mastery"</span>) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>type_of_student), <span class="at">by =</span> <span class="fu">character</span>()) <span class="sc">%&gt;%</span></span>
-<span id="cb26-45"><a href="#cb26-45" aria-hidden="true" tabindex="-1"></a>      <span class="fu">rename</span>(<span class="at">high_mastery_mean =</span> mean, <span class="at">high_mastery_SE =</span> SE, <span class="at">high_mastery_meanpos =</span> meanpos, <span class="at">high_mastery_meanneg =</span> meanneg) <span class="sc">%&gt;%</span></span>
-<span id="cb26-46"><a href="#cb26-46" aria-hidden="true" tabindex="-1"></a>      <span class="fu">left_join</span>(stats <span class="sc">%&gt;%</span> <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"low_mastery"</span>) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>type_of_student), <span class="at">by =</span> <span class="fu">character</span>()) <span class="sc">%&gt;%</span></span>
-<span id="cb26-47"><a href="#cb26-47" aria-hidden="true" tabindex="-1"></a>      <span class="fu">rename</span>(<span class="at">low_mastery_mean =</span> mean, <span class="at">low_mastery_SE =</span> SE, <span class="at">low_mastery_meanpos =</span> meanpos, <span class="at">low_mastery_meanneg =</span> meanneg)</span>
-<span id="cb26-48"><a href="#cb26-48" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb26-49"><a href="#cb26-49" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create the color condition</span></span>
-<span id="cb26-50"><a href="#cb26-50" aria-hidden="true" tabindex="-1"></a>    comparison_spread <span class="ot">&lt;-</span> comparison_spread <span class="sc">%&gt;%</span></span>
-<span id="cb26-51"><a href="#cb26-51" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">color_condition =</span> <span class="fu">case_when</span>(</span>
-<span id="cb26-52"><a href="#cb26-52" aria-hidden="true" tabindex="-1"></a>        high_mastery <span class="sc">&gt;</span> high_mastery_meanpos <span class="sc">&amp;</span> low_mastery <span class="sc">&gt;</span> low_mastery_meanpos <span class="sc">~</span> <span class="st">"red"</span>,</span>
-<span id="cb26-53"><a href="#cb26-53" aria-hidden="true" tabindex="-1"></a>        <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"default"</span></span>
-<span id="cb26-54"><a href="#cb26-54" aria-hidden="true" tabindex="-1"></a>      ))</span>
-<span id="cb26-55"><a href="#cb26-55" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb26-56"><a href="#cb26-56" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Gather the data back to long format</span></span>
-<span id="cb26-57"><a href="#cb26-57" aria-hidden="true" tabindex="-1"></a>    comparison_long <span class="ot">&lt;-</span> comparison_spread <span class="sc">%&gt;%</span></span>
-<span id="cb26-58"><a href="#cb26-58" aria-hidden="true" tabindex="-1"></a>      <span class="fu">gather</span>(type_of_student, percentage, high_mastery, low_mastery) <span class="sc">%&gt;%</span></span>
-<span id="cb26-59"><a href="#cb26-59" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">type_of_student =</span> <span class="fu">factor</span>(type_of_student, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"high_mastery"</span>, <span class="st">"low_mastery"</span>))) <span class="sc">%&gt;%</span></span>
-<span id="cb26-60"><a href="#cb26-60" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span> (<span class="at">color_condition =</span> <span class="fu">ifelse</span>(color_condition <span class="sc">==</span> <span class="st">"default"</span>, type_of_student, color_condition))</span>
-<span id="cb26-61"><a href="#cb26-61" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb26-62"><a href="#cb26-62" aria-hidden="true" tabindex="-1"></a>    comparison_long<span class="sc">$</span>color_condition <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(comparison_long<span class="sc">$</span>color_condition)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calculate percentages for high mastery and low mastery students</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    high_mastery_percent <span class="ot">&lt;-</span> filtered_never_correct <span class="sc">%&gt;%</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">high_mastery =</span> number_of_students <span class="sc">/</span> <span class="fu">nrow</span>(high_mastery_students) <span class="sc">*</span> <span class="dv">100</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span> (title_ID, high_mastery)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    low_mastery_percent <span class="ot">&lt;-</span> bottom_percentage_never_correct <span class="sc">%&gt;%</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">low_mastery =</span> no_of_students <span class="sc">/</span> <span class="fu">nrow</span>(low_mastery_students) <span class="sc">*</span> <span class="dv">100</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span> (title_ID, low_mastery)</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>    comparison_data <span class="ot">&lt;-</span> high_mastery_percent <span class="sc">%&gt;%</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">left_join</span>(low_mastery_percent, <span class="at">by =</span> <span class="st">"title_ID"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">diff =</span> <span class="fu">round</span>(low_mastery <span class="sc">-</span> high_mastery),<span class="at">digits =</span> <span class="dv">2</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pivot_longer</span> (<span class="at">cols =</span> <span class="fu">c</span>(low_mastery,high_mastery)) <span class="sc">%&gt;%</span></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>      <span class="fu">rename</span> (<span class="at">type_of_student =</span> name,</span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>              <span class="at">percentage =</span> value)</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>    low_mastery <span class="ot">&lt;-</span>  comparison_data <span class="sc">%&gt;%</span></span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"low_mastery"</span>)</span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>    high_mastery <span class="ot">&lt;-</span>  comparison_data <span class="sc">%&gt;%</span></span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"high_mastery"</span>)</span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>    stats <span class="ot">&lt;-</span> comparison_data <span class="sc">%&gt;%</span></span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a>      <span class="fu">group_by</span>(type_of_student) <span class="sc">%&gt;%</span></span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a>      <span class="fu">summarise</span>(<span class="at">mean =</span> <span class="fu">mean</span>(percentage),</span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a>                <span class="at">SE =</span> <span class="fu">sd</span>(percentage)) <span class="sc">%&gt;%</span></span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">meanpos =</span> mean <span class="sc">+</span> <span class="dv">1</span> <span class="sc">*</span>SE,</span>
+<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a>             <span class="at">meanneg =</span> mean <span class="sc">-</span> <span class="dv">1</span> <span class="sc">*</span>SE)</span>
+<span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb22-30"><a href="#cb22-30" aria-hidden="true" tabindex="-1"></a>    stats_low_mastery <span class="ot">&lt;-</span> stats <span class="sc">%&gt;%</span></span>
+<span id="cb22-31"><a href="#cb22-31" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"low_mastery"</span>)</span>
+<span id="cb22-32"><a href="#cb22-32" aria-hidden="true" tabindex="-1"></a>    stats_high_mastery <span class="ot">&lt;-</span> stats <span class="sc">%&gt;%</span></span>
+<span id="cb22-33"><a href="#cb22-33" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"high_mastery"</span>)</span>
+<span id="cb22-34"><a href="#cb22-34" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb22-35"><a href="#cb22-35" aria-hidden="true" tabindex="-1"></a>    diff <span class="ot">&lt;-</span> comparison_data <span class="sc">%&gt;%</span> </span>
+<span id="cb22-36"><a href="#cb22-36" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"low_mastery"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb22-37"><a href="#cb22-37" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">x_pos =</span> percentage <span class="sc">+</span> (<span class="sc">-</span>diff<span class="sc">/</span><span class="dv">2</span>))</span>
+<span id="cb22-38"><a href="#cb22-38" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb22-39"><a href="#cb22-39" aria-hidden="true" tabindex="-1"></a>    comparison_spread <span class="ot">&lt;-</span> comparison_data <span class="sc">%&gt;%</span></span>
+<span id="cb22-40"><a href="#cb22-40" aria-hidden="true" tabindex="-1"></a>      <span class="fu">spread</span>(type_of_student, percentage)</span>
+<span id="cb22-41"><a href="#cb22-41" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb22-42"><a href="#cb22-42" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Join the stats to get the mean values</span></span>
+<span id="cb22-43"><a href="#cb22-43" aria-hidden="true" tabindex="-1"></a>    comparison_spread <span class="ot">&lt;-</span> comparison_spread <span class="sc">%&gt;%</span></span>
+<span id="cb22-44"><a href="#cb22-44" aria-hidden="true" tabindex="-1"></a>      <span class="fu">left_join</span>(stats <span class="sc">%&gt;%</span> <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"high_mastery"</span>) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>type_of_student), <span class="at">by =</span> <span class="fu">character</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb22-45"><a href="#cb22-45" aria-hidden="true" tabindex="-1"></a>      <span class="fu">rename</span>(<span class="at">high_mastery_mean =</span> mean, <span class="at">high_mastery_SE =</span> SE, <span class="at">high_mastery_meanpos =</span> meanpos, <span class="at">high_mastery_meanneg =</span> meanneg) <span class="sc">%&gt;%</span></span>
+<span id="cb22-46"><a href="#cb22-46" aria-hidden="true" tabindex="-1"></a>      <span class="fu">left_join</span>(stats <span class="sc">%&gt;%</span> <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"low_mastery"</span>) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>type_of_student), <span class="at">by =</span> <span class="fu">character</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb22-47"><a href="#cb22-47" aria-hidden="true" tabindex="-1"></a>      <span class="fu">rename</span>(<span class="at">low_mastery_mean =</span> mean, <span class="at">low_mastery_SE =</span> SE, <span class="at">low_mastery_meanpos =</span> meanpos, <span class="at">low_mastery_meanneg =</span> meanneg)</span>
+<span id="cb22-48"><a href="#cb22-48" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb22-49"><a href="#cb22-49" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create the color condition</span></span>
+<span id="cb22-50"><a href="#cb22-50" aria-hidden="true" tabindex="-1"></a>    comparison_spread <span class="ot">&lt;-</span> comparison_spread <span class="sc">%&gt;%</span></span>
+<span id="cb22-51"><a href="#cb22-51" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">color_condition =</span> <span class="fu">case_when</span>(</span>
+<span id="cb22-52"><a href="#cb22-52" aria-hidden="true" tabindex="-1"></a>        high_mastery <span class="sc">&gt;</span> high_mastery_meanpos <span class="sc">&amp;</span> low_mastery <span class="sc">&gt;</span> low_mastery_meanpos <span class="sc">~</span> <span class="st">"red"</span>,</span>
+<span id="cb22-53"><a href="#cb22-53" aria-hidden="true" tabindex="-1"></a>        <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"default"</span></span>
+<span id="cb22-54"><a href="#cb22-54" aria-hidden="true" tabindex="-1"></a>      ))</span>
+<span id="cb22-55"><a href="#cb22-55" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb22-56"><a href="#cb22-56" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Gather the data back to long format</span></span>
+<span id="cb22-57"><a href="#cb22-57" aria-hidden="true" tabindex="-1"></a>    comparison_long <span class="ot">&lt;-</span> comparison_spread <span class="sc">%&gt;%</span></span>
+<span id="cb22-58"><a href="#cb22-58" aria-hidden="true" tabindex="-1"></a>      <span class="fu">gather</span>(type_of_student, percentage, high_mastery, low_mastery) <span class="sc">%&gt;%</span></span>
+<span id="cb22-59"><a href="#cb22-59" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">type_of_student =</span> <span class="fu">factor</span>(type_of_student, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"high_mastery"</span>, <span class="st">"low_mastery"</span>))) <span class="sc">%&gt;%</span></span>
+<span id="cb22-60"><a href="#cb22-60" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span> (<span class="at">color_condition =</span> <span class="fu">ifelse</span>(color_condition <span class="sc">==</span> <span class="st">"default"</span>, type_of_student, color_condition))</span>
+<span id="cb22-61"><a href="#cb22-61" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb22-62"><a href="#cb22-62" aria-hidden="true" tabindex="-1"></a>    comparison_long<span class="sc">$</span>color_condition <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(comparison_long<span class="sc">$</span>color_condition)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>      <span class="fu">ggplot</span>(comparison_long) <span class="sc">+</span></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_rect</span>(<span class="at">xmin =</span> stats_low_mastery<span class="sc">$</span>meanneg, <span class="at">xmax =</span> stats_low_mastery<span class="sc">$</span>meanpos,</span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>                  <span class="at">ymin =</span> <span class="dv">0</span>, <span class="at">ymax =</span> <span class="dv">38</span>, <span class="at">fill =</span> <span class="st">"#762a83"</span>, <span class="at">alpha =</span> .<span class="dv">05</span>) <span class="sc">+</span></span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> stats_low_mastery<span class="sc">$</span>mean, <span class="at">linetype =</span> <span class="st">"solid"</span>, <span class="at">size =</span> .<span class="dv">5</span>, <span class="at">alpha =</span> .<span class="dv">8</span>, <span class="at">color =</span> <span class="st">"#762a83"</span>)<span class="sc">+</span></span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_rect</span>(<span class="at">xmin =</span> stats_high_mastery<span class="sc">$</span>meanneg, <span class="at">xmax =</span> stats_high_mastery<span class="sc">$</span>meanpos,</span>
-<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>                  <span class="at">ymin =</span> <span class="dv">0</span>, <span class="at">ymax =</span> <span class="dv">38</span>, <span class="at">fill =</span> <span class="st">"#009688"</span>, <span class="at">alpha =</span> .<span class="dv">05</span>)<span class="sc">+</span>  </span>
-<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> stats_high_mastery<span class="sc">$</span>mean, <span class="at">color =</span> <span class="st">"#009688"</span>, <span class="at">linetype =</span> <span class="st">"solid"</span>,  <span class="at">size =</span> .<span class="dv">5</span>, <span class="at">alpha =</span> .<span class="dv">8</span>) <span class="sc">+</span></span>
-<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_segment</span>(<span class="at">data =</span> low_mastery,</span>
-<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">aes</span>(<span class="at">x =</span> percentage, <span class="at">y =</span> title_ID,</span>
-<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a>                         <span class="at">yend =</span> high_mastery<span class="sc">$</span>title_ID, <span class="at">xend =</span> high_mastery<span class="sc">$</span>percentage),</span>
-<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>                     <span class="at">color =</span> <span class="st">"#aeb6bf"</span>,</span>
-<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>                     <span class="at">size =</span> <span class="fl">4.5</span>,</span>
-<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a>                     <span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x =</span> percentage, <span class="at">y =</span> title_ID, <span class="at">color =</span> color_condition), <span class="at">size =</span> <span class="dv">4</span>, <span class="at">show.legend =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
-<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a>        <span class="co">#color points</span></span>
-<span id="cb27-19"><a href="#cb27-19" aria-hidden="true" tabindex="-1"></a>        <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"1"</span> <span class="ot">=</span> <span class="st">"#009688"</span>, <span class="st">"2"</span> <span class="ot">=</span> <span class="st">"#762a83"</span>, <span class="st">"red"</span> <span class="ot">=</span> <span class="st">"red"</span>))<span class="sc">+</span></span>
-<span id="cb27-20"><a href="#cb27-20" aria-hidden="true" tabindex="-1"></a>        <span class="co">#add annotations for mean and standard deviations</span></span>
-<span id="cb27-21"><a href="#cb27-21" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_text</span>(<span class="at">x =</span> stats_low_mastery<span class="sc">$</span>mean <span class="sc">+</span> <span class="dv">5</span>, <span class="at">y =</span> <span class="dv">38</span>, <span class="at">label =</span> <span class="st">"MEAN"</span>, <span class="at">angle =</span> <span class="dv">90</span>, <span class="at">size =</span> <span class="fl">2.5</span>, <span class="at">color =</span> <span class="st">"#009688"</span>)<span class="sc">+</span></span>
-<span id="cb27-22"><a href="#cb27-22" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_text</span>(<span class="at">x =</span> stats_low_mastery<span class="sc">$</span>meanpos <span class="sc">+</span> <span class="dv">5</span>, <span class="at">y =</span> <span class="dv">38</span>, <span class="at">label =</span> <span class="st">"STDEV"</span>, <span class="at">angle =</span> <span class="dv">90</span>, <span class="at">size =</span> <span class="fl">2.5</span>, <span class="at">color =</span> <span class="st">"#009688"</span>)<span class="sc">+</span></span>
-<span id="cb27-23"><a href="#cb27-23" aria-hidden="true" tabindex="-1"></a>        <span class="fu">ggtitle</span>(<span class="st">"Comparison of High Mastery Student Never Correct Percentage vs Low Mastery Student Correct Percentage"</span>) <span class="sc">+</span></span>
-<span id="cb27-24"><a href="#cb27-24" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_text</span> (<span class="at">data =</span> diff,</span>
-<span id="cb27-25"><a href="#cb27-25" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">aes</span>(<span class="at">label =</span> <span class="fu">paste</span>(<span class="st">"D:"</span>, diff, <span class="st">"%"</span>), <span class="at">x =</span> x_pos, <span class="at">y =</span> title_ID),</span>
-<span id="cb27-26"><a href="#cb27-26" aria-hidden="true" tabindex="-1"></a>                   <span class="at">color =</span> <span class="st">"#4a4e4d"</span>,</span>
-<span id="cb27-27"><a href="#cb27-27" aria-hidden="true" tabindex="-1"></a>                   <span class="at">size =</span> <span class="fl">2.5</span>) <span class="sc">+</span></span>
-<span id="cb27-28"><a href="#cb27-28" aria-hidden="true" tabindex="-1"></a>        <span class="fu">facet_grid</span>(title_ID <span class="sc">~</span> ., <span class="at">scales =</span> <span class="st">"free"</span>, <span class="at">switch =</span> <span class="st">"y"</span>) <span class="sc">+</span></span>
-<span id="cb27-29"><a href="#cb27-29" aria-hidden="true" tabindex="-1"></a>        <span class="fu">theme_minimal</span>()<span class="sc">+</span></span>
-<span id="cb27-30"><a href="#cb27-30" aria-hidden="true" tabindex="-1"></a>        <span class="fu">theme</span>(<span class="at">panel.grid.major.y =</span> <span class="fu">element_blank</span>(),</span>
-<span id="cb27-31"><a href="#cb27-31" aria-hidden="true" tabindex="-1"></a>              <span class="at">panel.grid.minor.y =</span> <span class="fu">element_blank</span>(),</span>
-<span id="cb27-32"><a href="#cb27-32" aria-hidden="true" tabindex="-1"></a>              <span class="at">panel.grid.major.x =</span> <span class="fu">element_blank</span>(),</span>
-<span id="cb27-33"><a href="#cb27-33" aria-hidden="true" tabindex="-1"></a>              <span class="at">panel.grid.minor.x =</span> <span class="fu">element_blank</span>(),</span>
-<span id="cb27-34"><a href="#cb27-34" aria-hidden="true" tabindex="-1"></a>              <span class="at">axis.title.y =</span> <span class="fu">element_blank</span>(),</span>
-<span id="cb27-35"><a href="#cb27-35" aria-hidden="true" tabindex="-1"></a>              <span class="at">axis.text.y =</span> <span class="fu">element_blank</span>(),</span>
-<span id="cb27-36"><a href="#cb27-36" aria-hidden="true" tabindex="-1"></a>              <span class="at">axis.ticks.y =</span> <span class="fu">element_blank</span>(),</span>
-<span id="cb27-37"><a href="#cb27-37" aria-hidden="true" tabindex="-1"></a>              <span class="at">axis.ticks.x =</span> <span class="fu">element_line</span>(<span class="at">color =</span> <span class="st">"#4a4e4d"</span>),</span>
-<span id="cb27-38"><a href="#cb27-38" aria-hidden="true" tabindex="-1"></a>              <span class="at">text =</span> <span class="fu">element_text</span>(<span class="at">family =</span> <span class="st">"Segoe UI Semibold"</span>, <span class="at">color =</span> <span class="st">"#4a4e4d"</span>),</span>
-<span id="cb27-39"><a href="#cb27-39" aria-hidden="true" tabindex="-1"></a>              <span class="at">strip.text.y.left  =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">0</span>),</span>
-<span id="cb27-40"><a href="#cb27-40" aria-hidden="true" tabindex="-1"></a>              <span class="at">panel.background =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> <span class="st">"white"</span>, <span class="at">color =</span> <span class="st">"white"</span>),</span>
-<span id="cb27-41"><a href="#cb27-41" aria-hidden="true" tabindex="-1"></a>              <span class="at">strip.background =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> <span class="st">"white"</span>, <span class="at">color =</span> <span class="st">"white"</span>),</span>
-<span id="cb27-42"><a href="#cb27-42" aria-hidden="true" tabindex="-1"></a>              <span class="at">strip.text =</span> <span class="fu">element_text</span>(<span class="at">color =</span> <span class="st">"#4a4e4d"</span>, <span class="at">family =</span> <span class="st">"Segoe UI"</span>),</span>
-<span id="cb27-43"><a href="#cb27-43" aria-hidden="true" tabindex="-1"></a>              <span class="at">plot.background =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> <span class="st">"white"</span>, <span class="at">color =</span> <span class="st">"white"</span>),</span>
-<span id="cb27-44"><a href="#cb27-44" aria-hidden="true" tabindex="-1"></a>              <span class="at">panel.spacing =</span> <span class="fu">unit</span>(<span class="dv">0</span>, <span class="st">"lines"</span>),</span>
-<span id="cb27-45"><a href="#cb27-45" aria-hidden="true" tabindex="-1"></a>              <span class="at">plot.margin =</span> <span class="fu">margin</span>(<span class="dv">1</span>,<span class="dv">1</span>,.<span class="dv">5</span>,<span class="dv">1</span>, <span class="st">"cm"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calculate percentages for high mastery and low mastery students</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    high_mastery_percent <span class="ot">&lt;-</span> filtered_never_correct <span class="sc">%&gt;%</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">high_mastery =</span> number_of_students <span class="sc">/</span> <span class="fu">nrow</span>(high_mastery_students) <span class="sc">*</span> <span class="dv">100</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span> (title_ID, high_mastery)</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    low_mastery_percent <span class="ot">&lt;-</span> bottom_percentage_never_correct <span class="sc">%&gt;%</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">low_mastery =</span> no_of_students <span class="sc">/</span> <span class="fu">nrow</span>(low_mastery_students) <span class="sc">*</span> <span class="dv">100</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span> (title_ID, low_mastery)</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>    comparison_data <span class="ot">&lt;-</span> high_mastery_percent <span class="sc">%&gt;%</span></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">left_join</span>(low_mastery_percent, <span class="at">by =</span> <span class="st">"title_ID"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">diff =</span> <span class="fu">round</span>(low_mastery <span class="sc">-</span> high_mastery),<span class="at">digits =</span> <span class="dv">2</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pivot_longer</span> (<span class="at">cols =</span> <span class="fu">c</span>(low_mastery,high_mastery)) <span class="sc">%&gt;%</span></span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>      <span class="fu">rename</span> (<span class="at">type_of_student =</span> name,</span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>              <span class="at">percentage =</span> value)</span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>    low_mastery <span class="ot">&lt;-</span>  comparison_data <span class="sc">%&gt;%</span></span>
+<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"low_mastery"</span>)</span>
+<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a>    high_mastery <span class="ot">&lt;-</span>  comparison_data <span class="sc">%&gt;%</span></span>
+<span id="cb23-21"><a href="#cb23-21" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"high_mastery"</span>)</span>
+<span id="cb23-22"><a href="#cb23-22" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-23"><a href="#cb23-23" aria-hidden="true" tabindex="-1"></a>    stats <span class="ot">&lt;-</span> comparison_data <span class="sc">%&gt;%</span></span>
+<span id="cb23-24"><a href="#cb23-24" aria-hidden="true" tabindex="-1"></a>      <span class="fu">group_by</span>(type_of_student) <span class="sc">%&gt;%</span></span>
+<span id="cb23-25"><a href="#cb23-25" aria-hidden="true" tabindex="-1"></a>      <span class="fu">summarise</span>(<span class="at">mean =</span> <span class="fu">mean</span>(percentage),</span>
+<span id="cb23-26"><a href="#cb23-26" aria-hidden="true" tabindex="-1"></a>                <span class="at">SE =</span> <span class="fu">sd</span>(percentage)) <span class="sc">%&gt;%</span></span>
+<span id="cb23-27"><a href="#cb23-27" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">meanpos =</span> mean <span class="sc">+</span> <span class="dv">1</span> <span class="sc">*</span>SE,</span>
+<span id="cb23-28"><a href="#cb23-28" aria-hidden="true" tabindex="-1"></a>             <span class="at">meanneg =</span> mean <span class="sc">-</span> <span class="dv">1</span> <span class="sc">*</span>SE)</span>
+<span id="cb23-29"><a href="#cb23-29" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-30"><a href="#cb23-30" aria-hidden="true" tabindex="-1"></a>    stats_low_mastery <span class="ot">&lt;-</span> stats <span class="sc">%&gt;%</span></span>
+<span id="cb23-31"><a href="#cb23-31" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"low_mastery"</span>)</span>
+<span id="cb23-32"><a href="#cb23-32" aria-hidden="true" tabindex="-1"></a>    stats_high_mastery <span class="ot">&lt;-</span> stats <span class="sc">%&gt;%</span></span>
+<span id="cb23-33"><a href="#cb23-33" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"high_mastery"</span>)</span>
+<span id="cb23-34"><a href="#cb23-34" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-35"><a href="#cb23-35" aria-hidden="true" tabindex="-1"></a>    diff <span class="ot">&lt;-</span> comparison_data <span class="sc">%&gt;%</span> </span>
+<span id="cb23-36"><a href="#cb23-36" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"low_mastery"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb23-37"><a href="#cb23-37" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">x_pos =</span> percentage <span class="sc">+</span> (<span class="sc">-</span>diff<span class="sc">/</span><span class="dv">2</span>))</span>
+<span id="cb23-38"><a href="#cb23-38" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-39"><a href="#cb23-39" aria-hidden="true" tabindex="-1"></a>    comparison_spread <span class="ot">&lt;-</span> comparison_data <span class="sc">%&gt;%</span></span>
+<span id="cb23-40"><a href="#cb23-40" aria-hidden="true" tabindex="-1"></a>      <span class="fu">spread</span>(type_of_student, percentage)</span>
+<span id="cb23-41"><a href="#cb23-41" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-42"><a href="#cb23-42" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Join the stats to get the mean values</span></span>
+<span id="cb23-43"><a href="#cb23-43" aria-hidden="true" tabindex="-1"></a>    comparison_spread <span class="ot">&lt;-</span> comparison_spread <span class="sc">%&gt;%</span></span>
+<span id="cb23-44"><a href="#cb23-44" aria-hidden="true" tabindex="-1"></a>      <span class="fu">left_join</span>(stats <span class="sc">%&gt;%</span> <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"high_mastery"</span>) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>type_of_student), <span class="at">by =</span> <span class="fu">character</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb23-45"><a href="#cb23-45" aria-hidden="true" tabindex="-1"></a>      <span class="fu">rename</span>(<span class="at">high_mastery_mean =</span> mean, <span class="at">high_mastery_SE =</span> SE, <span class="at">high_mastery_meanpos =</span> meanpos, <span class="at">high_mastery_meanneg =</span> meanneg) <span class="sc">%&gt;%</span></span>
+<span id="cb23-46"><a href="#cb23-46" aria-hidden="true" tabindex="-1"></a>      <span class="fu">left_join</span>(stats <span class="sc">%&gt;%</span> <span class="fu">filter</span>(type_of_student <span class="sc">==</span> <span class="st">"low_mastery"</span>) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>type_of_student), <span class="at">by =</span> <span class="fu">character</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb23-47"><a href="#cb23-47" aria-hidden="true" tabindex="-1"></a>      <span class="fu">rename</span>(<span class="at">low_mastery_mean =</span> mean, <span class="at">low_mastery_SE =</span> SE, <span class="at">low_mastery_meanpos =</span> meanpos, <span class="at">low_mastery_meanneg =</span> meanneg)</span>
+<span id="cb23-48"><a href="#cb23-48" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-49"><a href="#cb23-49" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create the color condition</span></span>
+<span id="cb23-50"><a href="#cb23-50" aria-hidden="true" tabindex="-1"></a>    comparison_spread <span class="ot">&lt;-</span> comparison_spread <span class="sc">%&gt;%</span></span>
+<span id="cb23-51"><a href="#cb23-51" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">color_condition =</span> <span class="fu">case_when</span>(</span>
+<span id="cb23-52"><a href="#cb23-52" aria-hidden="true" tabindex="-1"></a>        high_mastery <span class="sc">&gt;</span> high_mastery_meanpos <span class="sc">&amp;</span> low_mastery <span class="sc">&gt;</span> low_mastery_meanpos <span class="sc">~</span> <span class="st">"red"</span>,</span>
+<span id="cb23-53"><a href="#cb23-53" aria-hidden="true" tabindex="-1"></a>        <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"default"</span></span>
+<span id="cb23-54"><a href="#cb23-54" aria-hidden="true" tabindex="-1"></a>      ))</span>
+<span id="cb23-55"><a href="#cb23-55" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-56"><a href="#cb23-56" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Gather the data back to long format</span></span>
+<span id="cb23-57"><a href="#cb23-57" aria-hidden="true" tabindex="-1"></a>    comparison_long <span class="ot">&lt;-</span> comparison_spread <span class="sc">%&gt;%</span></span>
+<span id="cb23-58"><a href="#cb23-58" aria-hidden="true" tabindex="-1"></a>      <span class="fu">gather</span>(type_of_student, percentage, high_mastery, low_mastery) <span class="sc">%&gt;%</span></span>
+<span id="cb23-59"><a href="#cb23-59" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">type_of_student =</span> <span class="fu">factor</span>(type_of_student, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"high_mastery"</span>, <span class="st">"low_mastery"</span>))) <span class="sc">%&gt;%</span></span>
+<span id="cb23-60"><a href="#cb23-60" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span> (<span class="at">color_condition =</span> <span class="fu">ifelse</span>(color_condition <span class="sc">==</span> <span class="st">"default"</span>, type_of_student, color_condition))</span>
+<span id="cb23-61"><a href="#cb23-61" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-62"><a href="#cb23-62" aria-hidden="true" tabindex="-1"></a>    comparison_long<span class="sc">$</span>color_condition <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(comparison_long<span class="sc">$</span>color_condition)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>      <span class="fu">ggplot</span>(comparison_long) <span class="sc">+</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_rect</span>(<span class="at">xmin =</span> stats_low_mastery<span class="sc">$</span>meanneg, <span class="at">xmax =</span> stats_low_mastery<span class="sc">$</span>meanpos,</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>                  <span class="at">ymin =</span> <span class="dv">0</span>, <span class="at">ymax =</span> <span class="dv">38</span>, <span class="at">fill =</span> <span class="st">"#762a83"</span>, <span class="at">alpha =</span> .<span class="dv">05</span>) <span class="sc">+</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> stats_low_mastery<span class="sc">$</span>mean, <span class="at">linetype =</span> <span class="st">"solid"</span>, <span class="at">size =</span> .<span class="dv">5</span>, <span class="at">alpha =</span> .<span class="dv">8</span>, <span class="at">color =</span> <span class="st">"#762a83"</span>)<span class="sc">+</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_rect</span>(<span class="at">xmin =</span> stats_high_mastery<span class="sc">$</span>meanneg, <span class="at">xmax =</span> stats_high_mastery<span class="sc">$</span>meanpos,</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>                  <span class="at">ymin =</span> <span class="dv">0</span>, <span class="at">ymax =</span> <span class="dv">38</span>, <span class="at">fill =</span> <span class="st">"#009688"</span>, <span class="at">alpha =</span> .<span class="dv">05</span>)<span class="sc">+</span>  </span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> stats_high_mastery<span class="sc">$</span>mean, <span class="at">color =</span> <span class="st">"#009688"</span>, <span class="at">linetype =</span> <span class="st">"solid"</span>,  <span class="at">size =</span> .<span class="dv">5</span>, <span class="at">alpha =</span> .<span class="dv">8</span>) <span class="sc">+</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_segment</span>(<span class="at">data =</span> low_mastery,</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">aes</span>(<span class="at">x =</span> percentage, <span class="at">y =</span> title_ID,</span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>                         <span class="at">yend =</span> high_mastery<span class="sc">$</span>title_ID, <span class="at">xend =</span> high_mastery<span class="sc">$</span>percentage),</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>                     <span class="at">color =</span> <span class="st">"#aeb6bf"</span>,</span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>                     <span class="at">size =</span> <span class="fl">4.5</span>,</span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>                     <span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x =</span> percentage, <span class="at">y =</span> title_ID, <span class="at">color =</span> color_condition), <span class="at">size =</span> <span class="dv">4</span>, <span class="at">show.legend =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>        <span class="co">#color points</span></span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>        <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"1"</span> <span class="ot">=</span> <span class="st">"#009688"</span>, <span class="st">"2"</span> <span class="ot">=</span> <span class="st">"#762a83"</span>, <span class="st">"red"</span> <span class="ot">=</span> <span class="st">"red"</span>),</span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>                           <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"1"</span> <span class="ot">=</span> <span class="st">"High Mastery Students"</span>, <span class="st">"2"</span> <span class="ot">=</span> <span class="st">"Low Mastery Students"</span>)</span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>                           ) <span class="sc">+</span></span>
+<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a>        <span class="co">#add annotations for mean and standard deviations</span></span>
+<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_text</span>(<span class="at">x =</span> stats_low_mastery<span class="sc">$</span>mean <span class="sc">+</span> <span class="dv">5</span>, <span class="at">y =</span> <span class="dv">38</span>, <span class="at">label =</span> <span class="st">"MEAN"</span>, <span class="at">angle =</span> <span class="dv">90</span>, <span class="at">size =</span> <span class="fl">2.5</span>, <span class="at">color =</span> <span class="st">"#009688"</span>)<span class="sc">+</span></span>
+<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_text</span>(<span class="at">x =</span> stats_low_mastery<span class="sc">$</span>meanpos <span class="sc">+</span> <span class="dv">5</span>, <span class="at">y =</span> <span class="dv">38</span>, <span class="at">label =</span> <span class="st">"STDEV"</span>, <span class="at">angle =</span> <span class="dv">90</span>, <span class="at">size =</span> <span class="fl">2.5</span>, <span class="at">color =</span> <span class="st">"#009688"</span>)<span class="sc">+</span></span>
+<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a>        <span class="fu">ggtitle</span>(<span class="st">"Comparison of High Mastery Student Never Correct Percentage vs Low Mastery Student Correct Percentage"</span>) <span class="sc">+</span></span>
+<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_text</span> (<span class="at">data =</span> diff,</span>
+<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">aes</span>(<span class="at">label =</span> <span class="fu">paste</span>(<span class="st">"D:"</span>, diff, <span class="st">"%"</span>), <span class="at">x =</span> x_pos, <span class="at">y =</span> title_ID),</span>
+<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a>                   <span class="at">color =</span> <span class="st">"#4a4e4d"</span>,</span>
+<span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a>                   <span class="at">size =</span> <span class="fl">2.5</span>) <span class="sc">+</span></span>
+<span id="cb24-30"><a href="#cb24-30" aria-hidden="true" tabindex="-1"></a>        <span class="fu">facet_grid</span>(title_ID <span class="sc">~</span> ., <span class="at">scales =</span> <span class="st">"free"</span>, <span class="at">switch =</span> <span class="st">"y"</span>) <span class="sc">+</span></span>
+<span id="cb24-31"><a href="#cb24-31" aria-hidden="true" tabindex="-1"></a>        <span class="fu">theme_minimal</span>()<span class="sc">+</span></span>
+<span id="cb24-32"><a href="#cb24-32" aria-hidden="true" tabindex="-1"></a>        <span class="fu">theme</span>(<span class="at">panel.grid.major.y =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb24-33"><a href="#cb24-33" aria-hidden="true" tabindex="-1"></a>              <span class="at">panel.grid.minor.y =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb24-34"><a href="#cb24-34" aria-hidden="true" tabindex="-1"></a>              <span class="at">panel.grid.major.x =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb24-35"><a href="#cb24-35" aria-hidden="true" tabindex="-1"></a>              <span class="at">panel.grid.minor.x =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb24-36"><a href="#cb24-36" aria-hidden="true" tabindex="-1"></a>              <span class="at">axis.title.y =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb24-37"><a href="#cb24-37" aria-hidden="true" tabindex="-1"></a>              <span class="at">axis.text.y =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb24-38"><a href="#cb24-38" aria-hidden="true" tabindex="-1"></a>              <span class="at">axis.ticks.y =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb24-39"><a href="#cb24-39" aria-hidden="true" tabindex="-1"></a>              <span class="at">axis.ticks.x =</span> <span class="fu">element_line</span>(<span class="at">color =</span> <span class="st">"#4a4e4d"</span>),</span>
+<span id="cb24-40"><a href="#cb24-40" aria-hidden="true" tabindex="-1"></a>              <span class="at">text =</span> <span class="fu">element_text</span>(<span class="at">family =</span> <span class="st">"Segoe UI Semibold"</span>, <span class="at">color =</span> <span class="st">"#4a4e4d"</span>),</span>
+<span id="cb24-41"><a href="#cb24-41" aria-hidden="true" tabindex="-1"></a>              <span class="at">strip.text.y.left  =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">0</span>),</span>
+<span id="cb24-42"><a href="#cb24-42" aria-hidden="true" tabindex="-1"></a>              <span class="at">panel.background =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> <span class="st">"white"</span>, <span class="at">color =</span> <span class="st">"white"</span>),</span>
+<span id="cb24-43"><a href="#cb24-43" aria-hidden="true" tabindex="-1"></a>              <span class="at">strip.background =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> <span class="st">"white"</span>, <span class="at">color =</span> <span class="st">"white"</span>),</span>
+<span id="cb24-44"><a href="#cb24-44" aria-hidden="true" tabindex="-1"></a>              <span class="at">strip.text =</span> <span class="fu">element_text</span>(<span class="at">color =</span> <span class="st">"#4a4e4d"</span>, <span class="at">family =</span> <span class="st">"Segoe UI"</span>),</span>
+<span id="cb24-45"><a href="#cb24-45" aria-hidden="true" tabindex="-1"></a>              <span class="at">plot.background =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> <span class="st">"white"</span>, <span class="at">color =</span> <span class="st">"white"</span>),</span>
+<span id="cb24-46"><a href="#cb24-46" aria-hidden="true" tabindex="-1"></a>              <span class="at">panel.spacing =</span> <span class="fu">unit</span>(<span class="dv">0</span>, <span class="st">"lines"</span>),</span>
+<span id="cb24-47"><a href="#cb24-47" aria-hidden="true" tabindex="-1"></a>              <span class="at">plot.margin =</span> <span class="fu">margin</span>(<span class="dv">1</span>,<span class="dv">1</span>,.<span class="dv">5</span>,<span class="dv">1</span>, <span class="st">"cm"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Task4_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Task4_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -739,43 +788,43 @@ $ percentage_of_student_right &lt;dbl&gt; 49.27536, 50.72464, 49.27536, 50.72464
 <h3 class="anchored" data-anchor-id="lollipop-chart-analysis">Lollipop Chart Analysis</h3>
 <p>Our subsequent analysis involved a lollipop chart to identify the error rates among high mastery students across all assessed questions.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>percentage_error <span class="ot">&lt;-</span> percentage_error <span class="sc">%&gt;%</span></span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span> (student_ID <span class="sc">%in%</span> high_mastery_students<span class="sc">$</span>student_ID) <span class="sc">%&gt;%</span></span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(title_ID) <span class="sc">%&gt;%</span></span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span> (<span class="at">avg_percentage_wrong =</span> <span class="fu">mean</span>(percentage_wrong))</span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>percentile_75 <span class="ot">&lt;-</span> <span class="fu">quantile</span>(percentage_error<span class="sc">$</span>avg_percentage_wrong, <span class="fl">0.75</span>)</span>
-<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>percentage_error <span class="ot">&lt;-</span> percentage_error <span class="sc">%&gt;%</span></span>
-<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">highlight =</span> <span class="fu">ifelse</span>(avg_percentage_wrong <span class="sc">&gt;</span> percentile_75, <span class="st">"Above 75 Percentile"</span>, <span class="st">"Below 75 Percentile"</span>))</span>
-<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(percentage_error, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(title_ID,avg_percentage_wrong), <span class="at">y =</span> avg_percentage_wrong, <span class="at">color =</span> highlight)) <span class="sc">+</span></span>
-<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_segment</span>(<span class="fu">aes</span>(<span class="at">x =</span> title_ID, <span class="at">xend =</span> title_ID, <span class="at">y =</span> <span class="dv">0</span>, <span class="at">yend =</span> avg_percentage_wrong), <span class="at">color =</span> <span class="st">"grey"</span>) <span class="sc">+</span></span>
-<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">4</span>, <span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
-<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"Above 75 Percentile"</span> <span class="ot">=</span> <span class="st">"red"</span>, <span class="st">"Below 75 Percentile"</span> <span class="ot">=</span> <span class="st">"blue"</span>), <span class="at">name =</span> <span class="st">"Error Quantile"</span>) <span class="sc">+</span></span>
-<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Average Error Rate per Question for High Mastery Students"</span>,</span>
-<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Title ID"</span>,</span>
-<span id="cb28-18"><a href="#cb28-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Percentage of Error Rate"</span></span>
-<span id="cb28-19"><a href="#cb28-19" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">+</span></span>
-<span id="cb28-20"><a href="#cb28-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>() <span class="sc">+</span></span>
-<span id="cb28-21"><a href="#cb28-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span></span>
-<span id="cb28-22"><a href="#cb28-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
-<span id="cb28-23"><a href="#cb28-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">panel.grid.major.y =</span> <span class="fu">element_blank</span>(),</span>
-<span id="cb28-24"><a href="#cb28-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">panel.border =</span> <span class="fu">element_blank</span>(),</span>
-<span id="cb28-25"><a href="#cb28-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.ticks.y =</span> <span class="fu">element_blank</span>(),    </span>
-<span id="cb28-26"><a href="#cb28-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.title.y =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">14</span>, <span class="at">color =</span> <span class="st">"black"</span>),</span>
-<span id="cb28-27"><a href="#cb28-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.title.x =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">14</span>, <span class="at">color =</span> <span class="st">"black"</span>),</span>
-<span id="cb28-28"><a href="#cb28-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">14</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>, <span class="at">face =</span> <span class="st">"bold"</span>, <span class="at">color =</span> <span class="st">"black"</span>),</span>
-<span id="cb28-29"><a href="#cb28-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.title =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">10</span>),</span>
-<span id="cb28-30"><a href="#cb28-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.text =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">10</span>),</span>
-<span id="cb28-31"><a href="#cb28-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"bottom"</span>,</span>
-<span id="cb28-32"><a href="#cb28-32" aria-hidden="true" tabindex="-1"></a>    <span class="at">panel.spacing.x =</span> <span class="fu">unit</span>(<span class="dv">2</span>, <span class="st">"cm"</span>)</span>
-<span id="cb28-33"><a href="#cb28-33" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>percentage_error <span class="ot">&lt;-</span> percentage_error <span class="sc">%&gt;%</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span> (student_ID <span class="sc">%in%</span> high_mastery_students<span class="sc">$</span>student_ID) <span class="sc">%&gt;%</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(title_ID) <span class="sc">%&gt;%</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span> (<span class="at">avg_percentage_wrong =</span> <span class="fu">mean</span>(percentage_wrong))</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>percentile_75 <span class="ot">&lt;-</span> <span class="fu">quantile</span>(percentage_error<span class="sc">$</span>avg_percentage_wrong, <span class="fl">0.75</span>)</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>percentage_error <span class="ot">&lt;-</span> percentage_error <span class="sc">%&gt;%</span></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">highlight =</span> <span class="fu">ifelse</span>(avg_percentage_wrong <span class="sc">&gt;</span> percentile_75, <span class="st">"Above 75 Percentile"</span>, <span class="st">"Below 75 Percentile"</span>))</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(percentage_error, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(title_ID,avg_percentage_wrong), <span class="at">y =</span> avg_percentage_wrong, <span class="at">color =</span> highlight)) <span class="sc">+</span></span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_segment</span>(<span class="fu">aes</span>(<span class="at">x =</span> title_ID, <span class="at">xend =</span> title_ID, <span class="at">y =</span> <span class="dv">0</span>, <span class="at">yend =</span> avg_percentage_wrong), <span class="at">color =</span> <span class="st">"grey"</span>) <span class="sc">+</span></span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">4</span>, <span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"Above 75 Percentile"</span> <span class="ot">=</span> <span class="st">"red"</span>, <span class="st">"Below 75 Percentile"</span> <span class="ot">=</span> <span class="st">"blue"</span>), <span class="at">name =</span> <span class="st">"Error Quantile"</span>) <span class="sc">+</span></span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Average Error Rate per Question for High Mastery Students"</span>,</span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Title ID"</span>,</span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Percentage of Error Rate"</span></span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>() <span class="sc">+</span></span>
+<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span></span>
+<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">panel.grid.major.y =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">panel.border =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.ticks.y =</span> <span class="fu">element_blank</span>(),    </span>
+<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.title.y =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">14</span>, <span class="at">color =</span> <span class="st">"black"</span>),</span>
+<span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.title.x =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">14</span>, <span class="at">color =</span> <span class="st">"black"</span>),</span>
+<span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">14</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>, <span class="at">face =</span> <span class="st">"bold"</span>, <span class="at">color =</span> <span class="st">"black"</span>),</span>
+<span id="cb25-29"><a href="#cb25-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.title =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">10</span>),</span>
+<span id="cb25-30"><a href="#cb25-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.text =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">10</span>),</span>
+<span id="cb25-31"><a href="#cb25-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"bottom"</span>,</span>
+<span id="cb25-32"><a href="#cb25-32" aria-hidden="true" tabindex="-1"></a>    <span class="at">panel.spacing.x =</span> <span class="fu">unit</span>(<span class="dv">2</span>, <span class="st">"cm"</span>)</span>
+<span id="cb25-33"><a href="#cb25-33" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Task4_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Task4_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -786,48 +835,48 @@ $ percentage_of_student_right &lt;dbl&gt; 49.27536, 50.72464, 49.27536, 50.72464
 <h3 class="anchored" data-anchor-id="information-characteristic-curve-icc-analysis">Information Characteristic Curve (ICC) Analysis</h3>
 <p>Further insights were gleaned from an Information Characteristic Curve (ICC) analysis using a two-parameter Item Response Theory model to determine the degree by which questions will differentiate in performance between high and low knowledge level students.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>student_question <span class="ot">&lt;-</span> merged_data <span class="sc">%&gt;%</span></span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(student_ID, title_ID) <span class="sc">%&gt;%</span></span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span> (<span class="at">count =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span></span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span>
-<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>student_question <span class="ot">&lt;-</span> student_question <span class="sc">%&gt;%</span></span>
-<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(student_ID) <span class="sc">%&gt;%</span></span>
-<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span> (<span class="at">count =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span></span>
-<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span> (count <span class="sc">&gt;</span><span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>student_question <span class="ot">&lt;-</span> merged_data <span class="sc">%&gt;%</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(student_ID, title_ID) <span class="sc">%&gt;%</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span> (<span class="at">count =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>student_question <span class="ot">&lt;-</span> student_question <span class="sc">%&gt;%</span></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(student_ID) <span class="sc">%&gt;%</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span> (<span class="at">count =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span> (count <span class="sc">&gt;</span><span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>first_attempt_data <span class="ot">&lt;-</span> merged_data <span class="sc">%&gt;%</span></span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(student_ID, title_ID) <span class="sc">%&gt;%</span></span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice</span>(<span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span> (<span class="at">true_points =</span> <span class="fu">case_when</span>(</span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>      state <span class="sc">==</span> <span class="st">"Absolutely_Correct"</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
-<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> <span class="dv">0</span></span>
-<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>    )) <span class="sc">%&gt;%</span></span>
-<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span> (student_ID, title_ID, true_points)</span>
-<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>first_attempt_long <span class="ot">&lt;-</span> <span class="fu">pivot_wider</span>(first_attempt_data, </span>
-<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">names_from =</span> title_ID, <span class="at">values_from =</span> true_points) <span class="sc">%&gt;%</span></span>
-<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span> (student_ID <span class="sc">%in%</span> student_question<span class="sc">$</span>student_ID)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>first_attempt_data <span class="ot">&lt;-</span> merged_data <span class="sc">%&gt;%</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(student_ID, title_ID) <span class="sc">%&gt;%</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice</span>(<span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span> (<span class="at">true_points =</span> <span class="fu">case_when</span>(</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>      state <span class="sc">==</span> <span class="st">"Absolutely_Correct"</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> <span class="dv">0</span></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>    )) <span class="sc">%&gt;%</span></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span> (student_ID, title_ID, true_points)</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>first_attempt_long <span class="ot">&lt;-</span> <span class="fu">pivot_wider</span>(first_attempt_data, </span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">names_from =</span> title_ID, <span class="at">values_from =</span> true_points) <span class="sc">%&gt;%</span></span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span> (student_ID <span class="sc">%in%</span> student_question<span class="sc">$</span>student_ID)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span> (mirt)</span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>first_attempt_long <span class="ot">&lt;-</span> first_attempt_long <span class="sc">%&gt;%</span></span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate_all</span>(<span class="sc">~</span> <span class="fu">replace_na</span>(., <span class="dv">0</span>))</span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(first_attempt_long, <span class="st">"mirtdata.RDS"</span>)  </span>
-<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>first_attempt_long_high <span class="ot">&lt;-</span> first_attempt_long <span class="sc">%&gt;%</span></span>
-<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(student_ID <span class="sc">%in%</span> high_mastery_students<span class="sc">$</span>student_ID <span class="sc">|</span> student_ID <span class="sc">%in%</span> low_mastery_students<span class="sc">$</span>student_ID)</span>
-<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>fit3PL <span class="ot">&lt;-</span> <span class="fu">mirt</span>(<span class="at">data =</span> first_attempt_long_high[<span class="dv">2</span><span class="sc">:</span><span class="dv">39</span>], </span>
-<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>               <span class="at">model =</span> <span class="dv">1</span>,  <span class="co"># alternatively, we could also just specify model = 1 in this case</span></span>
-<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>               <span class="at">itemtype =</span> <span class="st">"2PL"</span>,</span>
-<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a>               <span class="at">SE =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>               <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a>fit3PL</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span> (mirt)</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>first_attempt_long <span class="ot">&lt;-</span> first_attempt_long <span class="sc">%&gt;%</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate_all</span>(<span class="sc">~</span> <span class="fu">replace_na</span>(., <span class="dv">0</span>))</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(first_attempt_long, <span class="st">"mirtdata.RDS"</span>)  </span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>first_attempt_long_high <span class="ot">&lt;-</span> first_attempt_long <span class="sc">%&gt;%</span></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(student_ID <span class="sc">%in%</span> high_mastery_students<span class="sc">$</span>student_ID <span class="sc">|</span> student_ID <span class="sc">%in%</span> low_mastery_students<span class="sc">$</span>student_ID)</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>fit3PL <span class="ot">&lt;-</span> <span class="fu">mirt</span>(<span class="at">data =</span> first_attempt_long_high[<span class="dv">2</span><span class="sc">:</span><span class="dv">39</span>], </span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>               <span class="at">model =</span> <span class="dv">1</span>,  <span class="co"># alternatively, we could also just specify model = 1 in this case</span></span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>               <span class="at">itemtype =</span> <span class="st">"2PL"</span>,</span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>               <span class="at">SE =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a>               <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a>fit3PL</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Call:
@@ -855,40 +904,40 @@ RMSEA = 0, CFI = NaN, TLI = NaN</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>df_IRT <span class="ot">&lt;-</span> <span class="fu">readRDS</span> (<span class="st">"mirtdata.RDS"</span>)</span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>df_IRT <span class="ot">&lt;-</span> df_IRT <span class="sc">%&gt;%</span></span>
-<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(student_ID <span class="sc">%in%</span> high_mastery_students<span class="sc">$</span>student_ID <span class="sc">|</span> student_ID <span class="sc">%in%</span> low_mastery_students<span class="sc">$</span>student_ID)</span>
-<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>fit3PL <span class="ot">&lt;-</span> <span class="fu">mirt</span>(<span class="at">data =</span> df_IRT[<span class="dv">2</span><span class="sc">:</span><span class="dv">39</span>],</span>
-<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>               <span class="at">model =</span> <span class="dv">1</span>,  <span class="co"># alternatively, we could also just specify model = 1 in this case</span></span>
-<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>               <span class="at">itemtype =</span> <span class="st">"2PL"</span>,</span>
-<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>               <span class="at">SE =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>               <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(fit3PL, <span class="at">type =</span> <span class="st">'infotrace'</span>, <span class="at">which.item =</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">38</span>), <span class="at">facet_items =</span> <span class="cn">TRUE</span>, </span>
-<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>     <span class="at">as.table =</span> <span class="cn">TRUE</span>, <span class="at">auto.key =</span> <span class="fu">list</span>(<span class="at">points =</span> <span class="cn">FALSE</span>, <span class="at">lines =</span> <span class="cn">TRUE</span>, <span class="at">columns =</span> <span class="dv">1</span>, <span class="at">space =</span> <span class="st">'right'</span>, <span class="at">cex =</span> .<span class="dv">8</span>), </span>
-<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a>     <span class="at">theta_lim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">3</span>, <span class="dv">3</span>), </span>
-<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"Item Information Curves Plot of 2PL Model"</span>,</span>
-<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a>     <span class="at">layout =</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="fu">ceiling</span>(<span class="dv">38</span> <span class="sc">/</span> <span class="dv">10</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>df_IRT <span class="ot">&lt;-</span> <span class="fu">readRDS</span> (<span class="st">"mirtdata.RDS"</span>)</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>df_IRT <span class="ot">&lt;-</span> df_IRT <span class="sc">%&gt;%</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(student_ID <span class="sc">%in%</span> high_mastery_students<span class="sc">$</span>student_ID <span class="sc">|</span> student_ID <span class="sc">%in%</span> low_mastery_students<span class="sc">$</span>student_ID)</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>fit3PL <span class="ot">&lt;-</span> <span class="fu">mirt</span>(<span class="at">data =</span> df_IRT[<span class="dv">2</span><span class="sc">:</span><span class="dv">39</span>],</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>               <span class="at">model =</span> <span class="dv">1</span>,  <span class="co"># alternatively, we could also just specify model = 1 in this case</span></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>               <span class="at">itemtype =</span> <span class="st">"2PL"</span>,</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>               <span class="at">SE =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>               <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(fit3PL, <span class="at">type =</span> <span class="st">'infotrace'</span>, <span class="at">which.item =</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">38</span>), <span class="at">facet_items =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>     <span class="at">as.table =</span> <span class="cn">TRUE</span>, <span class="at">auto.key =</span> <span class="fu">list</span>(<span class="at">points =</span> <span class="cn">FALSE</span>, <span class="at">lines =</span> <span class="cn">TRUE</span>, <span class="at">columns =</span> <span class="dv">1</span>, <span class="at">space =</span> <span class="st">'right'</span>, <span class="at">cex =</span> .<span class="dv">8</span>), </span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>     <span class="at">theta_lim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">3</span>, <span class="dv">3</span>), </span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"Item Information Curves Plot of 2PL Model"</span>,</span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>     <span class="at">layout =</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="fu">ceiling</span>(<span class="dv">38</span> <span class="sc">/</span> <span class="dv">10</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Task4_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Task4_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(fit3PL, <span class="at">type =</span> <span class="st">'trace'</span>, <span class="at">which.item =</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">38</span>), <span class="at">facet_items =</span> <span class="cn">TRUE</span>, </span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>     <span class="at">as.table =</span> <span class="cn">TRUE</span>, <span class="at">auto.key =</span> <span class="fu">list</span>(<span class="at">points =</span> <span class="cn">FALSE</span>, <span class="at">lines =</span> <span class="cn">TRUE</span>, <span class="at">columns =</span> <span class="dv">1</span>, <span class="at">space =</span> <span class="st">'right'</span>, <span class="at">cex =</span> .<span class="dv">8</span>), </span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">theta_lim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">3</span>, <span class="dv">3</span>), </span>
-<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"Category Characteristic Curves Plot of 2PL Model"</span>,</span>
-<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>     <span class="at">layout =</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="fu">ceiling</span>(<span class="dv">38</span> <span class="sc">/</span> <span class="dv">10</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(fit3PL, <span class="at">type =</span> <span class="st">'trace'</span>, <span class="at">which.item =</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">38</span>), <span class="at">facet_items =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>     <span class="at">as.table =</span> <span class="cn">TRUE</span>, <span class="at">auto.key =</span> <span class="fu">list</span>(<span class="at">points =</span> <span class="cn">FALSE</span>, <span class="at">lines =</span> <span class="cn">TRUE</span>, <span class="at">columns =</span> <span class="dv">1</span>, <span class="at">space =</span> <span class="st">'right'</span>, <span class="at">cex =</span> .<span class="dv">8</span>), </span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">theta_lim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">3</span>, <span class="dv">3</span>), </span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"Category Characteristic Curves Plot of 2PL Model"</span>,</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>     <span class="at">layout =</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="fu">ceiling</span>(<span class="dv">38</span> <span class="sc">/</span> <span class="dv">10</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Task4_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Task4_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
