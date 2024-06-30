@@ -2,4 +2,4 @@
 title: "Overview"
 ---
 
-![](images/ISSS608 Group 6_poster.jpg){fig-align="center"}
+![](images/ISSS608%20Group%206_poster.jpg){fig-align="center"}
