@@ -276,7 +276,7 @@ ui <- dashboardPage(
                                                          selected = "Overall sum of question mastery points"),
                                              fluidRow(
                                                title = "2-Sample Difference in Mean Statistical Test for Both Clusters",
-                                               plotlyOutput("plot5", height = "400px")
+                                               plotOutput("plot5", height = "400px")
                                              )
                                     ),
                                     tabPanel("Multi-linear Regression (Alternative from Clustering)",
@@ -954,7 +954,7 @@ server <- function(input, output) {
     (a + b) / (c + d) / (e + f) / (g + h)
   })
   
-  output$plot5 <- renderPlotly({
+  output$plot5 <- renderPlot({
     KAindicator02 <- NULL
     if (input$KAindicator2 == "Percent of submissions absolutely correct") {
       KAindicator02 <- "Percent of submissions absolutely correct"
@@ -964,14 +964,13 @@ server <- function(input, output) {
       KAindicator02 <- "Sum of points Overall"
     }
     
-    plot <- ggbetweenstats(
+    ggbetweenstats(
       data = StudentLMKA_data,
       x = "cluster", 
       y = !!sym(KAindicator02),  
       type = "np",
       messages = FALSE
     )
-    ggplotly(plot)
   })
   
   output$plot6 <- renderPlotly({
