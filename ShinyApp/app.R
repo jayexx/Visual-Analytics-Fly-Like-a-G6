@@ -85,7 +85,19 @@ ui <- dashboardPage(
       style = "display: flex; align-items: center;",
       "VISUALISING LEARNING EFFECTIVENESS FOR INSIGHTS ON NORTHCLASS INSTITUTE’S EDUCATION SYSTEM"
     ),
-    titleWidth = 700
+    titleWidth = 700,
+    tags$li(
+      class = "dropdown",
+      tags$a(
+        href = "https://takin-g6-2-hk.netlify.app/",
+        target = "_blank",
+        tags$div(
+          style = "display: flex; align-items: center;",
+          icon("external-link-alt"),
+          span("Back to project website", style = "margin-left: 5px;")
+        )
+      )
+    )
   ),
   dashboardSidebar(
     width = 420,
@@ -119,6 +131,12 @@ ui <- dashboardPage(
           background-color: #3c8dbc;
           color: white;
         }
+        .dropdown {
+          list-style-type: none;
+        }
+        .dropdown > a {
+          background-color: transparent !important;
+        }
       "))
     ),
     tabItems(
@@ -131,6 +149,7 @@ ui <- dashboardPage(
                   title = "G6: Visualising Learning Effectiveness for Insights on Northclass Institute",
                   h3("Introduction", style = "text-align: left;"),
                   p("This project focuses on analysis of the learning and performance of students in a computer programming course at NorthClass Training Institute to provide insights and recommendations on its education system."),
+                  p("For the user guide and more explanations about Shiny data visualization, see the user guide on the project website."),
                   br(),
                   h3("The Dataset", style = "text-align: left;"),
                   p("The provided materials for the challenge include 3 datasets described below, as well as a separate document providing a more detailed description of the data and variables:"),
@@ -288,7 +307,7 @@ ui <- dashboardPage(
                                                column( width = 12,
                                                  
                                                  title = "Multi-linear Regression of learning mode features (Overall)",
-                                                 plotlyOutput("plot6", width = NULL, height = "600px")
+                                                 plotOutput("plot6", width = NULL, height = "600px")
                                                
                                                )
                                              ),
@@ -731,8 +750,8 @@ server <- function(input, output) {
                                 alphaLines = 0.2,
                                 boxplot = TRUE, 
                                 title = "Parallel Coordinates Plot of Students' learning modes") +
-      theme(axis.text.x = element_text(angle = 30, size = 20))
-    ggplotly(parallel_plot, tooltip = "text") %>% layout(showlegend = FALSE)
+      theme(axis.text.x = element_text(angle = 30, size = 10))
+    ggplotly(parallel_plot, tooltip = "text") %>% layout(showlegend = TRUE)
     })
     
     output$cluster_table <- renderDT({
@@ -973,7 +992,7 @@ server <- function(input, output) {
     )
   })
   
-  output$plot6 <- renderPlotly({
+  output$plot6 <- renderPlot({
     KAindicator03 <- NULL
     if (input$KAindicator3 == "Overall sum of highest submission scores per question") {
       KAindicator03 <- "Sum of overall highest submission scores"
@@ -998,13 +1017,13 @@ server <- function(input, output) {
     plot61 <- ggcoefstats(model, 
                 output = "plot") +
                 theme(
-                      plot.title = element_text(size = 10),
-                      axis.title = element_text(size = 8),
-                      axis.text = element_text(size = 8),
-                      legend.title = element_text(size = 10),
-                      legend.text = element_text(size = 8)
+                      plot.title = element_text(size = 16),
+                      axis.title = element_text(size = 14),
+                      axis.text = element_text(size = 14),
+                      legend.title = element_text(size = 16),
+                      legend.text = element_text(size = 14)
                     )
-    ggplotly(plot61)
+    plot61
   })
   
   output$plot7 <- renderPlotly({
