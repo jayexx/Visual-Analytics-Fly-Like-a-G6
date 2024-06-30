@@ -432,6 +432,9 @@ plot(1:max_clusters, avg_sil_widths, type = "b", pch = 19, frame = FALSE,
 optimal_clusters <- which.max(avg_sil_widths)
 points(optimal_clusters, avg_sil_widths[optimal_clusters], col = "red", pch = 19)
 ```
+```{r}
+saveRDS(avg_sil_widths,'avg_sil_widths.rds')
+```
 
 ```{r}
 # Function to compute SSE for different numbers of clusters
@@ -518,6 +521,9 @@ ggparcoord(data = cluster_factor,
            boxplot = TRUE, 
            title = "Parallel Coordinates Plot of Students' learning modes")+
    theme(axis.text.x = element_text(angle = 30, size = 20))
+```
+```{r}
+saveRDS(cluster_factor,'cluster_factor.rds')
 ```
 
 ```{r}

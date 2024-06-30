@@ -169,14 +169,24 @@ ui <- dashboardPage(skin = 'blue',
                                     ),
                                     tabPanel("Parallel Coordinates Plot",
                                              fluidRow(
-                                               column(3, 
+                                               column(2, 
                                                       sliderInput("num_clusters", "Number of Clusters:",
                                                                   min = 2, max = 10, value = 2)),
-                                               column(9, 
+                                               column(10, 
                                                       plotlyOutput("plot02", height = "800px"))  # Parallel Coordinates Plot
                                              ),
                                              fluidRow(
-                                               plotOutput("plot03", height = "400px")  # Data Table
+                                               column(2,
+                                                      checkboxGroupInput("selected_vars", "Select Variables:",
+                                                                         choices = list("Title ID" = "title_ID",
+                                                                                        "Knowledge" = "knowledge",
+                                                                                        "Method" = "method",
+                                                                                        "Age" = "age",
+                                                                                        "Major" = "major"),
+                                                                         selected = c("title_ID", "knowledge", "method", "age", "major"))
+                                               ),
+                                               column(10,
+                                                      DTOutput("cluster_table", height = "400px"))  # Data Table
                                              )
                                     )
                                   )
@@ -628,8 +638,8 @@ server <- function(input, output) {
         return(data)
       }
 
-    cluster_data <- generate_clusters(cluster_factor, input$num_clusters)
-    parallel_plot <- ggparcoord(data = cluster_data, 
+    cluster_data00 <- generate_clusters(cluster_factor, input$num_clusters)
+    parallel_plot <- ggparcoord(data = cluster_data00, 
                                 columns = c(2, 3, 5, 7, 9, 10, 11, 12, 13), 
                                 groupColumn = 14, # cluster column index
                                 scale = "uniminmax",
@@ -640,10 +650,36 @@ server <- function(input, output) {
     ggplotly(parallel_plot, tooltip = "text") %>% layout(showlegend = FALSE)
     })
     
-    # table output
-    output$plot03 <- renderPlotly({
+    output$cluster_table <- renderDT({
       
+      # 计算每个聚类中所选变量的最高占比和名称
+      get_top_percentage <- function(df, selected_vars) {
+        result <- df %>%
+          select(all_of(c(selected_vars, "cluster"))) %>%
+          gather(key = "variable", value = "value", -cluster) %>%
+          group_by(cluster, variable, value) %>%
+          summarise(count = n(), .groups = 'drop') %>%
+          mutate(percentage = count / sum(count) * 100) %>%
+          arrange(cluster, variable, desc(percentage)) %>%
+          group_by(cluster, variable) %>%
+          slice(1) %>%
+          ungroup() %>%
+          select(cluster, variable, value)
+        return(result)
+      }
       
+      generate_clusters <- function(data, k) {
+        numeric_data <- data %>% select_if(is.numeric)
+        kmeans_result <- kmeans(numeric_data, centers = k)
+        data$cluster <- as.factor(kmeans_result$cluster)
+        return(data)
+      }
+      
+      cluster_data00 <- generate_clusters(cluster_factor, input$num_clusters)
+      
+      req(input$selected_vars)
+      result_table <- get_top_percentage(cluster_data00, input$selected_vars)
+      datatable(result_table, options = list(pageLength = 10, autoWidth = TRUE))
     })
 
   
