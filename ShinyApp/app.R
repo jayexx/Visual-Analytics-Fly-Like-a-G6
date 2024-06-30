@@ -244,7 +244,7 @@ ui <- dashboardPage(
                                                            min = 2, max = 10, value = 2) ,                                            
                                              
                                                title = "Parallel Coordinate plot",
-                                               plotlyOutput("plot2", height = "400px")
+                                               plotlyOutput("plot2", height = "800px")
                                              )
                                     ),
                                     tabPanel("Knowledge Acquisition Distribution Across Both Clusters", 
@@ -274,7 +274,7 @@ ui <- dashboardPage(
                                                                      "Overall sum of highest submission scores per question", 
                                                                      "Overall sum of question mastery points"), 
                                                          selected = "Overall sum of question mastery points"),
-                                             box(
+                                             fluidRow(
                                                title = "2-Sample Difference in Mean Statistical Test for Both Clusters",
                                                plotlyOutput("plot5", height = "400px")
                                              )
