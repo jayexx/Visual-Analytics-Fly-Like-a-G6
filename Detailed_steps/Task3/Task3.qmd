@@ -1,5 +1,5 @@
 ---
-title: "Task3"
+title: "Task 3: Learning Mode & Knowledge Acquisition"
 author: "Jayexx, fudi, yuhui"
 date: "June 1, 2024"
 date-modified: "last-modified"

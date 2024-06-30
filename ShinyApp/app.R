@@ -146,8 +146,8 @@ ui <- dashboardPage(
                     tags$li("1) Knowledge Mastery & Weak Links: Quantitatively assess the learners' question-answering behaviors to identify weak links in their knowledge system."),
                     tags$li("2) Learner Profiling: Profile learners from various perspectives based on their personalized learning behavior patterns and characteristics."),
                     tags$li("3) Learning Modes & Knowledge Acquisition: Examine the relationship between the learners' learning modes and knowledge acquisition."),
-                    tags$li("4) Question Difficulty & Learner Knowledge: Analyse the alignment of questions' difficulty level with learners' knowledge levels to identify inappropriate questions."),
-                    tags$li("5) Provide recommendations for adjusting the question bank and teaching strategies based on the analysis.")
+                    tags$li("4) Question Difficulty & Learner Knowledge: Analyse the alignment of questions' difficulty level with learners' knowledge levels to identify inappropriate questions。"),
+                    tags$li("5) Provide recommendations for adjusting the question bank and teaching strategies based on the analysis。")
                   )
                 )
               )
@@ -186,41 +186,43 @@ ui <- dashboardPage(
                                   )
                                 )),
                         
-                        # Task 2
-                        tabItem(tabName = 'Task2',
-                                fluidPage(
-                                  titlePanel("Task2: Learners Profile"),
-                                  tabsetPanel(
-                                    tabPanel("Silhouette Analysis",
-                                             fluidRow(
-                                               plotOutput("plot01", height = "400px")  # Silhouette Analysis plot
-                                             )
-                                    ),
-                                    tabPanel("Parallel Coordinates Plot",
-                                             fluidRow(
-                                               column(2, 
-                                                      sliderInput("num_clusters", "Number of Clusters:",
-                                                                  min = 2, max = 10, value = 2)),
-                                               column(10, 
-                                                      plotlyOutput("plot02", height = "800px"))  # Parallel Coordinates Plot
-                                             ),
-                                             fluidRow(
-                                               column(2,
-                                                      checkboxGroupInput("selected_vars", "Select Variables:",
-                                                                         choices = list("Title ID" = "title_ID",
-                                                                                        "Knowledge" = "knowledge",
-                                                                                        "Method" = "method",
-                                                                                        "Age" = "age",
-                                                                                        "Major" = "major"),
-                                                                         selected = c("title_ID", "knowledge", "method", "age", "major"))
-                                               ),
-                                               column(10,
-                                                      DTOutput("cluster_table", height = "400px"))  # Data Table
-                                             )
-                                    )
-                                  )
-                                )
-                        )
+      # Task 2
+      tabItem(tabName = 'Task2',
+              fluidPage(
+                titlePanel("Task2: Learners Profile"),
+                tabsetPanel(
+                  tabPanel("Silhouette Analysis",
+                           fluidRow(
+                             plotOutput("plot01", height = "400px")  # Silhouette Analysis plot
+                           )
+                  ),
+                  tabPanel("Parallel Coordinates Plot",
+                           fluidRow(
+                             column(2, 
+                                    sliderInput("num_clusters", "Number of Clusters:",
+                                                min = 2, max = 10, value = 2)),
+                             column(10, 
+                                    plotlyOutput("plot02", height = "800px"))  # Parallel Coordinates Plot
+                           ),
+                           fluidRow(
+                             column(2,
+                                    sliderInput("num_top_n", "Number of Top Preferences:",
+                                                min = 1, max = 5, value = 2),
+                                    checkboxGroupInput("selected_vars", "Select Variables:",
+                                                       choices = list("Title ID" = "title_ID",
+                                                                      "Knowledge" = "knowledge",
+                                                                      "Method" = "method",
+                                                                      "Age" = "age",
+                                                                      "Major" = "major"),
+                                                       selected = c("title_ID", "knowledge", "method", "age", "major"))
+                             ),
+                             column(10,
+                                    DTOutput("cluster_table", height = "400px"))  # Data Table
+                           )
+                  )
+                )
+              )
+      )
                         
                         ,
                         
@@ -736,7 +738,7 @@ server <- function(input, output) {
     output$cluster_table <- renderDT({
       
       # 计算每个聚类中所选变量的最高占比和名称
-      get_top_percentage <- function(df, selected_vars) {
+      get_top_percentage <- function(df, selected_vars, top_n_value) {
         result <- df %>%
           select(all_of(c(selected_vars, "cluster"))) %>%
           gather(key = "variable", value = "value", -cluster) %>%
@@ -745,9 +747,16 @@ server <- function(input, output) {
           mutate(percentage = count / sum(count) * 100) %>%
           arrange(cluster, variable, desc(percentage)) %>%
           group_by(cluster, variable) %>%
-          slice(1) %>%
+          top_n(top_n_value, wt = percentage) %>%
+          summarise(
+            top_values = paste(value, collapse = ", "),
+            top_percentages = paste(round(percentage, 2), collapse = ", "),
+            .groups = 'drop'
+          ) %>%
           ungroup() %>%
-          select(cluster, variable, value)
+          rename(preference = top_values) %>%
+          select(cluster, variable, preference)
+        
         return(result)
       }
       
@@ -761,8 +770,8 @@ server <- function(input, output) {
       cluster_data00 <- generate_clusters(cluster_factor, input$num_clusters)
       
       req(input$selected_vars)
-      result_table <- get_top_percentage(cluster_data00, input$selected_vars)
-      datatable(result_table, options = list(pageLength = 10, autoWidth = TRUE))
+      result_table <- get_top_percentage(cluster_data00, input$selected_vars, input$num_top_n)
+      datatable(result_table, options = list(pageLength = 10, autoWidth = TRUE), caption = 'Cluster Preference')
     })
 
   
