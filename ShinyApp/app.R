@@ -78,52 +78,80 @@ overall_mastery <- overall_mastery %>%
 
 # Shiny app UI
 
-ui <- dashboardPage(skin = 'blue',
-                    dashboardHeader(title = 'VISUALISING LEARNING EFFECTIVENESS FOR INSIGHTS ON NORTHCLASS INSTITUTE’S EDUCATION SYSTEM', titleWidth = 800),
-                    
-                    dashboardSidebar(
-                      width = 400,
-                      sidebarMenu(
-                        menuItem('HomePage', tabName = 'HomePage'),
-                        menuItem('Task 1: Knowledge Mastery & Weak links', tabName = 'Task1'),
-                        menuItem('Task 2: Learners Profile', tabName = 'Task2'),
-                        menuItem('Task 3: Learning Mode & Knowledge Acquisition', tabName = 'Task3'),
-                        menuItem('Task 4: Question Difficulty & Learners Knowledge Level', tabName = 'Task4'),
-                        menuItem('Task 5: Recommendations', tabName = 'Task5')
-                      )
-                    ),
-                    
-                    dashboardBody(
-                      tabItems(
-                        # Home Page
-                        tabItem(tabName = 'HomePage',
-                                fluidPage(
-                                  mainPanel(
-                                    h3("G6 : Visualising Learning effectiveness for Insights on Noethclass Institute ", align = 'center'),
-                                    br(),
-                                    strong('Introduction'),
-                                    p('This project focuses on analysis of the learning and performance of students in a computer programming course at NorthClass Training Institute to provide insights and recommendations on its education system.'),
-                                    br(),
-                                    strong('The Dataset'),
-                                    p('The provided materials for the challenge include 3 datasets described below, as well as a separate document providing a more detailed description of the data and variables:'),
-                                    tags$ul(
-                                      tags$li('Dataset 1: Student Information - This comprises of 5 columns and 1364 rows, providing individualized demographic variables of the learners (a.k.a students) within the scope of this project.'),
-                                      tags$li('Dataset 2: Learning Subject Title Information - This comprises of 5 columns and 44 rows, providing variables of the questions from the programming tasks which are collated in the scope of this project.'),
-                                      tags$li('Dataset 3: Class Submission Records - This comprises of multiple datasets, each with 10 columns and various number of rows, providing the participating learners’ answering variables to the questions collated in the scope of this project.')
-                                    ),
-                                    br(),
-                                    strong('Objective'),
-                                    p('The objectives of the study are as follows:'),
-                                    tags$ul(
-                                      tags$li("1) Knowledge Mastery & Weak Links: Quantitatively assess the learners' question-answering behaviors to identify weak links in their knowledge system."),
-                                      tags$li('2) Learner Profiling: Profile learners from various perspectives based on their personalized learning behavior patterns and characteristics.'),
-                                      tags$li('3) Learning Modes & Knowledge Acquisition: Examine the relationship between the learners\' learning modes and knowledge acquisition.'),
-                                      tags$li('4) Question Difficulty & Learner Knowledge: Analyse the alignment of questions\' difficulty level with learners\' knowledge levels to identify inappropriate questions.'),
-                                      tags$li('5) Provide recommendations for adjusting the question bank and teaching strategies based on the analysis.')
-                                    )
-                                  )
-                                )
-                        ),
+ui <- dashboardPage(
+  skin = 'blue',
+  dashboardHeader(
+    title = tags$div(
+      style = "display: flex; align-items: center;",
+      "VISUALISING LEARNING EFFECTIVENESS FOR INSIGHTS ON NORTHCLASS INSTITUTE’S EDUCATION SYSTEM"
+    ),
+    titleWidth = 700
+  ),
+  dashboardSidebar(
+    width = 420,
+    sidebarMenu(
+      menuItem('HomePage', tabName = 'HomePage', icon = icon("home")),
+      menuItem('Task 1: Knowledge Mastery & Weak Links', tabName = 'Task1', icon = icon("chart-bar")),
+      menuItem('Task 2: Learners Profile', tabName = 'Task2', icon = icon("user")),
+      menuItem('Task 3: Learning Mode & Knowledge Acquisition', tabName = 'Task3', icon = icon("book")),
+      menuItem('Task 4: Question Difficulty & Learners Knowledge Level', tabName = 'Task4', icon = icon("question-circle")),
+      menuItem('Task 5: Recommendations', tabName = 'Task5', icon = icon("lightbulb"))
+    )
+  ),
+  dashboardBody(
+    tags$head(
+      tags$style(HTML("
+        .main-header .logo {
+          font-family: 'Arial', sans-serif;
+          font-size: 24px;
+          font-weight: bold;
+        }
+        .content-wrapper, .right-side {
+          background-color: #f4f6f9;
+        }
+        .main-sidebar {
+          font-size: 16px;
+        }
+        .sidebar-menu > li > a {
+          color: #4a4e4d;
+        }
+        .sidebar-menu > li > a:hover {
+          background-color: #3c8dbc;
+          color: white;
+        }
+      "))
+    ),
+    tabItems(
+      tabItem(tabName = 'HomePage',
+              fluidPage(
+                box(
+                  width = 12,
+                  solidHeader = TRUE,
+                  status = "primary",
+                  title = "G6: Visualising Learning Effectiveness for Insights on Northclass Institute",
+                  h3("Introduction", style = "text-align: center;"),
+                  p("This project focuses on analysis of the learning and performance of students in a computer programming course at NorthClass Training Institute to provide insights and recommendations on its education system."),
+                  br(),
+                  h3("The Dataset", style = "text-align: center;"),
+                  p("The provided materials for the challenge include 3 datasets described below, as well as a separate document providing a more detailed description of the data and variables:"),
+                  tags$ul(
+                    tags$li("Dataset 1: Student Information - This comprises of 5 columns and 1364 rows, providing individualized demographic variables of the learners (a.k.a students) within the scope of this project."),
+                    tags$li("Dataset 2: Learning Subject Title Information - This comprises of 5 columns and 44 rows, providing variables of the questions from the programming tasks which are collated in the scope of this project."),
+                    tags$li("Dataset 3: Class Submission Records - This comprises of multiple datasets, each with 10 columns and various number of rows, providing the participating learners’ answering variables to the questions collated in the scope of this project.")
+                  ),
+                  br(),
+                  h3("Objective", style = "text-align: center;"),
+                  p("The objectives of the study are as follows:"),
+                  tags$ul(
+                    tags$li("1) Knowledge Mastery & Weak Links: Quantitatively assess the learners' question-answering behaviors to identify weak links in their knowledge system."),
+                    tags$li("2) Learner Profiling: Profile learners from various perspectives based on their personalized learning behavior patterns and characteristics."),
+                    tags$li("3) Learning Modes & Knowledge Acquisition: Examine the relationship between the learners' learning modes and knowledge acquisition."),
+                    tags$li("4) Question Difficulty & Learner Knowledge: Analyse the alignment of questions' difficulty level with learners' knowledge levels to identify inappropriate questions."),
+                    tags$li("5) Provide recommendations for adjusting the question bank and teaching strategies based on the analysis.")
+                  )
+                )
+              )
+      ),
                         
                         # Task 1
                         tabItem(tabName = 'Task1',
@@ -213,7 +241,7 @@ ui <- dashboardPage(skin = 'blue',
                                                            min = 2, max = 10, value = 2) ,                                            
                                              
                                                title = "Parallel Coordinate plot",
-                                               plotOutput("plot2", height = "400px")
+                                               plotlyOutput("plot2", height = "400px")
                                              )
                                     ),
                                     tabPanel("Knowledge Acquisition Distribution Across Both Clusters", 
@@ -245,7 +273,7 @@ ui <- dashboardPage(skin = 'blue',
                                                          selected = "Overall sum of question mastery points"),
                                              box(
                                                title = "2-Sample Difference in Mean Statistical Test for Both Clusters",
-                                               plotOutput("plot5", height = "400px")
+                                               plotlyOutput("plot5", height = "400px")
                                              )
                                     ),
                                     tabPanel("Multi-linear Regression (Alternative from Clustering)",
@@ -257,7 +285,7 @@ ui <- dashboardPage(skin = 'blue',
                                                column( width = 12,
                                                  
                                                  title = "Multi-linear Regression of learning mode features (Overall)",
-                                                 plotOutput("plot6", width = NULL, height = "600px")
+                                                 plotlyOutput("plot6", width = NULL, height = "600px")
                                                
                                                )
                                              ),
@@ -265,7 +293,7 @@ ui <- dashboardPage(skin = 'blue',
                                                column( width = 12,
                                                
                                                  title = "Multi-linear Regression of learning mode features (By Knowledge Areas)",
-                                                 plotOutput("plot7", width = NULL, height = "1500px")
+                                                 plotlyOutput("plot7", width = NULL, height = "1500px")
                                                
                                                )
                                              )
@@ -717,7 +745,7 @@ server <- function(input, output) {
     points(optimal_clusters, avg_sil_widths[optimal_clusters], col = "red", pch = 19)
   })
   
-  output$plot2 <- renderPlot({
+  output$plot2 <- renderPlotly({
 
     
     clustering_data <- StudentLM_data %>%
@@ -731,7 +759,7 @@ server <- function(input, output) {
     StudentLM_data_factor <- StudentLM_data
     StudentLM_data_factor$cluster <- as.character(StudentLM_data_factor$cluster)
     
-    ggparcoord(data = StudentLM_data_factor,
+    parallel_plot1 <- ggparcoord(data = StudentLM_data_factor,
                columns = c(2:13), 
                groupColumn = 14,
                scale = "uniminmax",
@@ -748,6 +776,7 @@ server <- function(input, output) {
         legend.title = element_text(size = 8),
         legend.text = element_text(size = 8)
       )
+    ggplotly(parallel_plot1, tooltip = "text")
   })
   
   output$plot3 <- renderPlot({
@@ -861,7 +890,7 @@ server <- function(input, output) {
     (a + b) / (c + d) / (e + f) / (g + h)
   })
   
-  output$plot5 <- renderPlot({
+  output$plot5 <- renderPlotly({
     KAindicator02 <- NULL
     if (input$KAindicator2 == "Percent of submissions absolutely correct") {
       KAindicator02 <- "Percent of submissions absolutely correct"
@@ -871,16 +900,17 @@ server <- function(input, output) {
       KAindicator02 <- "Sum of points Overall"
     }
     
-    ggbetweenstats(
+    plot <- ggbetweenstats(
       data = StudentLMKA_data,
       x = "cluster", 
       y = !!sym(KAindicator02),  
       type = "np",
       messages = FALSE
     )
+    ggplotly(plot)
   })
   
-  output$plot6 <- renderPlot({
+  output$plot6 <- renderPlotly({
     KAindicator03 <- NULL
     if (input$KAindicator3 == "Overall sum of highest submission scores per question") {
       KAindicator03 <- "Sum of overall highest submission scores"
@@ -902,18 +932,19 @@ server <- function(input, output) {
                   `Total memory size of submissions` +
                   `Total timeconsume of submissions`, data = StudentLMKA_data)
     
-    ggcoefstats(model, 
+    plot61 <- ggcoefstats(model, 
                 output = "plot") +
-      theme(
-        plot.title = element_text(size = 10),
-        axis.title = element_text(size = 8),
-        axis.text = element_text(size = 8),
-        legend.title = element_text(size = 10),
-        legend.text = element_text(size = 8)
-      )
+                theme(
+                      plot.title = element_text(size = 10),
+                      axis.title = element_text(size = 8),
+                      axis.text = element_text(size = 8),
+                      legend.title = element_text(size = 10),
+                      legend.text = element_text(size = 8)
+                    )
+    ggplotly(plot61)
   })
   
-  output$plot7 <- renderPlot({
+  output$plot7 <- renderPlotly({
     model3 <- lm(`Sum of points for b3C9s knowledge` ~  
                    `Percent of submissions on weekdays` +
                    `Percent of submissions during working hrs` +
@@ -1043,8 +1074,24 @@ server <- function(input, output) {
     h <- ggcoefstats(model10, 
                      output = "plot")
     
-    (a + b) / (c + d) / (e + f) / (g + h) 
-  })
+    a1 <- ggplotly(a)
+    b1 <- ggplotly(b)
+    c1 <- ggplotly(c)
+    d1 <- ggplotly(d)
+    e1 <- ggplotly(e)
+    f1 <- ggplotly(f)
+    g1 <- ggplotly(g)
+    h1 <- ggplotly(h)
+    
+    # 使用 subplot 函数组合 plotly 对象
+    combined_plot <- subplot(
+      list(a1, b1, c1, d1, e1, f1, g1, h1),
+      nrows = 4, shareX = TRUE, shareY = TRUE, titleX = TRUE, titleY = TRUE
+    )
+    
+    # 显示组合的 plotly 图表
+    combined_plot
+})
   
   # Add server logic for Task 4 here
   # Task 4: Reactive expression to dynamically choose the plot based on the selected metric for questions
