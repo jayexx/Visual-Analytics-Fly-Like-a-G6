@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Visual-Analytics-Fly-Like-a-G6 -</title>
+<title>Visual-Analytics-Fly-Like-a-G6</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -69,7 +69,6 @@ ul.task-list li input[type="checkbox"] {
 
 
 <link rel="stylesheet" href="styles.css">
-<link rel="stylesheet" href="homepage.css">
 </head>
 
 <body class="nav-fixed">
@@ -129,13 +128,13 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">Shinny app</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./Userguide.html"> 
+    <a class="nav-link active" href="./Userguide.html" aria-current="page"> 
 <span class="menu-text">User Guide</span></a>
   </li>  
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="./index.html" aria-current="page"> 
+    <a class="nav-link" href="./index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
@@ -154,7 +153,22 @@ ul.task-list li input[type="checkbox"] {
 <!-- sidebar -->
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#r-shiny-app-user-guide" id="toc-r-shiny-app-user-guide" class="nav-link active" data-scroll-target="#r-shiny-app-user-guide">R Shiny App User Guide –</a></li>
+  <li><a href="#visualising-learning-effectiveness-for-insights-on-northclass-institute" id="toc-visualising-learning-effectiveness-for-insights-on-northclass-institute" class="nav-link" data-scroll-target="#visualising-learning-effectiveness-for-insights-on-northclass-institute">Visualising Learning Effectiveness for Insights on Northclass Institute</a>
+  <ul class="collapse">
+  <li><a href="#homepage-sidebar-menu" id="toc-homepage-sidebar-menu" class="nav-link" data-scroll-target="#homepage-sidebar-menu">1. <u>Homepage &amp; Sidebar Menu</u></a></li>
+  <li><a href="#task-1-knowledge-mastery-weak-links." id="toc-task-1-knowledge-mastery-weak-links." class="nav-link" data-scroll-target="#task-1-knowledge-mastery-weak-links.">2. <u>Task 1: Knowledge Mastery &amp; Weak Links</u>.</a></li>
+  <li><a href="#task-2-learners-profile." id="toc-task-2-learners-profile." class="nav-link" data-scroll-target="#task-2-learners-profile.">3. <u>Task 2: Learners’ Profile</u>.</a></li>
+  <li><a href="#task-3-learning-modes-and-learners-knowledge-acquisition." id="toc-task-3-learning-modes-and-learners-knowledge-acquisition." class="nav-link" data-scroll-target="#task-3-learning-modes-and-learners-knowledge-acquisition.">4. <u>Task 3 Learning Modes and Learners Knowledge Acquisition</u>.</a></li>
+  <li><a href="#task-4-question-difficulty-and-learners-knowledge-level." id="toc-task-4-question-difficulty-and-learners-knowledge-level." class="nav-link" data-scroll-target="#task-4-question-difficulty-and-learners-knowledge-level.">5. <u>Task 4 Question Difficulty and Learners Knowledge Level</u>.</a></li>
+  <li><a href="#task-5-recommendations." id="toc-task-5-recommendations." class="nav-link" data-scroll-target="#task-5-recommendations.">6. <u>Task 5 Recommendations</u>.</a></li>
+  </ul></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -162,20 +176,78 @@ ul.task-list li input[type="checkbox"] {
 
 
 
-<p><img src="images/chinavis.png" style="width:25.4cm;height:9cm"></p>
-<div class="fullscreen">
-<p>NorthClass, a prominent higher education training institution, offers over 100 courses across various disciplines, attracting around 300,000 registered learners. The institution collects temporal learning data to assess instructional quality. To optimize teaching resources and improve quality, NorthClass plans to establish a Smart Education Development and Innovation Group. This group will explore the use of next-generation AI technology to cultivate innovative talents.</p>
-<p>As a member of the Smart Education Development and Innovation Group, your task is to design and implement a Visual Analytics solution. This solution should help the institution intuitively perceive learners’ learning status and provide actionable suggestions for adjusting teaching strategies and course designs. Here are the tasks:</p>
-<ul>
-<li><p>Analyze the log records of learners’ question-answering behaviors, quantitatively assess the degree of knowledge mastery based on multi-dimensional attributes such as answer scores and answer status, and identify weak links in their knowledge system. (It is recommended that participants answer this question with no more than 800 words and no more than 5 pictures)</p></li>
-<li><p>Mine personalized learning behavior patterns based on learners’ characteristics, and design and present learners’ profiles from various perspectives, including peak answering hours, preferred question types, correct answering rates, etc. (It is recommended that participants answer this question with no more than 800 words and 5 pictures)</p></li>
-<li><p>Different learning modes directly impact learners’ ability to absorb, integrate, and apply knowledge. Efficient learning modes can enhance deep understanding and long-term memory retention of knowledge. Please model the potential relationship between learning modes and knowledge acquisition, present the results in the form of a graph, and provide a brief analysis. (It is recommended that participants answer this question with no more than 800 words and 5 pictures)</p></li>
-<li><p>The difficulty level of questions should align with the learner’s level of knowledge. When a learner possesses a high level of knowledge but achieves a low percentage of correct answers, it indicates that the question’s difficulty exceeds their ability. Please utilize Visual Analytics to identify these inappropriate questions. (It is recommended that participants answer this question with no more than 800 words and no more than 5 pictures)</p></li>
-<li><p>Based on the outcomes of the aforementioned analysis, it is crucial to offer valuable recommendations for topic designers and course managers to optimize question bank content settings and enhance the quality of teaching and learning. Please briefly explain the rationale behind these suggestions. (It is recommended that participants answer this question with no more than 800 words and 3 pictures)</p></li>
-</ul>
-</div>
+<section id="r-shiny-app-user-guide" class="level1">
+<h1>R Shiny App User Guide –</h1>
+</section>
+<section id="visualising-learning-effectiveness-for-insights-on-northclass-institute" class="level1">
+<h1>Visualising Learning Effectiveness for Insights on Northclass Institute</h1>
+<section id="homepage-sidebar-menu" class="level2">
+<h2 class="anchored" data-anchor-id="homepage-sidebar-menu">1. <u>Homepage &amp; Sidebar Menu</u></h2>
+<p>This is the landing page for the R Shiny App. It contains an overview of the project, including an Introduction to the Scope, the Raw Datasets and the Main Objectives of the project.</p>
+<p>1.1.The Sidebar Panel pops up in the default view but can be hidden away or reopened with the button (with 3 lines). Navigation through the Sidebar Panel guides the user through the various components of the App, which is structured into the five key analysis tasks of the project.</p>
+<p><img src="images/截屏2024-06-30 21.32.45.png" class="img-fluid"></p>
+</section>
+<section id="task-1-knowledge-mastery-weak-links." class="level2">
+<h2 class="anchored" data-anchor-id="task-1-knowledge-mastery-weak-links.">2. <u>Task 1: Knowledge Mastery &amp; Weak Links</u>.</h2>
+<p>Clicking on Task 1 brings the user to the Data Visualisation for Task 1.</p>
+<p>2.1.&nbsp; In this section, there are 2 Tabs at the top allowing users to switch views between analyzing weak links by individual questions or by knowledge areas.</p>
+<p>2.2.&nbsp; For the 1<sup>st</sup> tab, users can observe the heatmap displaying the (1) Knowledge Mastery Metric as the Intensity, (2) Questions in the y-axis, and (3) Knowledge areas in the x-axis. There is only 1 bar in the map for each question, but multiple questions can belong to each knowledge area.</p>
+<p>2.2.1. Users may select from 3 different Knowledge Mastery Metrics in the Dropdown Selection List – Normalised Average Highest Score, Non-normalised Average Highest Score and Average No.&nbsp;of Methods Applied on Questions.</p>
+<p>2.2.2. Hovering over the heatmap, users can see the precise intensity reading, as well as other details offering more contextual information on each question. Or make use of the various buttons and click-drag to toggle the zoom of the plot.</p>
+<p><img src="images/截屏2024-06-30 21.35.03.png" class="img-fluid"></p>
+<p>2.3. For the 2<sup>nd</sup> tab, users can observe the charts for weak links by knowledge area, consisting of 3 charts – 2 box plots comparing the distribution of Mastery Points across knowledge areas and sub knowledge areas respectively, and another heat map similar to the 1<sup>st</sup> tab. The box plots are arranged from highest to lowest median mastery points from left to right.</p>
+<p>2.3.1. Hovering over points in the box plot, users can see the precise Mastery point reading, whereas hovering over the sides of the box plot, users can see other summary statistics for the box plot. Or make use of the various buttons and click-drag to toggle the zoom of the plot.</p>
+<p><img src="images/截屏2024-06-30 21.35.31.png" class="img-fluid"></p>
+</section>
+<section id="task-2-learners-profile." class="level2">
+<h2 class="anchored" data-anchor-id="task-2-learners-profile.">3. <u>Task 2: Learners’ Profile</u>.</h2>
+<p>Clicking on Task 2 brings the user to the Data Visualisation for Task 2.</p>
+<p>3.1.&nbsp; In this section, there are 2 Tabs at the top allowing users to switch views between the Silhouette Analysis or Parallel Coordinates Plot.</p>
+<p>3.2.&nbsp; For the 1<sup>st</sup> tab, users can observe the Silhouette Analysis showing the optimum number of clusters based on the final set of Learning Profile features selected for the project.</p>
+<p><img src="images/截屏2024-06-30 21.38.27.png" class="img-fluid"></p>
+<p>3.3.&nbsp; For the 2<sup>nd</sup> tab, users can observe the differences between the clusters across selected Learning Profile features in the parallel coordinates plot above and the data table below which lists the distinctive values for each feature for each cluster.</p>
+<p>3.3.1. Users may toggle the number of clusters from the slidebar to observe the changes to the parallel coordinates plot and data table.</p>
+<p>3.3.2. Hovering over the points in the plot, users can see the precise density reading, whereas hovering over the sides of the box plot, users can see other summary statistics for the box plot. Or make use of the various buttons and click-drag to toggle the zoom of the plot.</p>
+<p>3.3.3. Users may also check and uncheck different variables to filter the view in the data table.</p>
+<p>3.3.4. Users may also toggle the number of the preferences in each variables to see the top preferences.</p>
+<p><img src="images/截屏2024-06-30 21.39.13.png" class="img-fluid"></p>
+<p><img src="images/截屏2024-06-30 21.39.29.png" class="img-fluid"></p>
+</section>
+<section id="task-3-learning-modes-and-learners-knowledge-acquisition." class="level2">
+<h2 class="anchored" data-anchor-id="task-3-learning-modes-and-learners-knowledge-acquisition.">4. <u>Task 3 Learning Modes and Learners Knowledge Acquisition</u>.</h2>
+<p>Clicking on Task 3 brings the user to the Data Visualisation for Task 3.</p>
+<p>4.1.&nbsp; In this section, there are 4 Tabs at the top allowing users to switch views between the Clustering analysis, Knowledge Acquisition Distribution Across Both Clusters, 2-Sample Mean Statistical Test for Both Clusters, and Multi-linear Regression Model.</p>
+<p>4.2.&nbsp; For the 1<sup>st</sup> tab, users can observe the Silhouette Analysis above showing the optimum number of clusters based on the final set of features selected for the project, and the Parallel Coordinates Plot below showing the differences between the clusters across selected features.</p>
+<p>4.2.1. Users may toggle the number of clusters from the slidebar to observe the changes to the parallel coordinates plot and data table.</p>
+<p>4.2.2. Hovering over the points in the Parallel Coordinates plot, users can see the precise density reading, whereas hovering over the sides of the box plot, users can see other summary statistics for the box plot. Or make use of the various buttons and click-drag to toggle the zoom of the plot.</p>
+<p><img src="images/截屏2024-06-30 21.40.31.png" class="img-fluid"></p>
+<p>4.3.&nbsp; For the 2<sup>nd</sup> tab, users can observe the Ridgeplot Distribution Analysis for Knowledge Acquisition metrics with quantiles across the 2 clusters. The left plot shows the overall Knowledge acquisition for both clusters, while the right plot shows the breakdown into the 8 Knowledge areas.</p>
+<p>4.3.1. Users may select from 3 different Knowledge Acquistion Metrics in the Dropdown Selection List – No.&nbsp;of Questions Answered Fully or Partially, Overall Sum of Highest Submission Scores per question and Overall Sum of Question Mastery Points.</p>
+<p><img src="images/截屏2024-06-30 21.41.00.png" class="img-fluid"></p>
+<p>4.4.&nbsp; For the 3<sup>rd</sup> tab, users can observe the 2-Sample Mean Statistical Test across the 2 clusters, showing (1) the violin plot with (2) the median, as well as the statistical test figures including the (3) coefficient and (4) p-value for 95% level of significance.</p>
+<p>4.4.1. Users may select from 3 different Knowledge Acquistion Metrics in the Dropdown Selection List – No.&nbsp;of Questions Answered Fully or Partially, Overall Sum of Highest Submission Scores per question and Overall Sum of Question Mastery Points.</p>
+<p><img src="images/截屏2024-06-30 21.41.39.png" class="img-fluid"></p>
+<p>4.5.&nbsp; For the 4<sup>th</sup> tab, users can observe the Multiple Linear Regression Analysis showing the statistical significance of the linear relationship between the knowledge acquisition dependent variable against the final set of selected learning mode features as independent variables. The plot above shows Linear regression model for the overall knowledge acquisition indicators, while the plots below show the breakdown into the 8 knowledge areas.</p>
+<p>4.5.1. Users may select from 2 different Knowledge Acqusition Metrics in the Dropdown Selection List – Overall Sum of Highest Submission Scores per question and Overall Sum of Question Mastery Points.</p>
+<p>4.5.2. Hovering over the points in the Multi-linear regression plot, users can see the precise coefficient estimates, or may make use of the various buttons and click-drag to toggle the zoom of the plot.</p>
+<p><img src="images/截屏2024-06-30 21.42.06.png" class="img-fluid"></p>
+</section>
+<section id="task-4-question-difficulty-and-learners-knowledge-level." class="level2">
+<h2 class="anchored" data-anchor-id="task-4-question-difficulty-and-learners-knowledge-level.">5. <u>Task 4 Question Difficulty and Learners Knowledge Level</u>.</h2>
+<p>Clicking on Task 4 brings the user to the Data Visualisation for Task 4.</p>
+<p>5.1.&nbsp; In this section, users must first select from 2 possible values of 90 and 95% in the Dropdown Selection List for Percentile Threshold in defining High and Low Mastery Students.</p>
+<p>5.2.&nbsp;&nbsp;&nbsp; Based on the selection, users can then observe (1) the Dumbbell plot showing the comparison of Percentage of Students that Never got a question correct in the High Mastery Student pool with that of the Low Mastery Student pool, (2) the Lollipop plot showing the Average Error Rate per Question for High Mastery Students, and (3) the Information Characteristic Curves (ICC) showing the questions’ ability to discriminate between High and Low Mastery Students answering performance.</p>
+<p><img src="images/截屏2024-06-30 21.43.05.png" class="img-fluid"></p>
+<p><img src="images/截屏2024-06-30 21.43.40.png" class="img-fluid"></p>
+</section>
+<section id="task-5-recommendations." class="level2">
+<h2 class="anchored" data-anchor-id="task-5-recommendations.">6. <u>Task 5 Recommendations</u>.</h2>
+<p>Clicking on Task 5 brings the user to the Recommendations as part of Task 5 requirements. It consists of recommendations to enhance the Course Design &amp; Management, as well as Recommendations to improve the Question bank, based on insights from Tasks 1 to 4.</p>
+<p><img src="images/截屏2024-06-30 21.44.32.png" class="img-fluid"></p>
 
 
+</section>
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
