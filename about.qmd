@@ -3,9 +3,11 @@ title: "Our Team"
 ---
 
 ::: panel-tabset
-## Fudi Xiao
+## Xiao Fudi
 
 ## Low Jixiong
 
 ## Wang Yuhui
 :::
+
+![](images/clipboard-2638034536.png)

@@ -129,10 +129,10 @@ ui <- dashboardPage(
                   solidHeader = TRUE,
                   status = "primary",
                   title = "G6: Visualising Learning Effectiveness for Insights on Northclass Institute",
-                  h3("Introduction", style = "text-align: center;"),
+                  h3("Introduction", style = "text-align: left;"),
                   p("This project focuses on analysis of the learning and performance of students in a computer programming course at NorthClass Training Institute to provide insights and recommendations on its education system."),
                   br(),
-                  h3("The Dataset", style = "text-align: center;"),
+                  h3("The Dataset", style = "text-align: left;"),
                   p("The provided materials for the challenge include 3 datasets described below, as well as a separate document providing a more detailed description of the data and variables:"),
                   tags$ul(
                     tags$li("Dataset 1: Student Information - This comprises of 5 columns and 1364 rows, providing individualized demographic variables of the learners (a.k.a students) within the scope of this project."),
@@ -140,7 +140,7 @@ ui <- dashboardPage(
                     tags$li("Dataset 3: Class Submission Records - This comprises of multiple datasets, each with 10 columns and various number of rows, providing the participating learners’ answering variables to the questions collated in the scope of this project.")
                   ),
                   br(),
-                  h3("Objective", style = "text-align: center;"),
+                  h3("Objective", style = "text-align: left;"),
                   p("The objectives of the study are as follows:"),
                   tags$ul(
                     tags$li("1) Knowledge Mastery & Weak Links: Quantitatively assess the learners' question-answering behaviors to identify weak links in their knowledge system."),
@@ -163,7 +163,8 @@ ui <- dashboardPage(
                                                selectInput('questionMetric', tags$strong('Choose Metric:'),
                                                            choices = c('Normalized Average Highest Score' = 'NormAvgHighestScore',
                                                                        'Non-normalized Average Highest Score' = 'NonNormAvgHighestScore',
-                                                                       'Average Methods Applied on Questions' = 'AvgMethodsApplied')
+                                                                       'Average Methods Applied on Questions' = 'AvgMethodsApplied',
+                                                                       'Total Points on Each Question and Knowledge Area' = 'TotalPointsKnowledge')
                                                )),
                                              box(
                                                width = 12, height = 500, solidHeader = TRUE, collapsible = FALSE, collapsed = FALSE,
@@ -173,7 +174,7 @@ ui <- dashboardPage(
                                     tabPanel("Weak Links by Knowledge Area",
                                              box(
                                                selectInput('knowledgeMetric', tags$strong('Choose Metric:'),
-                                                           choices = c('Total Points on Each Knowledge Area' = 'TotalPointsKnowledge',
+                                                           choices = c(
                                                                        'Mastery Points for Knowledge Area' = 'MasteryPointsKnowledge',
                                                                        'Mastery Points for Sub Knowledge Area' = 'MasteryPointsSubKnowledge')
                                                )),
@@ -404,12 +405,14 @@ server <- function(input, output) {
       color_scale_limits <- range(average_highest_scores$average_highest_score, na.rm = TRUE)
       
       p_heatmap <- ggplot(average_highest_scores, aes(x = knowledge, y = title_ID, fill = average_highest_score,
-                                                      text = paste("Avg Highest Score:", round(average_highest_score, 2),
+                                                      text = paste("Knowledge Area:", knowledge,
+                                                                   "<br>Question ID:", title_ID,
+                                                                   "<br>Avg Highest Score:", round(average_highest_score, 2),
                                                                    "<br>Question Score:", question_score))) +
         geom_tile(color = "white") +
         scale_fill_gradient2(low = "blue", mid = "green", high = "red", midpoint = 0.9, 
                              limits = color_scale_limits, name = "Avg Highest Score") +
-        labs(title = "Normalised Average Highest Actual Score per Knowledge Area per Question",
+        labs(title = "Normalized Average Highest Actual Score per Knowledge Area per Question",
              x = "Knowledge Areas",
              y = "Question IDs",
              fill = "Avg Highest Score") +
@@ -446,12 +449,14 @@ server <- function(input, output) {
       color_scale_limits <- range(average_highest_scores$average_highest_score, na.rm = TRUE)
       
       p_heatmap <- ggplot(average_highest_scores, aes(x = knowledge, y = title_ID, fill = average_highest_score,
-                                                      text = paste("Avg Highest Score:", round(average_highest_score, 2),
+                                                      text = paste("Knowledge Area:", knowledge,
+                                                                   "<br>Question ID:", title_ID,
+                                                                   "<br>Avg Highest Score:", round(average_highest_score, 2),
                                                                    "<br>Question Score:", question_score))) +
         geom_tile(color = "white") +
         scale_fill_gradient2(low = "blue", mid = "green", high = "red", midpoint = 2.5, 
                              limits = color_scale_limits, name = "Avg Highest Score") +
-        labs(title = "Non-normalised Average Highest Actual Score per Knowledge Area per Question",
+        labs(title = "Non-normalized Average Highest Actual Score per Knowledge Area per Question",
              x = "Knowledge Areas",
              y = "Question IDs",
              fill = "Avg Highest Score") +
@@ -502,6 +507,57 @@ server <- function(input, output) {
           axis.title.x = element_text(size = 10, margin = margin(t = 20)),
           axis.title.y = element_text(size = 10, margin = margin(r = 20)),
           plot.title = element_text(size = 8, face = "bold", margin = margin(b = 20)),
+          legend.title = element_text(size = 8),
+          legend.text = element_text(size = 8),
+          legend.key.size = unit(1, "cm"),
+          legend.position = "right"
+        )
+      
+      ggplotly(p_heatmap, tooltip = "text")
+    } else if (input$questionMetric == 'TotalPointsKnowledge') {
+      # Total Points on Each Knowledge Area plot code
+      adjusted_scores <- adjusted_scores %>%
+        mutate(points = as.numeric(points))
+      
+      adjusted_scores <- adjusted_scores %>%
+        group_by(student_ID, title_ID, knowledge) %>%
+        mutate(attempts = n()) %>%
+        ungroup()
+      
+      total_points_attempts <- adjusted_scores %>%
+        group_by(student_ID, title_ID, knowledge) %>%
+        summarise(total_points_sum = sum(points, na.rm = TRUE),
+                  total_attempts = sum(attempts, na.rm = TRUE), .groups = 'drop')
+      
+      total_summary <- total_points_attempts %>%
+        group_by(title_ID, knowledge) %>%
+        summarise(total_points_sum = sum(total_points_sum, na.rm = TRUE),
+                  total_attempts = sum(total_attempts, na.rm = TRUE), .groups = 'drop')
+      
+      total_summary <- total_summary %>%
+        mutate(knowledge = as.factor(knowledge))
+      
+      color_scale_limits <- range(total_summary$total_points_sum, na.rm = TRUE)
+      
+      p_heatmap <- ggplot(total_summary, aes(x = knowledge, y = title_ID, fill = total_points_sum,
+                                             text = paste("Knowledge Area:", knowledge,
+                                                          "<br>Question ID:", title_ID,
+                                                          "<br>Total Points:", total_points_sum,
+                                                          "<br>Total Attempts:", total_attempts))) +
+        geom_tile(color = "white") +
+        scale_fill_gradient2(low = "blue", mid = "green", high = "red", midpoint = mean(color_scale_limits, na.rm = TRUE), 
+                             limits = color_scale_limits, name = "Total Points") +
+        labs(title = "Total Points per Question per Knowledge Area",
+             x = "Knowledge Areas",
+             y = "Question IDs",
+             fill = "Total Points") +
+        theme_minimal(base_size = 15) +
+        theme(
+          axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+          axis.text.y = element_text(size = 6),
+          axis.title.x = element_text(size = 10, margin = margin(t = 15)),
+          axis.title.y = element_text(size = 10, margin = margin(r = 15)),
+          plot.title = element_text(size = 8, face = "bold", margin = margin(b = 15)),
           legend.title = element_text(size = 8),
           legend.text = element_text(size = 8),
           legend.key.size = unit(1, "cm"),
@@ -639,7 +695,6 @@ server <- function(input, output) {
       ggplotly(p_ridge_max_scores_quantiles, tooltip = "text")
     }
   })
-  
   # Add server logic for Task 2 here yuhui
     
   # Define server logic for Task2

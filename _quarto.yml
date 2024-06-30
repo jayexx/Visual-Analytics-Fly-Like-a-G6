@@ -5,29 +5,32 @@ website:
   title: "Visual-Analytics-Fly-Like-a-G6"
   navbar:
     left:
-      - href: "Overview"
+      - href: "Overview.html"
         text: "Overview"
       - href: "Project_Proposal/Group6_project_proposal.html"
         text: "Project Proposal"
-      - text: Detailed steps
+      - text: "Detailed steps"
         menu:
-        - href: "Detailed_steps/DataPrep/DataPrep.html"
-          text: "Data Preparation"
-        - href: "Detailed_steps/Task1/Task1.html"
-          text: "Task1"
-        - href: "Detailed_steps/Task2/Task2.html"
-          text: "Task2"
-        - href: "Detailed_steps/Task3/Task3.html"
-          text: "Task3"
-        - href: "Detailed_steps/Task4/Task4.html"
-          text: "Task4"
+          - href: "Detailed_steps/DataPrep/DataPrep.html"
+            text: "Data Preparation"
+          - href: "Detailed_steps/Task1/Task1.html"
+            text: "Task1"
+          - href: "Detailed_steps/Task2/Task2.html"
+            text: "Task2"
+          - href: "Detailed_steps/Task3/Task3.html"
+            text: "Task3"
+          - href: "Detailed_steps/Task4/Task4.html"
+            text: "Task4"
       - href: "ShinyApp/app.R"
-      - text: Shinny app
-
+        text: "Shiny App"
+      - href: "Userguide"
+        text: "User Guide"       
     right:
-      - href: index.qmd
-        text: Home
-      - about.qmd
+      - href: "index.qmd"
+        text: "Home"
+      - href: "about.qmd"
+        text: "About"
+
 
 format:
   html:

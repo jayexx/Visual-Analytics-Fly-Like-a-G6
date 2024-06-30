@@ -12,7 +12,7 @@ body {
 }
 
 .fullscreen {
-  height: 180vh;
+  height: 150vh;
   display: flex;
   flex-direction: column; /* 使内容垂直排列 */
   align-items: center; /* 水平居中 */
