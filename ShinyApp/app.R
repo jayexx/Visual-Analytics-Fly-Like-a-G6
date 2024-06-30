@@ -152,233 +152,233 @@ ui <- dashboardPage(
                 )
               )
       ),
-                        
-                        # Task 1
-                        tabItem(tabName = 'Task1',
-                                fluidPage(
-                                  titlePanel("Task1: Knowledge Mastery and Weak Links"),
-                                  tabsetPanel(
-                                    tabPanel("Weak Links by Questions",
-                                             box(
-                                               selectInput('questionMetric', tags$strong('Choose Metric:'),
-                                                           choices = c('Normalized Average Highest Score' = 'NormAvgHighestScore',
-                                                                       'Non-normalized Average Highest Score' = 'NonNormAvgHighestScore',
-                                                                       'Average Methods Applied on Questions' = 'AvgMethodsApplied',
-                                                                       'Total Points on Each Question and Knowledge Area' = 'TotalPointsKnowledge')
-                                               )),
-                                             box(
-                                               width = 12, height = 500, solidHeader = TRUE, collapsible = FALSE, collapsed = FALSE,
-                                               plotlyOutput('questionPlot', height = 400)
-                                             )
-                                    ),
-                                    tabPanel("Weak Links by Knowledge Area",
-                                             box(
-                                               selectInput('knowledgeMetric', tags$strong('Choose Metric:'),
-                                                           choices = c(
-                                                                       'Mastery Points for Knowledge Area' = 'MasteryPointsKnowledge',
-                                                                       'Mastery Points for Sub Knowledge Area' = 'MasteryPointsSubKnowledge')
-                                               )),
-                                             box(
-                                               width = 12, height = 500, solidHeader = TRUE, collapsible = FALSE, collapsed = FALSE,
-                                               plotlyOutput('knowledgePlot', height = 400)
-                                             )
-                                    )
-                                  )
-                                )),
-                        
-                        # Task 2
-                        tabItem(tabName = 'Task2',
-                                fluidPage(
-                                  titlePanel("Task2: Learners Profile"),
-                                  tabsetPanel(
-                                    tabPanel("Silhouette Analysis",
-                                             fluidRow(
-                                               plotOutput("plot01", height = "400px")  # Silhouette Analysis plot
-                                             )
-                                    ),
-                                    tabPanel("Parallel Coordinates Plot",
-                                             fluidRow(
-                                               column(2, 
-                                                      sliderInput("num_clusters", "Number of Clusters:",
-                                                                  min = 2, max = 10, value = 2)),
-                                               column(10, 
-                                                      plotlyOutput("plot02", height = "800px"))  # Parallel Coordinates Plot
-                                             ),
-                                             fluidRow(
-                                               column(2,
-                                                      checkboxGroupInput("selected_vars", "Select Variables:",
-                                                                         choices = list("Title ID" = "title_ID",
-                                                                                        "Knowledge" = "knowledge",
-                                                                                        "Method" = "method",
-                                                                                        "Age" = "age",
-                                                                                        "Major" = "major"),
-                                                                         selected = c("title_ID", "knowledge", "method", "age", "major"))
-                                               ),
-                                               column(10,
-                                                      DTOutput("cluster_table", height = "400px"))  # Data Table
-                                             )
-                                    )
-                                  )
-                                )
-                        )
-                        
-                        ,
-                        
-                        # Task 3
-                        tabItem(tabName = 'Task3',
-                                fluidPage(
-                                  titlePanel("Task3: Learning Mode & Knowledge Acquisition"),
-                                  tabsetPanel(
-                                    tabPanel("Clustering Analysis for Learning Modes",
-                                             fluidRow( 
-                                               title = "Silhouette Analysis for Number of K-means Clusters",
-                                               plotOutput("plot1", height = "400px")
-                                             ),
-                                             
-                                             fluidRow(
-
-
-                                               sliderInput("num_clusters1", "Number of Clusters:",
-                                                           min = 2, max = 10, value = 2) ,                                            
-                                             
-                                               title = "Parallel Coordinate plot",
-                                               plotlyOutput("plot2", height = "400px")
-                                             )
-                                    ),
-                                    tabPanel("Knowledge Acquisition Distribution Across Both Clusters", 
-                                             selectInput("KAindicator1", tags$strong("Choose an indicator:"), 
-                                                         choices = c("No. of questions answered fully or partially correct", 
-                                                                     "Overall sum of highest submission scores per question", 
-                                                                     "Overall sum of question mastery points"), 
-                                                         selected = "Overall sum of question mastery points"),
-                                             
-                                               box(
-                                               title = "Ridgeline Plot of Distribution of Both Clusters",
-                                               plotOutput("plot3", height = "400px")
-                                               ),
-                                             
-                                             
-                                             
-                                               box(
-                                                 title = "Ridgeline Plot of Distribution by Knowledge Areas for Both Clusters",
-                                                 plotOutput("plot4", height = "1000px")
-                                               ) 
-                                             
-                                             
-                                    ),
-                                    tabPanel("2-Sample Mean Statistical Test For Both Clusters",
-                                             selectInput("KAindicator2", tags$strong("Choose an indicator:"), 
-                                                         choices = c("Percent of submissions absolutely correct", 
-                                                                     "Overall sum of highest submission scores per question", 
-                                                                     "Overall sum of question mastery points"), 
-                                                         selected = "Overall sum of question mastery points"),
-                                             box(
-                                               title = "2-Sample Difference in Mean Statistical Test for Both Clusters",
-                                               plotlyOutput("plot5", height = "400px")
-                                             )
-                                    ),
-                                    tabPanel("Multi-linear Regression (Alternative from Clustering)",
-                                             selectInput("KAindicator3", tags$strong("Choose an indicator:"), 
-                                                         choices = c("Overall sum of highest submission scores per question", 
-                                                                     "Overall sum of question mastery points"), 
-                                                         selected = "Overall sum of question mastery points"),
-                                             fluidRow(
-                                               column( width = 12,
-                                                 
-                                                 title = "Multi-linear Regression of learning mode features (Overall)",
-                                                 plotlyOutput("plot6", width = NULL, height = "600px")
-                                               
-                                               )
-                                             ),
-                                             fluidRow(
-                                               column( width = 12,
-                                               
-                                                 title = "Multi-linear Regression of learning mode features (By Knowledge Areas)",
-                                                 plotlyOutput("plot7", width = NULL, height = "1500px")
-                                               
-                                               )
-                                             )
-                                             
-                                    )
-                                  )
-                                )),
-                        
-                        # Task 4
-                        tabItem(tabName = 'Task4',
-                                fluidPage(
-                                  titlePanel("Task4: Question Difficulty & Learners Knowledge Level"),
-                                  sidebarPanel(
-                                    selectInput("threshold", "Select Threshold:", 
-                                                choices = c("90%", "95%"), selected = "95%"), 
-                                    actionButton("filter", "Filter High Mastery Students")
-                                  ),
-                                  mainPanel(
-                                    div(style = "overflow-y: scroll; width: 100%;",
-                                        plotOutput("dumbbellPlot", height = "600px"))
-                                  ),
-                                  fluidRow(
-                                    column(12, plotOutput("percentageWrongPlot"))
-                                  ),
-                                  fluidRow(
-                                    column(12, plotOutput("tracePlot"))
-                                  ),
-                                  fluidRow(
-                                    column(12, plotOutput("CCCPlot"))
-                                  )
-                                )),
-                        
-                        # Task 5
-                        tabItem(tabName = 'Task5',
-                                fluidPage(
-                                  titlePanel("Task5: Recommendations"), 
-                                  mainPanel(
-                                    h3("", align = 'center'),
-                                    br(),
-                                    strong('Recommendations to enhance Course design & management:'),
-                                    p(''),
-                                    tags$ul(
-                                      tags$li(
-                                        "1. Targeted Remediation for Weak Knowledge Areas: Identify students with poor performance on specific knowledge areas such as r8S3g, s8Y2f. Provide focused remediation sessions with targeted exercises and practice problems to address these gaps."
-                                      ),
-                                      tags$li(
-                                        "2. Supporting Variable Sub-Knowledge Areas: For areas like m3D1v, where specific sub-knowledge shows variability, offer detailed feedback, small group instruction, and supplemental tutoring sessions. Utilize targeted practice and peer tutoring to improve understanding."
-                                      ),
-                                      tags$li(
-                                        "3. Addressing High Error Rate Questions: Questions such as Question_5fgqjSBwTPG7KUV3it6O and Question_YWXHr4G6Cl7bEm9iF2kQ, which consistently show higher error rates, tailor teaching methods to meet varied learning needs. Provide additional explanations, simplified examples, and hands-on activities. Break down complex topics into smaller, manageable chunks, offering support at each step and gradually reducing assistance to build confidence and competence."
-                                      ),
-                                      tags$li(
-                                        "4. Reinforcing Foundational Concepts: Reinforce foundational concepts through interactive and hands-on learning activities. Relate these concepts to real-world examples and applications to help students understand their relevance and practical use."
-                                      ),
-                                      tags$li(
-                                        "5. Frequent Formative Assessments: Conduct frequent formative assessments to monitor students’ progress and understanding. Use the results to adjust teaching strategies and provide timely, constructive feedback."
-                                      )
-                                    ),
-                                    br(),
-                                    strong('Recommendations to improve Question bank:'),
-                                    p(''),
-                                    tags$ul(
-                                      tags$li(
-                                        "1. Balanced Coverage of Knowledge Areas: Currently, some knowledge areas and sub-knowledge areas, such as k4W1c and s8Y2f, include only one question, while b3C9s has three questions. This limits the assessment of learners' mastery. To provide a comprehensive evaluation, ensure that the question bank includes a balanced number of questions across all knowledge and sub-knowledge areas. This will help in identifying gaps in students' understanding more accurately."
-                                      ),
-                                      tags$li(
-                                        "2. Incorporate Various Question Types: Include diverse formats of questions, such as multiple-choice, short answer, problem-solving, and essay questions. Add more question types specifically targeting weaker sub-knowledge areas like s8Y2f_v4x8by9j and g7R2j_j1g8g3v. These questions should vary in difficulty to progressively build students' mastery."
-                                      ),
-                                      tags$li(
-                                        "3. Sequential Difficulty and Instant Feedback: Arrange questions in a sequence of increasing difficulty. Start with basic questions to build confidence and gradually introduce more complex problems to challenge students. Design questions that provide instant feedback, offering explanations for both correct and incorrect responses. This helps students learn from their mistakes."
-                                      ),
-                                      tags$li(
-                                        "4. Engagement through Application: Diversify the sub-knowledge areas by incorporating real-world scenarios through case studies and project-based questions. This approach will engage students, encourage them to apply their knowledge, and facilitate learning through answering questions."
-                                      ),
-                                      tags$li(
-                                        "5. Dynamic Question Bank: Regularly update the question bank based on student feedback to ensure balanced and thorough assessments. These strategies will help identify knowledge gaps and inform more effective teaching methods, ultimately leading to improved student performance across all knowledge areas."
-                                      )
-                                    )
-                                  )
-                                )
-                        )
-                        
-                      )
+      
+      # Task 1
+      tabItem(tabName = 'Task1',
+              fluidPage(
+                titlePanel("Task1: Knowledge Mastery and Weak Links"),
+                tabsetPanel(
+                  tabPanel("Weak Links by Questions",
+                           box(
+                             selectInput('questionMetric', tags$strong('Choose Metric:'),
+                                         choices = c('Normalized Average Highest Score' = 'NormAvgHighestScore',
+                                                     'Non-normalized Average Highest Score' = 'NonNormAvgHighestScore',
+                                                     'Average Methods Applied on Questions' = 'AvgMethodsApplied',
+                                                     'Total Points on Each Question and Knowledge Area' = 'TotalPointsKnowledge')
+                             )),
+                           box(
+                             width = 12, height = 500, solidHeader = TRUE, collapsible = FALSE, collapsed = FALSE,
+                             plotlyOutput('questionPlot', height = 400)
+                           )
+                  ),
+                  tabPanel("Weak Links by Knowledge Area",
+                           box(
+                             selectInput('knowledgeMetric', tags$strong('Choose Metric:'),
+                                         choices = c(
+                                           'Mastery Points for Knowledge Area' = 'MasteryPointsKnowledge',
+                                           'Mastery Points for Sub Knowledge Area' = 'MasteryPointsSubKnowledge')
+                             )),
+                           box(
+                             width = 12, height = 500, solidHeader = TRUE, collapsible = FALSE, collapsed = FALSE,
+                             plotlyOutput('knowledgePlot', height = 400)
+                           )
+                  )
+                )
+              )),
+      
+      # Task 2
+      tabItem(tabName = 'Task2',
+              fluidPage(
+                titlePanel("Task2: Learners Profile"),
+                tabsetPanel(
+                  tabPanel("Silhouette Analysis",
+                           fluidRow(
+                             plotOutput("plot01", height = "400px")  # Silhouette Analysis plot
+                           )
+                  ),
+                  tabPanel("Parallel Coordinates Plot",
+                           fluidRow(
+                             column(2, 
+                                    sliderInput("num_clusters", "Number of Clusters:",
+                                                min = 2, max = 10, value = 2)),
+                             column(10, 
+                                    plotlyOutput("plot02", height = "800px"))  # Parallel Coordinates Plot
+                           ),
+                           fluidRow(
+                             column(2,
+                                    checkboxGroupInput("selected_vars", "Select Variables:",
+                                                       choices = list("Title ID" = "title_ID",
+                                                                      "Knowledge" = "knowledge",
+                                                                      "Method" = "method",
+                                                                      "Age" = "age",
+                                                                      "Major" = "major"),
+                                                       selected = c("title_ID", "knowledge", "method", "age", "major"))
+                             ),
+                             column(10,
+                                    DTOutput("cluster_table", height = "400px"))  # Data Table
+                           )
+                  )
+                )
+              )
+      )
+      
+      ,
+      
+      # Task 3
+      tabItem(tabName = 'Task3',
+              fluidPage(
+                titlePanel("Task3: Learning Mode & Knowledge Acquisition"),
+                tabsetPanel(
+                  tabPanel("Clustering Analysis for Learning Modes",
+                           fluidRow( 
+                             title = "Silhouette Analysis for Number of K-means Clusters",
+                             plotOutput("plot1", height = "400px")
+                           ),
+                           
+                           fluidRow(
+                             
+                             
+                             sliderInput("num_clusters1", "Number of Clusters:",
+                                         min = 2, max = 10, value = 2) ,                                            
+                             
+                             title = "Parallel Coordinate plot",
+                             plotlyOutput("plot2", height = "400px")
+                           )
+                  ),
+                  tabPanel("Knowledge Acquisition Distribution Across Both Clusters", 
+                           selectInput("KAindicator1", tags$strong("Choose an indicator:"), 
+                                       choices = c("No. of questions answered fully or partially correct", 
+                                                   "Overall sum of highest submission scores per question", 
+                                                   "Overall sum of question mastery points"), 
+                                       selected = "Overall sum of question mastery points"),
+                           
+                           box(
+                             title = "Ridgeline Plot of Distribution of Both Clusters",
+                             plotOutput("plot3", height = "400px")
+                           ),
+                           
+                           
+                           
+                           box(
+                             title = "Ridgeline Plot of Distribution by Knowledge Areas for Both Clusters",
+                             plotOutput("plot4", height = "1000px")
+                           ) 
+                           
+                           
+                  ),
+                  tabPanel("2-Sample Mean Statistical Test For Both Clusters",
+                           selectInput("KAindicator2", tags$strong("Choose an indicator:"), 
+                                       choices = c("Percent of submissions absolutely correct", 
+                                                   "Overall sum of highest submission scores per question", 
+                                                   "Overall sum of question mastery points"), 
+                                       selected = "Overall sum of question mastery points"),
+                           fluidRow(
+                             title = "2-Sample Difference in Mean Statistical Test for Both Clusters",
+                             plotlyOutput("plot5", height = "400px")
+                           )
+                  ),
+                  tabPanel("Multi-linear Regression (Alternative from Clustering)",
+                           selectInput("KAindicator3", tags$strong("Choose an indicator:"), 
+                                       choices = c("Overall sum of highest submission scores per question", 
+                                                   "Overall sum of question mastery points"), 
+                                       selected = "Overall sum of question mastery points"),
+                           fluidRow(
+                             column( width = 12,
+                                     
+                                     title = "Multi-linear Regression of learning mode features (Overall)",
+                                     plotlyOutput("plot6", width = NULL, height = "600px")
+                                     
+                             )
+                           ),
+                           fluidRow(
+                             column( width = 12,
+                                     
+                                     title = "Multi-linear Regression of learning mode features (By Knowledge Areas)",
+                                     plotlyOutput("plot7", width = NULL, height = "1500px")
+                                     
+                             )
+                           )
+                           
+                  )
+                )
+              )),
+      
+      # Task 4
+      tabItem(tabName = 'Task4',
+              fluidPage(
+                titlePanel("Task4: Question Difficulty & Learners Knowledge Level"),
+                sidebarPanel(
+                  selectInput("threshold", "Select Threshold:", 
+                              choices = c("90%", "95%"), selected = "95%"), 
+                  actionButton("filter", "Filter High Mastery Students")
+                ),
+                mainPanel(
+                  div(style = "overflow-y: scroll; width: 100%;",
+                      plotOutput("dumbbellPlot", height = "600px"))
+                ),
+                fluidRow(
+                  column(12, plotOutput("percentageWrongPlot"))
+                ),
+                fluidRow(
+                  column(12, plotOutput("tracePlot"))
+                ),
+                fluidRow(
+                  column(12, plotOutput("CCCPlot"))
+                )
+              )),
+      
+      # Task 5
+      tabItem(tabName = 'Task5',
+              fluidPage(
+                titlePanel("Task5: Recommendations"), 
+                mainPanel(
+                  h3("", align = 'center'),
+                  br(),
+                  strong('Recommendations to enhance Course design & management:'),
+                  p(''),
+                  tags$ul(
+                    tags$li(
+                      "1. Targeted Remediation for Weak Knowledge Areas: Identify students with poor performance on specific knowledge areas such as r8S3g, s8Y2f. Provide focused remediation sessions with targeted exercises and practice problems to address these gaps."
+                    ),
+                    tags$li(
+                      "2. Supporting Variable Sub-Knowledge Areas: For areas like m3D1v, where specific sub-knowledge shows variability, offer detailed feedback, small group instruction, and supplemental tutoring sessions. Utilize targeted practice and peer tutoring to improve understanding."
+                    ),
+                    tags$li(
+                      "3. Addressing High Error Rate Questions: Questions such as Question_5fgqjSBwTPG7KUV3it6O and Question_YWXHr4G6Cl7bEm9iF2kQ, which consistently show higher error rates, tailor teaching methods to meet varied learning needs. Provide additional explanations, simplified examples, and hands-on activities. Break down complex topics into smaller, manageable chunks, offering support at each step and gradually reducing assistance to build confidence and competence."
+                    ),
+                    tags$li(
+                      "4. Reinforcing Foundational Concepts: Reinforce foundational concepts through interactive and hands-on learning activities. Relate these concepts to real-world examples and applications to help students understand their relevance and practical use."
+                    ),
+                    tags$li(
+                      "5. Frequent Formative Assessments: Conduct frequent formative assessments to monitor students’ progress and understanding. Use the results to adjust teaching strategies and provide timely, constructive feedback."
                     )
+                  ),
+                  br(),
+                  strong('Recommendations to improve Question bank:'),
+                  p(''),
+                  tags$ul(
+                    tags$li(
+                      "1. Balanced Coverage of Knowledge Areas: Currently, some knowledge areas and sub-knowledge areas, such as k4W1c and s8Y2f, include only one question, while b3C9s has three questions. This limits the assessment of learners' mastery. To provide a comprehensive evaluation, ensure that the question bank includes a balanced number of questions across all knowledge and sub-knowledge areas. This will help in identifying gaps in students' understanding more accurately."
+                    ),
+                    tags$li(
+                      "2. Incorporate Various Question Types: Include diverse formats of questions, such as multiple-choice, short answer, problem-solving, and essay questions. Add more question types specifically targeting weaker sub-knowledge areas like s8Y2f_v4x8by9j and g7R2j_j1g8g3v. These questions should vary in difficulty to progressively build students' mastery."
+                    ),
+                    tags$li(
+                      "3. Sequential Difficulty and Instant Feedback: Arrange questions in a sequence of increasing difficulty. Start with basic questions to build confidence and gradually introduce more complex problems to challenge students. Design questions that provide instant feedback, offering explanations for both correct and incorrect responses. This helps students learn from their mistakes."
+                    ),
+                    tags$li(
+                      "4. Engagement through Application: Diversify the sub-knowledge areas by incorporating real-world scenarios through case studies and project-based questions. This approach will engage students, encourage them to apply their knowledge, and facilitate learning through answering questions."
+                    ),
+                    tags$li(
+                      "5. Dynamic Question Bank: Regularly update the question bank based on student feedback to ensure balanced and thorough assessments. These strategies will help identify knowledge gaps and inform more effective teaching methods, ultimately leading to improved student performance across all knowledge areas."
+                    )
+                  )
+                )
+              )
+      )
+      
+    )
+  )
 )
 
 
@@ -696,31 +696,31 @@ server <- function(input, output) {
     }
   })
   # Add server logic for Task 2 here yuhui
-    
+  
   # Define server logic for Task2
+  
+  # Silhouette Analysis logic
+  output$plot01 <- renderPlot({
+    # Plot the average silhouette widths
+    plot(1:18, avg_sil_widths, type = "b", pch = 19, frame = FALSE,
+         xlab = "Number of clusters", ylab = "Average silhouette width",
+         main = "Silhouette Analysis for Determining Optimal Number of Clusters")
     
-    # Silhouette Analysis logic
-    output$plot01 <- renderPlot({
-      # Plot the average silhouette widths
-      plot(1:18, avg_sil_widths, type = "b", pch = 19, frame = FALSE,
-           xlab = "Number of clusters", ylab = "Average silhouette width",
-           main = "Silhouette Analysis for Determining Optimal Number of Clusters")
-      
-      # Highlight the optimal number of clusters
-      optimal_clusters <- which.max(avg_sil_widths)
-      points(optimal_clusters, avg_sil_widths[optimal_clusters], col = "red", pch = 19)
-    })
+    # Highlight the optimal number of clusters
+    optimal_clusters <- which.max(avg_sil_widths)
+    points(optimal_clusters, avg_sil_widths[optimal_clusters], col = "red", pch = 19)
+  })
+  
+  # Parallel Coordinates Plot logic
+  output$plot02 <- renderPlotly({
     
-    # Parallel Coordinates Plot logic
-    output$plot02 <- renderPlotly({
-      
-      generate_clusters <- function(data, k) {
-        numeric_data <- data %>% select_if(is.numeric)
-        kmeans_result <- kmeans(numeric_data, centers = k)
-        data$cluster <- as.factor(kmeans_result$cluster)
-        return(data)
-      }
-
+    generate_clusters <- function(data, k) {
+      numeric_data <- data %>% select_if(is.numeric)
+      kmeans_result <- kmeans(numeric_data, centers = k)
+      data$cluster <- as.factor(kmeans_result$cluster)
+      return(data)
+    }
+    
     cluster_data00 <- generate_clusters(cluster_factor, input$num_clusters)
     parallel_plot <- ggparcoord(data = cluster_data00, 
                                 columns = c(2, 3, 5, 7, 9, 10, 11, 12, 13), 
@@ -731,40 +731,40 @@ server <- function(input, output) {
                                 title = "Parallel Coordinates Plot of Students' learning modes") +
       theme(axis.text.x = element_text(angle = 30, size = 20))
     ggplotly(parallel_plot, tooltip = "text") %>% layout(showlegend = FALSE)
-    })
+  })
+  
+  output$cluster_table <- renderDT({
     
-    output$cluster_table <- renderDT({
-      
-      # 计算每个聚类中所选变量的最高占比和名称
-      get_top_percentage <- function(df, selected_vars) {
-        result <- df %>%
-          select(all_of(c(selected_vars, "cluster"))) %>%
-          gather(key = "variable", value = "value", -cluster) %>%
-          group_by(cluster, variable, value) %>%
-          summarise(count = n(), .groups = 'drop') %>%
-          mutate(percentage = count / sum(count) * 100) %>%
-          arrange(cluster, variable, desc(percentage)) %>%
-          group_by(cluster, variable) %>%
-          slice(1) %>%
-          ungroup() %>%
-          select(cluster, variable, value)
-        return(result)
-      }
-      
-      generate_clusters <- function(data, k) {
-        numeric_data <- data %>% select_if(is.numeric)
-        kmeans_result <- kmeans(numeric_data, centers = k)
-        data$cluster <- as.factor(kmeans_result$cluster)
-        return(data)
-      }
-      
-      cluster_data00 <- generate_clusters(cluster_factor, input$num_clusters)
-      
-      req(input$selected_vars)
-      result_table <- get_top_percentage(cluster_data00, input$selected_vars)
-      datatable(result_table, options = list(pageLength = 10, autoWidth = TRUE))
-    })
-
+    # 计算每个聚类中所选变量的最高占比和名称
+    get_top_percentage <- function(df, selected_vars) {
+      result <- df %>%
+        select(all_of(c(selected_vars, "cluster"))) %>%
+        gather(key = "variable", value = "value", -cluster) %>%
+        group_by(cluster, variable, value) %>%
+        summarise(count = n(), .groups = 'drop') %>%
+        mutate(percentage = count / sum(count) * 100) %>%
+        arrange(cluster, variable, desc(percentage)) %>%
+        group_by(cluster, variable) %>%
+        slice(1) %>%
+        ungroup() %>%
+        select(cluster, variable, value)
+      return(result)
+    }
+    
+    generate_clusters <- function(data, k) {
+      numeric_data <- data %>% select_if(is.numeric)
+      kmeans_result <- kmeans(numeric_data, centers = k)
+      data$cluster <- as.factor(kmeans_result$cluster)
+      return(data)
+    }
+    
+    cluster_data00 <- generate_clusters(cluster_factor, input$num_clusters)
+    
+    req(input$selected_vars)
+    result_table <- get_top_percentage(cluster_data00, input$selected_vars)
+    datatable(result_table, options = list(pageLength = 10, autoWidth = TRUE))
+  })
+  
   
   
   
@@ -801,7 +801,7 @@ server <- function(input, output) {
   })
   
   output$plot2 <- renderPlotly({
-
+    
     
     clustering_data <- StudentLM_data %>%
       select(-student_ID)
@@ -815,12 +815,12 @@ server <- function(input, output) {
     StudentLM_data_factor$cluster <- as.character(StudentLM_data_factor$cluster)
     
     parallel_plot1 <- ggparcoord(data = StudentLM_data_factor,
-               columns = c(2:13), 
-               groupColumn = 14,
-               scale = "uniminmax",
-               alphaLines = 0.2,
-               boxplot = TRUE, 
-               title = "Parallel Coordinates Split Plot of Students' learning modes") +
+                                 columns = c(2:13), 
+                                 groupColumn = 14,
+                                 scale = "uniminmax",
+                                 alphaLines = 0.2,
+                                 boxplot = TRUE, 
+                                 title = "Parallel Coordinates Split Plot of Students' learning modes") +
       facet_wrap(~ cluster) +
       theme(
         plot.title = element_text(size = 10),
@@ -988,14 +988,14 @@ server <- function(input, output) {
                   `Total timeconsume of submissions`, data = StudentLMKA_data)
     
     plot61 <- ggcoefstats(model, 
-                output = "plot") +
-                theme(
-                      plot.title = element_text(size = 10),
-                      axis.title = element_text(size = 8),
-                      axis.text = element_text(size = 8),
-                      legend.title = element_text(size = 10),
-                      legend.text = element_text(size = 8)
-                    )
+                          output = "plot") +
+      theme(
+        plot.title = element_text(size = 10),
+        axis.title = element_text(size = 8),
+        axis.text = element_text(size = 8),
+        legend.title = element_text(size = 10),
+        legend.text = element_text(size = 8)
+      )
     ggplotly(plot61)
   })
   
@@ -1146,7 +1146,7 @@ server <- function(input, output) {
     
     # 显示组合的 plotly 图表
     combined_plot
-})
+  })
   
   # Add server logic for Task 4 here
   # Task 4: Reactive expression to dynamically choose the plot based on the selected metric for questions
@@ -1377,10 +1377,10 @@ calculate_threshold_scores <- function(overall_mastery_df, threshold) {
   threshold_score <- quantile(overall_mastery_df$overall_mastery, percentile, na.rm = TRUE)
   
   return(threshold_score)
-
+  
   
   # Add server logic for Task 5 here
-
+  
 }
 
 
