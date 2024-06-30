@@ -271,7 +271,7 @@ ui <- dashboardPage(
                                                                      "Overall sum of highest submission scores per question", 
                                                                      "Overall sum of question mastery points"), 
                                                          selected = "Overall sum of question mastery points"),
-                                             box(
+                                             fluidRow(
                                                title = "2-Sample Difference in Mean Statistical Test for Both Clusters",
                                                plotlyOutput("plot5", height = "400px")
                                              )
