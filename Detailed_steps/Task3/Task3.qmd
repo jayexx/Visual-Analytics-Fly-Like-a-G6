@@ -48,22 +48,22 @@ The code chunk below loads the following libraries:
 -   [`visNetwork`](https://cran.r-project.org/web/packages/factoextra/readme/README.html#:~:text=The%20R%20package%20factoextra%20has,data%20visualization%20with%20less%20typing.): Extract and Visualize the Results of Multivariate Data Analyses.
 -   [`BiocManager`](https://ggobi.github.io/ggally/): Extension of `ggplot2` by adding several functions to reduce the complexity of combining geometric objects with transformed data.
 -   [`igraph`](https://ggobi.github.io/ggally/): Extension of `ggplot2` by adding several functions to reduce the complexity of combining geometric objects with transformed data.
--   cluster
--   factoextra
--   stats
--   hms
--   caret
--   ggfortify
--   gridExtra
--   GGally
--   parallelPlot
--   seriation
--   dendextend
--   heatmaply
--   corrplot
--   ggalluvial
--   entropy
--   ineq
+-   cluster: Provides methods for cluster analysis, including algorithms for hierarchical and k-means clustering, as well as utilities for cluster validation
+-   factoextra: Provides tools for extracting and visualizing the results of multivariate data analyses, including PCA, CA, MCA, and clustering
+-   stats: The base R package for statistical functions, offering a wide range of tools for data analysis, hypothesis testing, and statistical modeling
+-   hms: For wrangling time-of-day data, simplifying the representation and manipulation of times (hours, minutes, seconds).
+-   caret: Provides tools for training and evaluating machine learning models, streamlining the process of model selection, training, and validation.
+-   ggfortify: Simplifies the process of visualizing statistical results from various R packages (e.g., stats, survival, MASS) using ggplot2.
+-   gridExtra: Offers functions to arrange multiple ggplot2 plots on a page, providing flexible tools for combining and arranging plots.
+-   GGally: Extends ggplot2 by adding several functions to simplify the process of combining geometric objects with transformed data, particularly useful for creating pair plots.
+-   parallelPlot: Provides tools for creating parallel coordinate plots, useful for visualizing multidimensional data.
+-   seriation: Provides methods for seriation (reordering objects to reveal patterns), useful in exploratory data analysis.
+-   dendextend: Offers functions to extend and enhance dendrogram objects, allowing for more flexible and informative hierarchical clustering visualizations.
+-   heatmaply: Combines heatmap and plotly to create interactive heatmaps, providing tools for creating dynamic and informative heatmap visualizations.
+-   corrplot: Provides tools for visualizing correlation matrices, offering various methods for displaying correlations using colors and shapes.
+-   ggalluvial: Provides tools for creating alluvial diagrams, which are useful for visualizing categorical data and changes in category membership over time.
+-   entropy: Offers functions for estimating entropy and related quantities, useful for measuring the uncertainty or information content of data.
+-   ineq: Provides tools for measuring inequality, including functions for calculating Gini coefficients and other inequality indices.
 
 ```{r}
 pacman::p_load(tidyverse, knitr, ggridges, ggdist, colorspace, ggrepel, ggthemes, hrbrthemes, patchwork, lubridate, ggstatsplot, plotly, rjson, visNetwork, BiocManager, igraph, cluster, factoextra, stats, hms, caret, ggfortify, gridExtra, GGally, parallelPlot, seriation, dendextend, heatmaply, corrplot, ggalluvial, entropy, ineq) 
@@ -537,6 +537,15 @@ ggparcoord(data = StudentLM_data1_n,
            boxplot = TRUE, 
            title = "Parallel Coordinates Plot of Students' learning modes")+
    theme(axis.text.x = element_text(angle = 30))
+
+ggparcoord(data = StudentLM_data1_n,
+           columns = c(2:13), 
+           groupColumn = 14,
+           scale = "uniminmax",
+           alphaLines = 0.2,
+           boxplot = TRUE, 
+           title = "Parallel Coordinates Split Plot of Students' learning modes")+
+  facet_wrap(~ cluster_hc)
 ```
 
 ```{r}
@@ -595,8 +604,7 @@ ggplot(StudentLM_data_long1,
         axis.title.y = element_text(size = 10),
         plot.margin = unit(c(1, 1, 1, 1), "cm"))
 ```
-
-From the plots above, it can be observed that although hierarchical clustering could give a higher number of optimum clusters, the separation and distinction, is much worse in comparison with the optimum of 2 clusters using K-means. Hence for subsequent analysis, the K-means clustering results will be used instead.
+From the plots above, it can be observed that although hierarchical clustering could give a higher number of optimum clusters, the separation and distinction, is much worse in comparison with the optimum of 2 clusters using K-means. Furthermore, Cluster 1 is extremely dominant, with the other clusters being substantially smaller. Hence for subsequent analysis, the K-means clustering results will be used instead.
 
 ## Knowledge Acquisition
 
